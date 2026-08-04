@@ -1,0 +1,119 @@
+"use client"
+
+import Link from "next/link"
+import type { ColumnDef } from "@tanstack/react-table"
+import { format } from "date-fns"
+import { MoreHorizontalIcon, EyeIcon, DoorOpenIcon, ArrowRightLeftIcon } from "lucide-react"
+import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
+import { PersonAvatar } from "@/components/common/person-avatar"
+import { StatusBadge } from "@/components/common/status-badge"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { getPatientById } from "@/lib/mock/patients"
+import { getStaffById } from "@/lib/mock/staff"
+import { getWardById, getBedById } from "@/lib/mock/admissions"
+import type { Admission } from "@/lib/mock/admissions"
+
+function admissionsColumns(onDischarge: (admission: Admission) => void): ColumnDef<Admission>[] {
+  return [
+    {
+      id: "patient",
+      header: "Patient",
+      cell: ({ row }) => {
+        const patient = getPatientById(row.original.patientId)
+        if (!patient) return <span className="text-muted-foreground">Unknown patient</span>
+        return (
+          <Link
+            href={`/patients/${patient.id}`}
+            className="flex items-center gap-2.5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
+            <div className="flex flex-col">
+              <span className="font-medium text-foreground hover:text-primary hover:underline">
+                {patient.name}
+              </span>
+              <span className="text-xs text-muted-foreground">{patient.mrn}</span>
+            </div>
+          </Link>
+        )
+      },
+    },
+    {
+      id: "ward",
+      header: "Ward / Bed",
+      cell: ({ row }) => {
+        const ward = getWardById(row.original.wardId)
+        const bed = getBedById(row.original.bedId)
+        return (
+          <div className="flex flex-col">
+            <span className="text-foreground">{ward?.name ?? "N/A"}</span>
+            <span className="text-xs text-muted-foreground">{bed?.label ?? "N/A"}</span>
+          </div>
+        )
+      },
+    },
+    {
+      id: "doctor",
+      header: "Admitting Doctor",
+      cell: ({ row }) => {
+        const doctor = getStaffById(row.original.doctorId)
+        return <span className="text-muted-foreground">{doctor?.name ?? "Unassigned"}</span>
+      },
+    },
+    {
+      accessorKey: "admissionDate",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Admission Date" />,
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {format(new Date(row.original.admissionDate), "MMM d, yyyy")}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => {
+        const admission = row.original
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+            >
+              <MoreHorizontalIcon className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem render={<Link href={`/patients/${admission.patientId}`} />}>
+                <EyeIcon />
+                View Patient
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={admission.status !== "Admitted"}
+                onClick={() => onDischarge(admission)}
+              >
+                <DoorOpenIcon />
+                Discharge
+              </DropdownMenuItem>
+              <DropdownMenuItem render={<Link href="/admissions/transfers" />}>
+                <ArrowRightLeftIcon />
+                Transfer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
+    },
+  ]
+}
+
+export { admissionsColumns }

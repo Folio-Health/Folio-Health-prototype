@@ -1,0 +1,13 @@
+<svg width="180" height="40" viewBox="0 0 180 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="2" y1="2" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3B82F6" />
+      <stop offset="1" stop-color="#1D4ED8" />
+    </linearGradient>
+  </defs>
+  <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#g)" />
+  <rect x="10.5" y="10.5" width="15" height="19" rx="3" fill="white" fill-opacity="0.5" transform="rotate(-9 18 20)" />
+  <rect x="14.5" y="10.5" width="15" height="19" rx="3" fill="white" transform="rotate(9 22 20)" />
+  <polyline points="13.5,21.4 16.4,21.4 18.4,16.2 20.6,25.6 22.6,17.4 24.4,21.4 27,21.4" fill="none" stroke="#2563EB" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" transform="rotate(9 22 20)" />
+  <text x="50" y="26" font-family="Inter, system-ui, sans-serif" font-size="19" font-weight="700" fill="#0F172A">Folio<tspan fill="#2563EB" font-weight="500" dx="6">Health</tspan></text>
+</svg>
