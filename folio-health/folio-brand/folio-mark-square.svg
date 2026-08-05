@@ -1,0 +1,4 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Folio"><defs><linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#11534A"/><stop offset="1" stop-color="#0C3E36"/></linearGradient></defs><rect x="0" y="0" width="512" height="512" fill="url(#tile)"/><rect x="158" y="132" width="52" height="248" rx="20" fill="#FFFFFF"/>
+<rect x="158" y="132" width="180" height="52" rx="20" fill="#FFFFFF"/>
+<path d="M 184 258 L 246 258 L 268 222 L 298 300 L 320 258 L 334 258" fill="none" stroke="#FFFFFF" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="368" cy="258" r="24" fill="#E65A4F"/></svg>

@@ -33,7 +33,7 @@ function CookieConsent() {
           transition={{ duration: 0.35, ease: "easeOut" }}
           className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4 sm:px-6 sm:pb-6"
         >
-          <div className="mx-auto flex max-w-3xl flex-col items-start gap-4 rounded-2xl border border-border bg-card p-5 shadow-2xl sm:flex-row sm:items-center">
+          <div className="mx-auto flex max-w-3xl flex-col items-start gap-4 rounded-2xl border border-border bg-white p-5 shadow-2xl sm:flex-row sm:items-center">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <CookieIcon className="size-4.5" />
             </span>

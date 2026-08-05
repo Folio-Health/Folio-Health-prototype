@@ -34,7 +34,7 @@ function MarketingNavbar() {
       className={cn(
         "fixed inset-x-0 top-0 z-40 border-b transition-colors duration-300",
         scrolled || open
-          ? "border-white/10 bg-[#0a1224]/95 backdrop-blur-md"
+          ? "border-white/10 bg-[#0E443B]/95 backdrop-blur-md"
           : "border-transparent bg-transparent"
       )}
     >
@@ -71,7 +71,7 @@ function MarketingNavbar() {
       </div>
 
       {open && (
-        <div className="flex flex-col gap-1 border-t border-white/10 bg-[#0a1224] px-5 py-4 md:hidden">
+        <div className="flex flex-col gap-1 border-t border-white/10 bg-[#0E443B] px-5 py-4 md:hidden">
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}

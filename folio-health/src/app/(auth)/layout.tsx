@@ -29,7 +29,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           sizes="50vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-primary/10" />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-950/40 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-transparent" />
         <div className="absolute bottom-12 left-12 right-12 flex flex-col gap-2 text-white">
           <h2 className="font-heading text-3xl font-semibold tracking-tight">
             Delivering Better Healthcare

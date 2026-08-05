@@ -32,7 +32,7 @@ const COLUMNS = [
 
 function MarketingFooter() {
   return (
-    <footer className="bg-[#0a1224] text-white/70">
+    <footer className="bg-[#0E443B] text-white/70">
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-5 py-14 sm:px-8 lg:flex-row lg:justify-between">
         <div className="flex max-w-xs flex-col gap-4">
           <Logo size={26} tone="inverted" />

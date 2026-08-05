@@ -124,7 +124,7 @@ export default function CapabilitiesPage() {
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1224]/95 via-[#0a1224]/80 to-[#0a1224]/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0E443B]/95 via-[#0E443B]/80 to-[#0E443B]/40" />
         <div className="relative mx-auto flex max-w-7xl flex-col gap-4 px-5 py-20 sm:px-8 sm:py-28">
           <FadeIn>
             <span className="w-fit rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/80 backdrop-blur-sm">

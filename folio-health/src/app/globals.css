@@ -38,6 +38,8 @@
   --color-status-warning: var(--status-warning);
   --color-status-serious: var(--status-serious);
   --color-status-critical: var(--status-critical);
+  --color-brand-coral: var(--brand-coral);
+  --color-brand-mint: var(--brand-mint);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -63,98 +65,147 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Folio Brand Colors - Light Mode */
 :root {
-  /* App shell background: soft slate-50, cards sit on top in white */
-  --background: oklch(0.984 0.003 247.858);
-  --foreground: oklch(0.208 0.042 265.755);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.208 0.042 265.755);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.208 0.042 265.755);
-  /* Brand: soft blue #2563EB (Tailwind blue-600) */
-  --primary: oklch(0.546 0.245 262.881);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.932 0.032 255.585);
-  --accent-foreground: oklch(0.379 0.146 265.522);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.623 0.214 259.815);
+  /* Background and Foreground */
+  --background: #FFFFFF; /* Surface */
+  --foreground: #0E443B; /* Folio Deep */
 
-  /* Data-viz categorical palette (validated: scripts/validate_palette.js, light @ #ffffff) */
-  --chart-1: #2a78d6; /* blue     */
-  --chart-2: #1baf7a; /* aqua     */
-  --chart-3: #eda100; /* yellow   */
-  --chart-4: #008300; /* green    */
-  --chart-5: #4a3aa7; /* violet   */
-  --chart-6: #e34948; /* red      */
-  --chart-7: #e87ba4; /* magenta  */
-  --chart-8: #eb6834; /* orange   */
+  /* Card and Popover — flush with the page surface, separated by border/shadow */
+  --card: #FFFFFF;
+  --card-foreground: #0E443B;
+  --popover: #FFFFFF;
+  --popover-foreground: #0E443B;
 
-  /* Status palette (fixed — never themed, never reused for series) */
+  /* Destructive — reuses the critical-status red for consistency */
+  --destructive: #D03B3B;
+
+  /* Specific section backgrounds */
+  --stats-bg: #0C3E36; /* Folio Deep (low) */
+  --muted-bg: #F3F6F5; /* Subtle teal-tinted gray for section backgrounds */
+  --hero-gradient-start: #071F1A; /* Near-black Folio Deep, for hero photo gradients */
+  --hero-gradient-end: transparent;
+
+  /* Primary */
+  --primary: #0E443B; /* Folio Deep */
+  --primary-foreground: #FFFFFF; /* Surface */
+
+  /* Secondary — a light, low-emphasis surface (not a second saturated button) */
+  --secondary: #EAF1EF; /* Pale teal-gray */
+  --secondary-foreground: #0E443B; /* Folio Deep */
+
+  /* Accent — kept subtle; Signal Coral is used directly, sparingly, never as this
+     structural hover/highlight token (brand guideline: "accent only, never large areas") */
+  --accent: #EAF1EF; /* Pale teal-gray, matches secondary for a cohesive hover wash */
+  --accent-foreground: #0E443B; /* Folio Deep */
+  --brand-coral: #E65A4F; /* Signal Coral — small accents only: dots, badges, live indicators */
+  --brand-mint: #7FC9BC; /* Mint — secondary text on dark brand surfaces */
+
+  /* Muted — genuinely subtle, with foreground that actually reads against it */
+  --muted: #EEF2F1; /* Very light teal-gray */
+  --muted-foreground: #5C6D69; /* Mid teal-gray, AA against both --muted and --background */
+
   --status-good: #0ca30c;
   --status-warning: #fab219;
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
 
+  /* Borders and Inputs */
+  --border: #DCE3E1; /* Teal-tinted light gray */
+  --input: #DCE3E1;
+  --ring: #0E443B; /* Folio Deep */
+
+  /* Radius */
   --radius: 0.7rem;
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-primary: oklch(0.546 0.245 262.881);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.932 0.032 255.585);
-  --sidebar-accent-foreground: oklch(0.379 0.146 265.522);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+
+  /* Sidebar */
+  --sidebar: #FFFFFF; /* Surface */
+  --sidebar-foreground: #0E443B; /* Folio Deep */
+  --sidebar-primary: #0E443B; /* Folio Deep */
+  --sidebar-primary-foreground: #FFFFFF; /* Surface */
+  --sidebar-accent: #EAF1EF; /* Pale teal-gray hover wash */
+  --sidebar-accent-foreground: #0E443B; /* Folio Deep */
+  --sidebar-border: #DCE3E1;
+  --sidebar-ring: #0E443B; /* Folio Deep */
+
+  /* Chart colors — anchored on brand teal, with enough hue variety for multi-series */
+  --chart-1: #11534A; /* Folio Teal (brand) */
+  --chart-2: #E65A4F; /* Signal Coral (brand) */
+  --chart-3: #eda100; /* amber    */
+  --chart-4: #2f9e5c; /* green    */
+  --chart-5: #4a3aa7; /* violet   */
+  --chart-6: #2a78d6; /* blue     */
+  --chart-7: #e87ba4; /* magenta  */
+  --chart-8: #7FC9BC; /* mint (brand) */
 }
 
 .dark {
-  --background: oklch(0.145 0.017 264.435);
-  --foreground: oklch(0.95 0.01 255);
-  --card: oklch(0.196 0.019 264.53);
-  --card-foreground: oklch(0.95 0.01 255);
-  --popover: oklch(0.196 0.019 264.53);
-  --popover-foreground: oklch(0.95 0.01 255);
-  --primary: oklch(0.65 0.21 262.5);
-  --primary-foreground: oklch(0.145 0.017 264.435);
-  --secondary: oklch(0.269 0.023 264.435);
-  --secondary-foreground: oklch(0.95 0.01 255);
-  --muted: oklch(0.243 0.02 264.435);
-  --muted-foreground: oklch(0.674 0.03 256.788);
-  --accent: oklch(0.279 0.05 262.5);
-  --accent-foreground: oklch(0.82 0.08 258);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.65 0.21 262.5);
+  /* Folio-inspired Dark Mode — the surface itself is Folio Deep */
+  --background: #0E443B; /* Folio Deep */
+  --foreground: #FFFFFF; /* Surface */
 
-  /* Data-viz categorical palette (validated: scripts/validate_palette.js, dark @ #0f172a) */
-  --chart-1: #3987e5;
-  --chart-2: #199e70;
-  --chart-3: #c98500;
-  --chart-4: #008300;
-  --chart-5: #9085e9;
-  --chart-6: #e66767;
-  --chart-7: #d55181;
-  --chart-8: #d95926;
+  /* Card and Popover — raised slightly above the page for depth */
+  --card: #163F38;
+  --card-foreground: #FFFFFF;
+  --popover: #163F38;
+  --popover-foreground: #FFFFFF;
 
-  --status-good: #0ca30c;
+  /* Destructive — brightened critical-status red for a dark surface */
+  --destructive: #FF6B6B;
+
+  /* Specific section backgrounds */
+  --stats-bg: #0A332C; /* Deeper than background, for contrast bands */
+  --muted-bg: #11534A; /* Folio Teal */
+  --hero-gradient-start: #071F1A;
+  --hero-gradient-end: transparent;
+
+  /* Primary inverts to white — the brand color already fills the whole page,
+     so the CTA needs to be the thing that pops against it. */
+  --primary: #FFFFFF;
+  --primary-foreground: #0E443B; /* Folio Deep */
+
+  --secondary: #163F38; /* Slightly lighter than background — a "raised" surface */
+  --secondary-foreground: #FFFFFF;
+
+  --accent: #163F38; /* Same subtle raised surface, used for hover washes */
+  --accent-foreground: #FFFFFF;
+  --brand-coral: #FF7A6E; /* Brightened coral for legibility on a dark teal surface */
+  --brand-mint: #7FC9BC;
+
+  /* Muted — was light-gray-bg/white-text (invisible). Fixed to a dark, slightly
+     raised surface with a legible light teal-gray foreground. */
+  --muted: #163F38;
+  --muted-foreground: #A9C7C1;
+
+  --status-good: #34c759;
   --status-warning: #fab219;
   --status-serious: #ec835a;
-  --status-critical: #d03b3b;
+  --status-critical: #ff6b6b;
 
-  --sidebar: oklch(0.196 0.019 264.53);
-  --sidebar-foreground: oklch(0.95 0.01 255);
-  --sidebar-primary: oklch(0.65 0.21 262.5);
-  --sidebar-primary-foreground: oklch(0.145 0.017 264.435);
-  --sidebar-accent: oklch(0.279 0.05 262.5);
-  --sidebar-accent-foreground: oklch(0.82 0.08 258);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.65 0.21 262.5);
+  --border: #1D4F46; /* Lighter than background, visible seam */
+  --input: #1D4F46;
+  --ring: #FFFFFF;
+
+  --radius: 0.7rem;
+
+  --sidebar: #0E443B; /* Folio Deep, blends with the page */
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #FFFFFF;
+  --sidebar-primary-foreground: #0E443B;
+  --sidebar-accent: #163F38; /* Subtle raised hover wash */
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #1D4F46;
+  --sidebar-ring: #FFFFFF;
+
+  /* Chart colors — brightened for contrast against the dark teal surface */
+  --chart-1: #7FC9BC; /* Mint (brand) */
+  --chart-2: #FF7A6E; /* Signal Coral, brightened */
+  --chart-3: #f5b93d;
+  --chart-4: #4cc98a;
+  --chart-5: #a89bf0;
+  --chart-6: #6fa8ea;
+  --chart-7: #f2a0c1;
+  --chart-8: #cfe8e2;
 }
 
 @layer base {

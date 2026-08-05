@@ -20,7 +20,6 @@ import {
   ZapIcon,
   HeartHandshakeIcon,
   LineChartIcon,
-  ChevronDownIcon,
 } from "lucide-react"
 import { MarketingNavbar } from "@/components/marketing/marketing-navbar"
 import { MarketingFooter } from "@/components/marketing/marketing-footer"
@@ -46,8 +45,8 @@ export const metadata: Metadata = {
     "One connected system for reception, doctors, nurses, labs, pharmacy, and billing.",
 }
 
-const STATS_BG = "#0d1a33"
-const MUTED_BG = "oklch(0.968 0.007 247.896)"
+const STATS_BG = "var(--stats-bg)"
+const MUTED_BG = "var(--muted-bg)"
 
 const PANELS = [
   {
@@ -159,72 +158,98 @@ export default function HomePage() {
     <div className="flex min-h-dvh flex-col overflow-x-hidden bg-background">
       <MarketingNavbar />
 
-      {/* Hero — full-bleed photo background */}
-      <section className="relative isolate flex min-h-[94vh] items-center overflow-hidden">
-        <Image
-          src={unsplash(MEDICAL_IMAGES.consultation[3], { w: 1920, h: 1200, q: 75 })}
-          alt="Doctor consulting with a patient at Folio Health EMR"
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#060a14]/95 via-[#060a14]/80 to-[#060a14]/45" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#060a14]/70 via-transparent to-[#060a14]/20" />
+      {/* Hero — split panel: copy on white, physician portrait on Folio green */}
+      <section className="relative isolate overflow-hidden">
+        <div className="grid grid-cols-1 lg:min-h-[88vh] lg:grid-cols-2">
+          <div className="relative z-10 flex flex-col justify-center gap-6 px-5 py-20 sm:px-8 lg:px-14 lg:py-16 xl:px-20">
+            <FadeIn>
+              <span className="w-fit rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-foreground">
+                Next-gen Hospital Management
+              </span>
+            </FadeIn>
+            <FadeIn delay={0.05}>
+              <h1 className="font-heading text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+                Healthcare technology that puts <span className="text-brand-coral">people first</span>
+              </h1>
+            </FadeIn>
+            <FadeIn delay={0.1}>
+              <p className="max-w-lg text-base text-muted-foreground">
+                Folio Health EMR brings every department, from reception and doctors to nurses, labs,
+                pharmacy, and billing, onto one connected system, so your team can spend less time
+                on paperwork and more time on patients.
+              </p>
+            </FadeIn>
+            <FadeIn delay={0.15}>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button size="lg" className="h-11 px-6" render={<Link href="/signup" />}>
+                  Get Started
+                  <ArrowRightIcon />
+                </Button>
+                <Button size="lg" variant="outline" className="h-11 px-6" render={<Link href="/login" />}>
+                  Sign In
+                </Button>
+              </div>
+            </FadeIn>
+            <FadeIn delay={0.2}>
+              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+                {TRUST_ROW.map((item) => (
+                  <div key={item.label} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <item.icon className="size-4 text-primary" />
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            </FadeIn>
+            <FadeIn delay={0.25}>
+              <div className="mt-6 flex flex-wrap gap-x-8 gap-y-4 border-t border-border pt-6">
+                {STATS.slice(0, 3).map((stat) => (
+                  <div key={stat.label} className="flex flex-col gap-0.5">
+                    <p className="font-heading text-2xl font-semibold text-foreground">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            </FadeIn>
+          </div>
 
-        <div className="relative mx-auto flex max-w-7xl flex-col gap-6 px-5 py-24 sm:px-8 lg:max-w-3xl lg:py-32">
-          <FadeIn>
-            <span className="w-fit rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/80 backdrop-blur-sm">
-              Next-gen Hospital Management
-            </span>
-          </FadeIn>
-          <FadeIn delay={0.05}>
-            <h1 className="font-heading text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-              Healthcare technology that puts <span className="text-blue-400">people first</span>
-            </h1>
-          </FadeIn>
-          <FadeIn delay={0.1}>
-            <p className="max-w-lg text-base text-white/70">
-              Folio Health EMR brings every department, from reception and doctors to nurses, labs,
-              pharmacy, and billing, onto one connected system, so your team can spend less time
-              on paperwork and more time on patients.
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.15}>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button size="lg" className="h-11 px-6" render={<Link href="/signup" />}>
-                Get Started
-                <ArrowRightIcon />
-              </Button>
-              <Button size="lg" variant="outline" className={`h-11 px-6 ${OUTLINE_ON_DARK}`} render={<Link href="/login" />}>
-                Sign In
-              </Button>
-            </div>
-          </FadeIn>
-          <FadeIn delay={0.2}>
-            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
-              {TRUST_ROW.map((item) => (
-                <div key={item.label} className="flex items-center gap-2 text-sm text-white/60">
-                  <item.icon className="size-4 text-blue-400" />
-                  {item.label}
-                </div>
-              ))}
-            </div>
-          </FadeIn>
-          <FadeIn delay={0.25}>
-            <div className="mt-6 flex flex-wrap gap-x-8 gap-y-4 border-t border-white/10 pt-6">
-              {STATS.slice(0, 3).map((stat) => (
-                <div key={stat.label} className="flex flex-col gap-0.5">
-                  <p className="font-heading text-2xl font-semibold text-white">{stat.value}</p>
-                  <p className="text-xs text-white/50">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </FadeIn>
-        </div>
+          <div className="relative isolate flex items-center justify-center overflow-hidden bg-primary px-8 py-16 lg:py-0">
+            <div
+              className="absolute inset-0 opacity-40"
+              style={{ background: "radial-gradient(circle at 65% 25%, var(--brand-mint), transparent 55%)" }}
+              aria-hidden="true"
+            />
+            <div className="absolute -bottom-16 -left-16 size-72 rounded-full bg-brand-coral/20 blur-3xl" aria-hidden="true" />
 
-        <div className="absolute inset-x-0 bottom-8 flex justify-center">
-          <ChevronDownIcon className="size-6 animate-bounce text-white/50" />
+            <FadeIn delay={0.1} className="relative w-full max-w-sm">
+              <div className="relative aspect-[4/5] w-full">
+                <Image
+                  src={unsplash(MEDICAL_IMAGES.staffPortraits[1], { w: 900, h: 1125, q: 80 })}
+                  alt="A Folio Health EMR physician"
+                  fill
+                  priority
+                  className="object-cover object-top"
+                  sizes="(min-width: 1024px) 40vw, 90vw"
+                  style={{
+                    maskImage: "radial-gradient(ellipse 78% 88% at 50% 40%, black 60%, transparent 100%)",
+                    WebkitMaskImage: "radial-gradient(ellipse 78% 88% at 50% 40%, black 60%, transparent 100%)",
+                  }}
+                />
+              </div>
+
+              <FadeIn
+                delay={0.5}
+                className="absolute -bottom-4 left-1/2 flex w-max -translate-x-1/2 items-center gap-2.5 rounded-xl bg-white px-4 py-3 shadow-xl lg:-right-6 lg:left-auto lg:translate-x-0"
+              >
+                <span className="flex size-9 items-center justify-center rounded-full bg-[#0E443B]/10 text-[#0E443B]">
+                  <ActivityIcon className="size-4" />
+                </span>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-sm font-semibold text-[#0E443B]">99.9% Uptime</span>
+                  <span className="text-xs text-[#5C6D69]">Always available</span>
+                </div>
+              </FadeIn>
+            </FadeIn>
+          </div>
         </div>
       </section>
 
@@ -412,7 +437,7 @@ export default function HomePage() {
               <p className="font-heading text-3xl font-semibold text-white sm:text-4xl">
                 {stat.value}
               </p>
-              <p className="text-sm text-white/50">{stat.label}</p>
+              <p className="text-sm text-white/60">{stat.label}</p>
             </FadeIn>
           ))}
         </div>
@@ -427,7 +452,7 @@ export default function HomePage() {
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1224]/95 via-[#0a1224]/85 to-[#0a1224]/55" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0E443B]/95 via-[#0E443B]/85 to-[#0E443B]/50" />
 
         <FadeIn>
           <div className="relative mx-auto flex max-w-7xl flex-col items-start gap-5 px-5 py-20 sm:px-8 sm:py-28">

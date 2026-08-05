@@ -58,7 +58,7 @@ function FeaturePanel({ title, description, details, image }: FeaturePanelProps)
         >
           {details.map((detail) => (
             <p key={detail} className="flex items-start gap-2 text-xs text-white/80">
-              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-blue-400" />
+              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-brand-mint" />
               {detail}
             </p>
           ))}
