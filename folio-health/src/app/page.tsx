@@ -36,6 +36,8 @@ import { CookieConsent } from "@/components/marketing/cookie-consent"
 import { WelcomeModal } from "@/components/marketing/welcome-modal"
 import { FeaturePanel } from "@/components/marketing/feature-panel"
 import { BenefitCard } from "@/components/marketing/benefit-card"
+import { HowItWorksStep } from "@/components/marketing/how-it-works-step"
+import { AnimatedConnectorLine } from "@/components/marketing/animated-connector-line"
 import { Button } from "@/components/ui/button"
 import { unsplash, MEDICAL_IMAGES } from "@/lib/images"
 
@@ -220,19 +222,16 @@ export default function HomePage() {
             />
             <div className="absolute -bottom-16 -left-16 size-72 rounded-full bg-brand-coral/20 blur-3xl" aria-hidden="true" />
 
-            <FadeIn delay={0.1} className="relative w-full max-w-sm">
+            <FadeIn delay={0.1} className="relative w-full max-w-lg">
               <div className="relative aspect-[4/5] w-full">
                 <Image
-                  src={unsplash(MEDICAL_IMAGES.staffPortraits[1], { w: 900, h: 1125, q: 80 })}
+                  src="/hero-doctor.png"
                   alt="A Folio Health EMR physician"
                   fill
                   priority
-                  className="object-cover object-top"
-                  sizes="(min-width: 1024px) 40vw, 90vw"
-                  style={{
-                    maskImage: "radial-gradient(ellipse 78% 88% at 50% 40%, black 60%, transparent 100%)",
-                    WebkitMaskImage: "radial-gradient(ellipse 78% 88% at 50% 40%, black 60%, transparent 100%)",
-                  }}
+                  className="object-cover"
+                  sizes="(min-width: 1024px) 48vw, 92vw"
+                  style={{ objectPosition: "72% 42%" }}
                 />
               </div>
 
@@ -251,6 +250,12 @@ export default function HomePage() {
             </FadeIn>
           </div>
         </div>
+
+        {/* Soft fade so the green panel melts into the next section instead of a hard cut */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-linear-to-b from-transparent to-background sm:h-28"
+          aria-hidden="true"
+        />
       </section>
 
       {/* Live dashboard preview */}
@@ -265,7 +270,15 @@ export default function HomePage() {
             style={{ objectPosition: "20% 30%" }}
           />
         </BgFadeIn>
-        <div className="absolute inset-0 bg-gradient-to-r from-background/10 via-background/60 to-background" />
+        <div className="absolute inset-0 bg-linear-to-r from-background/10 via-background/60 to-background" />
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-linear-to-b from-background to-transparent sm:h-32"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-linear-to-t from-background to-transparent sm:h-32"
+          aria-hidden="true"
+        />
         <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
             <div className="flex flex-col gap-8">
@@ -344,16 +357,16 @@ export default function HomePage() {
           </FadeIn>
 
           <div className="relative mt-14 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="absolute top-6 right-0 left-0 hidden h-px bg-border lg:block" aria-hidden="true" />
+            <AnimatedConnectorLine className="absolute top-6 right-0 left-0 hidden lg:block" />
             {STEPS.map((step, i) => (
-              <FadeIn key={step.title} delay={i * 0.08} className="relative flex flex-col items-center gap-3 text-center">
-                <span className="relative z-10 flex size-12 items-center justify-center rounded-full border border-border bg-background text-primary shadow-sm">
-                  <step.icon className="size-5" />
-                </span>
-                <p className="text-xs font-semibold text-muted-foreground">Step {i + 1}</p>
-                <p className="font-heading text-base font-semibold text-foreground">{step.title}</p>
-                <p className="text-sm text-muted-foreground">{step.description}</p>
-              </FadeIn>
+              <HowItWorksStep
+                key={step.title}
+                icon={<step.icon className="size-5" />}
+                step={i + 1}
+                title={step.title}
+                description={step.description}
+                delay={i * 0.1}
+              />
             ))}
           </div>
         </div>

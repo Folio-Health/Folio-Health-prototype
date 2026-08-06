@@ -33,7 +33,7 @@ const DEPARTMENT_LOAD = [
  */
 function DashboardPreview() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+    <div className="@container overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
       <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-4 py-3">
         <span className="size-2.5 rounded-full bg-red-400" />
         <span className="size-2.5 rounded-full bg-amber-400" />
@@ -43,27 +43,27 @@ function DashboardPreview() {
         </span>
       </div>
 
-      <div className="flex flex-col gap-5 p-5 sm:p-6">
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="flex flex-col gap-3 p-3 @sm:gap-4 @sm:p-4 @lg:p-5">
+        <div className="grid grid-cols-2 gap-2.5 @3xl:grid-cols-4 @3xl:gap-3">
           <StatCard label="Today's Patients" value={128} icon={UsersIcon} delta={{ value: 12, comparedTo: "yesterday" }} />
           <StatCard label="Appointments" value={86} icon={CalendarDaysIcon} tone="violet" delta={{ value: 8, comparedTo: "yesterday" }} />
           <StatCard label="Admissions" value={24} icon={BedDoubleIcon} tone="emerald" delta={{ value: -4, comparedTo: "yesterday" }} />
           <StatCard label="Revenue (MTD)" value="₦12.4M" icon={TrendingUpIcon} tone="amber" delta={{ value: 9, comparedTo: "last month" }} />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-border p-4 lg:col-span-2">
-            <p className="mb-3 text-sm font-medium text-foreground">Patient Visits This Week</p>
+        <div className="grid grid-cols-1 gap-2.5 @lg:grid-cols-3 @lg:gap-3">
+          <div className="rounded-xl border border-border p-3 @lg:col-span-2">
+            <p className="mb-2 text-sm font-medium text-foreground">Patient Visits This Week</p>
             <TrendChart
               data={WEEKLY_VISITS}
               xKey="day"
-              height={200}
+              height={130}
               series={[{ key: "visits", label: "Visits", color: "var(--chart-1)" }]}
             />
           </div>
-          <div className="rounded-xl border border-border p-4">
-            <p className="mb-3 text-sm font-medium text-foreground">Department Load</p>
-            <DonutChart data={DEPARTMENT_LOAD} centerLabel="Total" centerValue={152} size={120} />
+          <div className="rounded-xl border border-border p-3">
+            <p className="mb-2 text-sm font-medium text-foreground">Department Load</p>
+            <DonutChart data={DEPARTMENT_LOAD} centerLabel="Total" centerValue={152} size={90} />
           </div>
         </div>
       </div>
