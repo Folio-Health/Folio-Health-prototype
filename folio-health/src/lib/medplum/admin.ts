@@ -1,7 +1,7 @@
 import "server-only"
 
 import { medplumUrl } from "./config"
-import { getAccessToken, refreshAccessToken } from "./session"
+import { getAccessToken, refreshSession } from "./session"
 
 /**
  * Privileged platform-plane operations.
@@ -24,10 +24,17 @@ export class AdminError extends Error {
   }
 }
 
+const UNREACHABLE_MESSAGE = "Can't reach Folio right now. Check your connection and try again."
+
 async function tokenOrThrow(): Promise<string> {
-  const token = (await getAccessToken()) ?? (await refreshAccessToken())
-  if (!token) throw new AdminError("Not authenticated.", 401)
-  return token
+  const existing = await getAccessToken()
+  if (existing) return existing
+
+  const refreshed = await refreshSession()
+  // 503, not 401 — an unreachable server must never present as a sign-out.
+  if (refreshed.status === "unreachable") throw new AdminError(UNREACHABLE_MESSAGE, 503)
+  if (refreshed.status === "expired") throw new AdminError("Not authenticated.", 401)
+  return refreshed.accessToken
 }
 
 /** Authenticated call to any Medplum path, retrying once after a token refresh. */
@@ -48,12 +55,21 @@ export async function medplumFetch<T>(
       cache: "no-store",
     })
 
-  let response = await send(token)
-  if (response.status === 401) {
-    const refreshed = await refreshAccessToken()
-    if (!refreshed) throw new AdminError("Session expired.", 401)
-    token = refreshed
+  let response: Response
+  try {
     response = await send(token)
+    if (response.status === 401) {
+      const refreshed = await refreshSession()
+      if (refreshed.status === "unreachable") throw new AdminError(UNREACHABLE_MESSAGE, 503)
+      if (refreshed.status === "expired") throw new AdminError("Session expired.", 401)
+      token = refreshed.accessToken
+      response = await send(token)
+    }
+  } catch (error) {
+    if (error instanceof AdminError) throw error
+    // Network failure reaching Medplum.
+    console.error("[medplum-admin] request could not reach the server", error)
+    throw new AdminError(UNREACHABLE_MESSAGE, 503)
   }
 
   if (!response.ok) {

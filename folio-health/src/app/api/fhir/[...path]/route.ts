@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { medplumUrl } from "@/lib/medplum/config"
-import { getAccessToken, refreshAccessToken } from "@/lib/medplum/session"
+import { getAccessToken, refreshSession } from "@/lib/medplum/session"
 
 /**
  * Authenticated FHIR proxy.
@@ -35,10 +35,20 @@ const STRIPPED_REQUEST_HEADERS = new Set([
 async function forward(request: NextRequest, path: string[]): Promise<NextResponse> {
   let accessToken = await getAccessToken()
   if (!accessToken) {
-    accessToken = await refreshAccessToken()
-  }
-  if (!accessToken) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
+    const refreshed = await refreshSession()
+    if (refreshed.status === "unreachable") {
+      // 503, never 401: the session may be perfectly valid and the server
+      // merely unreachable. Answering 401 would make a network blip look like
+      // a sign-out.
+      return NextResponse.json(
+        { error: "Can't reach Folio right now. Check your connection and try again." },
+        { status: 503 }
+      )
+    }
+    if (refreshed.status === "expired") {
+      return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
+    }
+    accessToken = refreshed.accessToken
   }
 
   const search = request.nextUrl.search
@@ -67,11 +77,17 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
 
     // An expired access token looks like a 401; refresh once and replay.
     if (response.status === 401) {
-      const refreshed = await refreshAccessToken()
-      if (!refreshed) {
+      const refreshed = await refreshSession()
+      if (refreshed.status === "unreachable") {
+        return NextResponse.json(
+          { error: "Can't reach Folio right now. Check your connection and try again." },
+          { status: 503 }
+        )
+      }
+      if (refreshed.status === "expired") {
         return NextResponse.json({ error: "Session expired." }, { status: 401 })
       }
-      response = await send(refreshed)
+      response = await send(refreshed.accessToken)
     }
 
     const responseHeaders = new Headers()
@@ -87,8 +103,12 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
       headers: responseHeaders,
     })
   } catch (error) {
+    // Upstream unreachable mid-request — same reasoning as above, 503 not 401.
     console.error("[api/fhir] upstream request failed", error)
-    return NextResponse.json({ error: "Could not reach the Folio server." }, { status: 502 })
+    return NextResponse.json(
+      { error: "Can't reach Folio right now. Check your connection and try again." },
+      { status: 503 }
+    )
   }
 }
 

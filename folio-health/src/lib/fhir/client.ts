@@ -27,6 +27,14 @@ export class FhirError extends Error {
   get isUnauthenticated(): boolean {
     return this.status === 401
   }
+
+  /**
+   * Folio could not be reached. Distinct from `isUnauthenticated` so a dropped
+   * connection is never treated as a sign-out — the session is probably fine.
+   */
+  get isUnreachable(): boolean {
+    return this.status === 503
+  }
 }
 
 async function toError(response: Response): Promise<FhirError> {
