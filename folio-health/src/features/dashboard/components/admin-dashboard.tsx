@@ -71,13 +71,22 @@ function AdminDashboard() {
         <StatCardGridSkeleton count={6} />
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
-          <StatCard label="Patients" value={data.patients} icon={UsersIcon} />
-          <StatCard
-            label="Appointments Today"
-            value={data.appointmentsToday}
-            icon={CalendarDaysIcon}
-            tone="violet"
-          />
+          {/* Tiles link out only where a screen actually exists — a figure you
+              can't click through to is a dead end. */}
+          <Link href="/patients" className="rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50">
+            <StatCard label="Patients" value={data.patients} icon={UsersIcon} />
+          </Link>
+          <Link
+            href="/appointments"
+            className="rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <StatCard
+              label="Appointments Today"
+              value={data.appointmentsToday}
+              icon={CalendarDaysIcon}
+              tone="violet"
+            />
+          </Link>
           <StatCard
             label="Active Encounters"
             value={data.activeEncounters}
@@ -85,12 +94,17 @@ function AdminDashboard() {
             tone="emerald"
           />
           <StatCard label="Practitioners" value={data.practitioners} icon={StethoscopeIcon} />
-          <StatCard
-            label="Facilities"
-            value={data.organizations}
-            icon={Building2Icon}
-            tone="amber"
-          />
+          <Link
+            href="/facilities"
+            className="rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <StatCard
+              label="Facilities"
+              value={data.organizations}
+              icon={Building2Icon}
+              tone="amber"
+            />
+          </Link>
           <StatCard
             label="Open Lab Orders"
             value={data.pendingLabOrders}
