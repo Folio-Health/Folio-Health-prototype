@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import type { ColumnDef } from "@tanstack/react-table"
-import { formatDistanceToNow } from "date-fns"
 import { MoreHorizontalIcon, EyeIcon, PencilIcon, FileTextIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
 import { PersonAvatar } from "@/components/common/person-avatar"
@@ -14,9 +13,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Patient } from "@/types/core"
+import type { PatientSummary } from "@/lib/fhir/patient"
 
-export const patientsColumns: ColumnDef<Patient>[] = [
+/**
+ * Columns render only what a FHIR `Patient` actually carries.
+ *
+ * The previous version had a "Doctor" column printing `primaryDoctorId` raw
+ * (e.g. "STF-0012") and a "Last Visit" column from an invented field. The
+ * treating clinician is `generalPractitioner` and the last visit is the most
+ * recent `Encounter` — both separate reads, so they belong on the profile
+ * screen rather than being faked in a list cell.
+ */
+export const patientsColumns: ColumnDef<PatientSummary>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Patient" />,
@@ -28,12 +36,12 @@ export const patientsColumns: ColumnDef<Patient>[] = [
           className="flex items-center gap-2.5"
           onClick={(e) => e.stopPropagation()}
         >
-          <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
+          <PersonAvatar name={patient.name} seed={patient.id} size="sm" />
           <div className="flex flex-col">
             <span className="font-medium text-foreground hover:text-primary hover:underline">
               {patient.name}
             </span>
-            <span className="text-xs text-muted-foreground">{patient.mrn}</span>
+            <span className="font-mono text-xs text-muted-foreground">{patient.mrn}</span>
           </div>
         </Link>
       )
@@ -42,31 +50,28 @@ export const patientsColumns: ColumnDef<Patient>[] = [
   {
     accessorKey: "age",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Age" />,
-    cell: ({ row }) => <span className="tabular-nums">{row.original.age}</span>,
+    cell: ({ row }) => (
+      <span className="tabular-nums">
+        {row.original.age ?? <span className="text-muted-foreground">Unknown</span>}
+      </span>
+    ),
   },
   {
     accessorKey: "gender",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Gender" />,
   },
   {
+    accessorKey: "dob",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Date of Birth" />,
+    cell: ({ row }) => (
+      <span className="font-mono text-sm text-muted-foreground">{row.original.dob ?? "—"}</span>
+    ),
+  },
+  {
     accessorKey: "phone",
     header: "Phone",
-    cell: ({ row }) => <span className="text-muted-foreground">{row.original.phone}</span>,
-  },
-  {
-    id: "doctor",
-    header: "Doctor",
-    cell: ({ row }) => {
-      return <span className="text-muted-foreground">{row.original.primaryDoctorId}</span>
-    },
-  },
-  {
-    accessorKey: "lastVisit",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Last Visit" />,
     cell: ({ row }) => (
-      <span className="text-muted-foreground">
-        {formatDistanceToNow(new Date(row.original.lastVisit), { addSuffix: true })}
-      </span>
+      <span className="font-mono text-sm text-muted-foreground">{row.original.phone || "—"}</span>
     ),
   },
   {

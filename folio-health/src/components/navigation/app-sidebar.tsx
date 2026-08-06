@@ -9,15 +9,19 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { NAV_SECTIONS } from "@/config/nav"
 import { useUiStore } from "@/stores/ui-store"
-import { getStaffByRole } from "@/lib/mock/staff"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
 import { cn } from "@/lib/utils"
 
 function AppSidebar() {
   const pathname = usePathname()
   const collapsed = useUiStore((s) => s.sidebarCollapsed)
   const toggleSidebar = useUiStore((s) => s.toggleSidebar)
-  const activeRole = useUiStore((s) => s.activeRole)
-  const currentUser = getStaffByRole(activeRole)[0]
+  const { data: user } = useCurrentUser()
+  // Who is actually signed in, per Medplum — not a mock staff record picked by
+  // whatever role happens to be selected locally.
+  const currentUser = user
+    ? { name: user.name, role: user.admin ? "Administrator" : (user.project ?? "Clinician") }
+    : null
 
   return (
     <aside

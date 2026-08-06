@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { BellIcon, LogOutIcon, MenuIcon, HelpCircleIcon } from "lucide-react"
 import { Logo } from "@/components/common/logo"
 import { PersonAvatar } from "@/components/common/person-avatar"
-import { clearSessionCookie } from "@/lib/session"
+import { signOut } from "@/lib/sign-out"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -203,10 +203,7 @@ function PortalProfileMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
-          onClick={() => {
-            clearSessionCookie()
-            router.push("/login")
-          }}
+          onClick={() => void signOut(router)}
         >
           <LogOutIcon />
           Log Out

@@ -16,9 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { PATIENTS } from "@/lib/mock/patients"
+import { ErrorState } from "@/components/common/empty-state"
 import { patientsColumns } from "./patients-columns"
-import type { Patient } from "@/types/core"
+import { usePatients } from "../hooks/use-patients"
+import { useDebouncedValue } from "@/lib/use-debounced-value"
 import { downloadCsv } from "@/lib/csv-export"
 
 const ALL = "all"
@@ -30,27 +31,27 @@ function PatientsList() {
   const [status, setStatus] = useState(ALL)
   const [ageRange, setAgeRange] = useState(ALL)
 
+  // Search runs on the server; debounce so a keystroke isn't a FHIR query.
+  const debouncedSearch = useDebouncedValue(search, 300)
+
+  const { data, isLoading, isError, error, refetch } = usePatients({
+    search: debouncedSearch,
+    gender,
+    status,
+  })
+
+  const patients = useMemo(() => data?.patients ?? [], [data])
+
+  // Age is derived from birthDate rather than stored, so FHIR cannot filter on
+  // it directly — this one filter stays client-side over the fetched page.
   const filtered = useMemo(() => {
-    return PATIENTS.filter((p) => {
-      if (search) {
-        const q = search.toLowerCase()
-        if (
-          !p.name.toLowerCase().includes(q) &&
-          !p.mrn.toLowerCase().includes(q) &&
-          !p.phone.includes(q)
-        ) {
-          return false
-        }
-      }
-      if (gender !== ALL && p.gender !== gender) return false
-      if (status !== ALL && p.status !== status) return false
-      if (ageRange !== ALL) {
-        const [min, max] = ageRange.split("-").map(Number)
-        if (p.age < min || (max && p.age > max)) return false
-      }
-      return true
+    if (ageRange === ALL) return patients
+    const [min, max] = ageRange.split("-").map(Number)
+    return patients.filter((p) => {
+      if (p.age === undefined) return false
+      return p.age >= min && (!max || p.age <= max)
     })
-  }, [search, gender, status, ageRange])
+  }, [patients, ageRange])
 
   function handleExport() {
     downloadCsv(
@@ -58,26 +59,53 @@ function PatientsList() {
       filtered.map((p) => ({
         MRN: p.mrn,
         Name: p.name,
-        Age: p.age,
+        Age: p.age ?? "",
         Gender: p.gender,
+        "Date of Birth": p.dob ?? "",
         Phone: p.phone,
         Email: p.email,
         Status: p.status,
-        "Last Visit": new Date(p.lastVisit).toLocaleDateString("en-US"),
       }))
     )
     toast.success(`Exported ${filtered.length} patients to CSV`)
   }
 
+  if (isError) {
+    return (
+      <div>
+        <PageHeader
+          title="Patients"
+          breadcrumbs={[{ label: "Front Desk" }, { label: "Patients" }]}
+        />
+        <ErrorState
+          title="Could not load patients"
+          description={
+            error instanceof Error ? error.message : "The Folio server did not respond."
+          }
+          action={
+            <Button variant="outline" onClick={() => void refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      </div>
+    )
+  }
+
+  const total = data?.total
+  const description = isLoading
+    ? "Loading patients…"
+    : `${total ?? filtered.length} patient${(total ?? filtered.length) === 1 ? "" : "s"} registered`
+
   return (
     <div>
       <PageHeader
         title="Patients"
-        description={`${PATIENTS.length} patients registered`}
+        description={description}
         breadcrumbs={[{ label: "Front Desk" }, { label: "Patients" }]}
         actions={
           <>
-            <Button variant="outline" onClick={handleExport}>
+            <Button variant="outline" onClick={handleExport} disabled={isLoading || !filtered.length}>
               <DownloadIcon />
               Export
             </Button>
@@ -91,7 +119,8 @@ function PatientsList() {
 
       <DataTable
         columns={patientsColumns}
-        data={filtered as Patient[]}
+        data={filtered}
+        isLoading={isLoading}
         onRowClick={(patient) => router.push(`/patients/${patient.id}`)}
         emptyTitle="No patients found"
         emptyDescription="Try adjusting your search or filters, or register a new patient."
@@ -102,7 +131,7 @@ function PatientsList() {
                 <SearchIcon className="size-4" />
               </InputGroupAddon>
               <InputGroupInput
-                placeholder="Search by name, MRN, or phone..."
+                placeholder="Search by name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -138,7 +167,6 @@ function PatientsList() {
                 <SelectItem value={ALL}>All Statuses</SelectItem>
                 <SelectItem value="Active">Active</SelectItem>
                 <SelectItem value="Inactive">Inactive</SelectItem>
-                <SelectItem value="Archived">Archived</SelectItem>
               </SelectContent>
             </Select>
           </div>

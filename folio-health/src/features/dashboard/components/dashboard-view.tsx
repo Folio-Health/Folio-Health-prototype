@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { PageHeader } from "@/components/common/page-header"
 import { useUiStore } from "@/stores/ui-store"
 import { AdminDashboard } from "./admin-dashboard"
@@ -29,11 +30,25 @@ function DashboardView() {
   const activeRole = useUiStore((s) => s.activeRole)
   const DashboardComponent = ROLE_DASHBOARDS[activeRole] ?? AdminDashboard
 
+  // Formatting "today" during render makes the server's HTML disagree with the
+  // browser whenever their timezone or locale differs. Resolve it after mount
+  // so both render the same thing first.
+  const [today, setToday] = useState<string | null>(null)
+  useEffect(() => {
+    setToday(
+      new Date().toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      })
+    )
+  }, [])
+
   return (
     <div>
       <PageHeader
         title="Dashboard"
-        description={`${activeRole} overview for ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
+        description={today ? `${activeRole} overview for ${today}` : `${activeRole} overview`}
       />
       <DashboardComponent />
     </div>
