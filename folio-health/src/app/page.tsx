@@ -214,7 +214,7 @@ export default function HomePage() {
             </FadeIn>
           </div>
 
-          <div className="relative isolate flex items-center justify-center overflow-hidden bg-primary px-8 py-16 lg:py-0">
+          <div className="relative isolate flex items-end justify-center overflow-hidden bg-primary px-8 pt-16 pb-24 lg:pb-28">
             <div
               className="absolute inset-0 opacity-40"
               style={{ background: "radial-gradient(circle at 65% 25%, var(--brand-mint), transparent 55%)" }}
@@ -231,7 +231,11 @@ export default function HomePage() {
                   priority
                   className="object-cover"
                   sizes="(min-width: 1024px) 48vw, 92vw"
-                  style={{ objectPosition: "72% 42%" }}
+                  style={{
+                    objectPosition: "100% 50%",
+                    maskImage: "radial-gradient(ellipse 78% 85% at 52% 45%, black 48%, transparent 100%)",
+                    WebkitMaskImage: "radial-gradient(ellipse 78% 85% at 52% 45%, black 48%, transparent 100%)",
+                  }}
                 />
               </div>
 
