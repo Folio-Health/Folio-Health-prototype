@@ -86,30 +86,38 @@ function ProfileMenu() {
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <RepeatIcon />
-            Preview as role
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            {CLINICAL_ROLES.map((role) => (
-              <DropdownMenuItem
-                key={role}
-                onClick={() => {
-                  setActiveRole(role)
-                  toast.success(`Now previewing as ${role}`)
-                  router.push("/dashboard")
-                }}
-              >
-                {role}
-                {role === activeRole && (
-                  <span className="ml-auto size-1.5 rounded-full bg-primary" />
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        {/* "Preview as role" is a local demo switch with no bearing on what the
+            server authorises. On a platform account it is doubly wrong: the
+            operator plane has no clinical role to preview into, and offering
+            one implies an escalation the AccessPolicy would refuse anyway. */}
+        {!user?.platformOnly && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <RepeatIcon />
+                Preview as role
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {CLINICAL_ROLES.map((role) => (
+                  <DropdownMenuItem
+                    key={role}
+                    onClick={() => {
+                      setActiveRole(role)
+                      toast.success(`Now previewing as ${role}`)
+                      router.push("/dashboard")
+                    }}
+                  >
+                    {role}
+                    {role === activeRole && (
+                      <span className="ml-auto size-1.5 rounded-full bg-primary" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={() => void signOut(router)}>
           <LogOutIcon />
