@@ -1,26 +1,35 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { SESSION_COOKIE } from "@/lib/session"
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/session"
 
+// Internal system: no self-registration. Accounts are provisioned in Medplum by
+// a facility administrator, so there is no public /signup route.
 const PUBLIC_PATHS = [
-  "/",
   "/login",
-  "/signup",
   "/forgot-password",
   "/reset-password",
   "/otp-verification",
   "/two-factor",
   "/session-expired",
-  "/capabilities",
-  "/faqs",
-  "/support",
 ]
 
-const AUTH_FORM_PATHS = ["/login", "/signup"]
+const AUTH_FORM_PATHS = ["/login"]
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const isAuthenticated = request.cookies.has(SESSION_COOKIE)
+  // A live access token, or a refresh token the API routes can still redeem.
+  // Presence is only a routing hint — Medplum validates the token itself on
+  // every FHIR call, so a forged cookie gets a user precisely nowhere.
+  const isAuthenticated =
+    request.cookies.has(ACCESS_TOKEN_COOKIE) || request.cookies.has(REFRESH_TOKEN_COOKIE)
   const isPublic = PUBLIC_PATHS.includes(pathname)
+
+  // Internal system: "/" is not a landing page, it's a routing decision.
+  if (pathname === "/") {
+    const url = request.nextUrl.clone()
+    url.pathname = isAuthenticated ? "/dashboard" : "/login"
+    url.search = ""
+    return NextResponse.redirect(url)
+  }
 
   if (!isAuthenticated && !isPublic) {
     const url = request.nextUrl.clone()
@@ -40,5 +49,18 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:png|jpg|jpeg|svg|webp|ico|webmanifest|json|xml|txt)$).*)"],
+  /**
+   * Excluded by PREFIX, never by file extension.
+   *
+   * The previous matcher excluded any path ending in .json/.txt/.xml/etc. That
+   * is an unanchored suffix rule applied to the whole path, so a future route
+   * like /patients/export.json would have silently bypassed the auth check.
+   *
+   * `api` is excluded because those routes authenticate themselves — if the
+   * proxy gated them, an unauthenticated POST to /api/auth/login would be
+   * redirected to /login and sign-in could never happen.
+   */
+  matcher: [
+    "/((?!api/|_next/|favicon\\.ico$|icon\\.svg$|apple-icon\\.png$|site\\.webmanifest$|favicon-|icon-|apple-touch-icon\\.png$).*)",
+  ],
 }

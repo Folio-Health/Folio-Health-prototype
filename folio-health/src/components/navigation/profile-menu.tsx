@@ -25,16 +25,22 @@ import {
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { CLINICAL_ROLES } from "@/types/core"
 import { useUiStore } from "@/stores/ui-store"
-import { getStaffByRole } from "@/lib/mock/staff"
-import { clearSessionCookie } from "@/lib/session"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { signOut } from "@/lib/sign-out"
 
 function ProfileMenu() {
   const router = useRouter()
   const activeRole = useUiStore((s) => s.activeRole)
   const setActiveRole = useUiStore((s) => s.setActiveRole)
-  const currentUser = getStaffByRole(activeRole)[0]
+  const { data: user } = useCurrentUser()
 
-  if (!currentUser) return null
+  // Identity comes from the Medplum session, not from the locally-selected
+  // role. Until it resolves, show a neutral placeholder rather than a fake
+  // staff member.
+  const currentUser = {
+    name: user?.name ?? "Loading…",
+    email: user?.email ?? user?.project ?? "",
+  }
 
   return (
     <DropdownMenu>
@@ -101,11 +107,7 @@ function ProfileMenu() {
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={() => clearSessionCookie()}
-          render={<Link href="/login" />}
-        >
+        <DropdownMenuItem variant="destructive" onClick={() => void signOut(router)}>
           <LogOutIcon />
           Log Out
         </DropdownMenuItem>

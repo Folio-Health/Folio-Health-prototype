@@ -12,19 +12,16 @@ export const metadata: Metadata = {
     template: "%s · Folio Health EMR",
   },
   description:
-    "Folio — the record that follows the patient. One connected system for reception, doctors, nurses, labs, pharmacy, and billing.",
+    "Internal hospital information system for reception, doctors, nurses, labs, pharmacy, and billing.",
   manifest: "/site.webmanifest",
   appleWebApp: {
     title: "Folio",
   },
-  openGraph: {
-    title: "Folio — the record that follows the patient",
-    description: "One record, every clinic. A connecting layer for Nigerian healthcare.",
-    images: [{ url: "/folio-og.png", width: 1200, height: 630 }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    images: ["/folio-og.png"],
+  // Internal system — no public surface to index or share socially.
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
   },
 };
 
