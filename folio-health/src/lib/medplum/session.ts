@@ -56,32 +56,59 @@ export async function getAccessToken(): Promise<string | undefined> {
 }
 
 /**
- * Exchange the refresh token for a new access token. Returns the new access
- * token, or undefined when there is no usable refresh token — in which case the
- * caller should treat the session as ended.
+ * Outcome of a refresh attempt.
+ *
+ * "unreachable" is kept distinct from "expired" on purpose. Both used to
+ * collapse into "no token", so a dropped connection was indistinguishable from
+ * a dead session — and the app would sign a clinician out mid-shift because the
+ * network blinked. A blip must never destroy credentials.
  */
-export async function refreshAccessToken(): Promise<string | undefined> {
+export type RefreshResult =
+  | { status: "ok"; accessToken: string }
+  | { status: "expired" }
+  | { status: "unreachable" }
+
+/** Exchange the refresh token for a new access token. Never throws. */
+export async function refreshSession(): Promise<RefreshResult> {
   const jar = await cookies()
   const refreshToken = jar.get(REFRESH_TOKEN_COOKIE)?.value
-  if (!refreshToken) return undefined
+  if (!refreshToken) return { status: "expired" }
 
-  const response = await fetch(medplumUrl("oauth2/token"), {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      client_id: medplumClientId(),
-      refresh_token: refreshToken,
-    }),
-    cache: "no-store",
-  })
+  let response: Response
+  try {
+    response = await fetch(medplumUrl("oauth2/token"), {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: medplumClientId(),
+        refresh_token: refreshToken,
+      }),
+      cache: "no-store",
+    })
+  } catch (error) {
+    // Network failure (EHOSTUNREACH, DNS, timeout). Keep the tokens: they are
+    // probably still valid and the server is simply not reachable right now.
+    console.error("[medplum] token refresh could not reach the server", error)
+    return { status: "unreachable" }
+  }
 
   if (!response.ok) {
+    // The server answered and rejected the token — this session really is over.
     await clearTokens()
-    return undefined
+    return { status: "expired" }
   }
 
   const tokens = (await response.json()) as TokenResponse
   await storeTokens(tokens)
-  return tokens.access_token
+  return { status: "ok", accessToken: tokens.access_token }
+}
+
+/**
+ * Convenience wrapper for callers that only need the token.
+ * Prefer `refreshSession` where "unreachable" and "expired" should differ.
+ */
+export async function refreshAccessToken(): Promise<string | undefined> {
+  const result = await refreshSession()
+  return result.status === "ok" ? result.accessToken : undefined
 }

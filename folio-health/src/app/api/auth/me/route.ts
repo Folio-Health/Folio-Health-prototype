@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { FOLIO_ROLE_SYSTEM, TEMP_CREDENTIAL_EXTENSION_URL } from "@/lib/auth/roles"
 import { medplumUrl } from "@/lib/medplum/config"
-import { getAccessToken, refreshAccessToken } from "@/lib/medplum/session"
+import { getAccessToken, refreshSession } from "@/lib/medplum/session"
 
 /**
  * The signed-in user.
@@ -11,11 +11,23 @@ import { getAccessToken, refreshAccessToken } from "@/lib/medplum/session"
  * to show who is actually logged in — rather than the mock staff record the
  * prototype used to display.
  */
+/** 503 when the server is unreachable — a blip must not read as a sign-out. */
+function unreachable() {
+  return NextResponse.json(
+    { error: "Can't reach Folio right now. Check your connection and try again." },
+    { status: 503 }
+  )
+}
+
 export async function GET() {
   let token = await getAccessToken()
-  if (!token) token = await refreshAccessToken()
   if (!token) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
+    const refreshed = await refreshSession()
+    if (refreshed.status === "unreachable") return unreachable()
+    if (refreshed.status === "expired") {
+      return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
+    }
+    token = refreshed.accessToken
   }
 
   async function fetchMe(accessToken: string) {
@@ -28,9 +40,12 @@ export async function GET() {
   try {
     let response = await fetchMe(token)
     if (response.status === 401) {
-      const refreshed = await refreshAccessToken()
-      if (!refreshed) return NextResponse.json({ error: "Session expired." }, { status: 401 })
-      response = await fetchMe(refreshed)
+      const refreshed = await refreshSession()
+      if (refreshed.status === "unreachable") return unreachable()
+      if (refreshed.status === "expired") {
+        return NextResponse.json({ error: "Session expired." }, { status: 401 })
+      }
+      response = await fetchMe(refreshed.accessToken)
     }
 
     if (!response.ok) {
@@ -107,6 +122,6 @@ export async function GET() {
     )
   } catch (error) {
     console.error("[auth/me] request failed", error)
-    return NextResponse.json({ error: "Could not reach the Folio server." }, { status: 502 })
+    return unreachable()
   }
 }
