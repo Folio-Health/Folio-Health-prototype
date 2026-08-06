@@ -1,0 +1,130 @@
+import "server-only"
+
+import { medplumUrl } from "./config"
+import { getAccessToken, refreshAccessToken } from "./session"
+
+/**
+ * Privileged platform-plane operations.
+ *
+ * These call Medplum endpoints OUTSIDE `/fhir/R4` (`admin/projects/.../invite`),
+ * which the FHIR proxy deliberately refuses to forward. They live here, behind
+ * an explicit platform-admin check, rather than widening that proxy.
+ *
+ * Every call uses the SIGNED-IN OPERATOR'S OWN token — never a stored service
+ * credential — so Medplum authorises the action against that person, and the
+ * resulting AuditEvent attributes it to them.
+ */
+
+export class AdminError extends Error {
+  readonly status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = "AdminError"
+    this.status = status
+  }
+}
+
+async function tokenOrThrow(): Promise<string> {
+  const token = (await getAccessToken()) ?? (await refreshAccessToken())
+  if (!token) throw new AdminError("Not authenticated.", 401)
+  return token
+}
+
+/** Authenticated call to any Medplum path, retrying once after a token refresh. */
+export async function medplumFetch<T>(
+  path: string,
+  init: RequestInit = {}
+): Promise<T> {
+  let token = await tokenOrThrow()
+
+  const send = (accessToken: string) =>
+    fetch(medplumUrl(path), {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...init.headers,
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: "no-store",
+    })
+
+  let response = await send(token)
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken()
+    if (!refreshed) throw new AdminError("Session expired.", 401)
+    token = refreshed
+    response = await send(token)
+  }
+
+  if (!response.ok) {
+    let detail: string | undefined
+    try {
+      const body = await response.json()
+      detail = body?.issue?.[0]?.details?.text ?? body?.error_description ?? body?.error
+    } catch {
+      // Non-JSON error body.
+    }
+    throw new AdminError(detail ?? `Request failed (${response.status})`, response.status)
+  }
+
+  // 204 and friends carry no body.
+  if (response.status === 204) return undefined as T
+  return (await response.json()) as T
+}
+
+interface AuthMe {
+  project?: { id?: string; name?: string }
+  membership?: { admin?: boolean }
+}
+
+/**
+ * Assert the caller is a platform administrator and return the project id.
+ *
+ * `ProjectMembership.admin` is server-held and cannot be edited by the user, so
+ * it is the only acceptable gate here. Medplum would reject an unauthorised
+ * invite anyway — this check exists so the app fails with a clear 403 instead
+ * of leaking a confusing upstream error.
+ */
+export async function requirePlatformAdmin(): Promise<{ projectId: string }> {
+  const me = await medplumFetch<AuthMe>("auth/me")
+  if (!me.membership?.admin) {
+    throw new AdminError("This action requires a platform administrator account.", 403)
+  }
+  const projectId = me.project?.id
+  if (!projectId) throw new AdminError("Could not determine the project.", 500)
+  return { projectId }
+}
+
+interface Bundle<T> {
+  entry?: { resource?: T }[]
+}
+
+/**
+ * Look up an AccessPolicy by name.
+ *
+ * Policies are authored and installed by the platform's own provisioning
+ * tooling (packages/fhir-model + setup-medplum-tenancy). This app REFERENCES
+ * them and never rebuilds them: duplicating policy-authoring logic in a second
+ * codebase is how two definitions of "what a facility admin may read" drift
+ * apart, and a drift there is a data breach.
+ */
+export async function findAccessPolicyByName(
+  name: string
+): Promise<{ id: string; name: string }> {
+  const bundle = await medplumFetch<Bundle<{ id?: string; name?: string }>>(
+    `fhir/R4/AccessPolicy?name=${encodeURIComponent(name)}&_count=10`
+  )
+  const match = (bundle.entry ?? [])
+    .map((e) => e.resource)
+    .find((p) => p?.name === name && p.id)
+  if (!match?.id) {
+    throw new AdminError(
+      `Access policy "${name}" is not installed. Run the platform provisioning setup first.`,
+      500
+    )
+  }
+  return { id: match.id, name: match.name ?? name }
+}
+
+/** Stable names of the installed policies this app binds users to. */
+export const FACILITY_ADMIN_ACCESS_POLICY_NAME = "Folio Facility Admin Access Policy"
