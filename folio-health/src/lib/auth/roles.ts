@@ -116,7 +116,8 @@ export const PLATFORM_NAV_HREFS: string[] = [
   "/facilities",
   "/administration",
   "/settings",
-  "/help",
+  // Help Center is clinical/operational guidance for facility staff, so it
+  // belongs to the facility plane, not the operator's.
 ]
 
 /** Routes the platform plane may open. Prefix match. */

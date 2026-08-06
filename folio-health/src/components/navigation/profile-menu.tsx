@@ -77,10 +77,14 @@ function ProfileMenu() {
             <SettingsIcon />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/help" />}>
-            <HelpCircleIcon />
-            Help Center
-          </DropdownMenuItem>
+          {/* Help Center is facility-staff guidance — not part of the
+              operator plane, which cannot open the route either. */}
+          {!user?.platformOnly && (
+            <DropdownMenuItem render={<Link href="/help" />}>
+              <HelpCircleIcon />
+              Help Center
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuSub>
