@@ -3,7 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
-import { Building2Icon, StethoscopeIcon, ScrollTextIcon, ArrowRightIcon } from "lucide-react"
+import { Building2Icon, StethoscopeIcon, ScrollTextIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 import {
   Card,
   CardAction,
@@ -54,7 +55,7 @@ function PlatformDashboard() {
   const [granularity, setGranularity] = useState<Granularity>("month")
   const metrics = usePlatformMetrics()
   const registrations = useFacilityRegistrations(granularity)
-  const activity = useRecentActivity(8)
+  const activity = useRecentActivity(6)
 
   if (metrics.isError) {
     return (
@@ -178,41 +179,32 @@ function PlatformDashboard() {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent>
           {activity.isLoading ? (
             <ListSkeleton />
           ) : activity.data?.length ? (
-            activity.data.map((item) => (
-              <div key={item.id} className="flex items-start gap-3">
-                <span
-                  className={
-                    item.outcome && item.outcome !== "0"
-                      ? "mt-1.5 size-1.5 shrink-0 rounded-full bg-destructive"
-                      : "mt-1.5 size-1.5 shrink-0 rounded-full bg-primary"
-                  }
-                />
-                <div className="flex flex-col gap-0.5">
-                  <p className="text-sm text-foreground">{item.action}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.when ? format(new Date(item.when), "d MMM yyyy, HH:mm") : "—"}
-                    {" · "}
-                    {item.who}
-                  </p>
-                </div>
-              </div>
-            ))
+            // One line per event, time right-aligned on its own column so the
+            // timestamps stack and stay scannable.
+            <ul className="divide-y divide-border">
+              {activity.data.map((item) => (
+                <li key={item.id} className="flex items-center gap-2.5 py-1.5 text-xs">
+                  <span
+                    className={cn(
+                      "size-1.5 shrink-0 rounded-full",
+                      item.outcome && item.outcome !== "0" ? "bg-destructive" : "bg-primary"
+                    )}
+                  />
+                  <span className="truncate text-foreground">{item.action}</span>
+                  <span className="truncate text-muted-foreground">{item.who}</span>
+                  <span className="ml-auto shrink-0 font-mono text-muted-foreground/70">
+                    {item.when ? format(new Date(item.when), "d MMM HH:mm") : "—"}
+                  </span>
+                </li>
+              ))}
+            </ul>
           ) : (
             <EmptyState title="No recorded activity" description="The audit trail is empty." />
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-1 w-fit gap-1.5"
-            render={<Link href="/facilities" />}
-          >
-            Manage facilities
-            <ArrowRightIcon className="size-3.5" />
-          </Button>
         </CardContent>
       </Card>
 
