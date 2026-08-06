@@ -28,8 +28,22 @@ export type RoleId =
   | "front-desk"
   | "him-officer"
 
-/** Role tag system written onto the Practitioner by provisioning. */
+/**
+ * Role system written onto the Practitioner by provisioning.
+ *
+ * It is a Practitioner **identifier** (`.../sid/role` — a system identifier),
+ * not a `meta.tag`. Provisioning writes
+ * `identifier: [{ system: FOLIO_ROLE_SYSTEM, value: <roleId> }]`.
+ */
 export const FOLIO_ROLE_SYSTEM = "https://folio.health/fhir/sid/role"
+
+/**
+ * Marks a first-login temporary credential. Set by provisioning and cleared by
+ * the privileged credential Bot after a real password change — never by the
+ * user, who cannot write their own Practitioner.
+ */
+export const TEMP_CREDENTIAL_EXTENSION_URL =
+  "https://folio.health/fhir/StructureDefinition/temp-credential"
 
 const KNOWN_ROLES: RoleId[] = [
   "platform-admin",

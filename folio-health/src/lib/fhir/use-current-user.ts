@@ -13,8 +13,10 @@ export interface CurrentUser {
   project: string | null
   facilityId: string | null
   facilityName: string | null
-  /** Untrusted role tags from the Practitioner. */
+  /** Untrusted role identifiers from the Practitioner. */
   roleTags: string[]
+  /** First-login temporary credential still in place. */
+  mustChangePassword: boolean
 }
 
 export interface CurrentUserWithRoles extends CurrentUser {
