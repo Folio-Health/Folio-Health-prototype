@@ -58,7 +58,7 @@ function FacilitiesList() {
         <PageHeader title="Facilities" breadcrumbs={[{ label: "System" }, { label: "Facilities" }]} />
         <ErrorState
           title="Could not load facilities"
-          description={error instanceof Error ? error.message : "The Folio server did not respond."}
+          description={error instanceof Error ? error.message : "Could not reach Folio. Check your connection and try again."}
           action={
             <Button variant="outline" onClick={() => void refetch()}>
               Try again
@@ -78,7 +78,7 @@ function FacilitiesList() {
         description={
           isLoading
             ? "Loading facilities…"
-            : `${total} facilit${total === 1 ? "y" : "ies"} on this server`
+            : `${total} facilit${total === 1 ? "y" : "ies"} registered`
         }
         breadcrumbs={[{ label: "System" }, { label: "Facilities" }]}
         actions={
@@ -95,7 +95,7 @@ function FacilitiesList() {
         isLoading={isLoading}
         onRowClick={(facility) => router.push(`/facilities/${facility.id}`)}
         emptyTitle="No facilities found"
-        emptyDescription="No Organization records match your filters."
+        emptyDescription="No facilities match your search or filters."
         toolbar={
           <div className="flex flex-wrap items-center gap-2.5">
             <InputGroup className="h-9 max-w-xs">

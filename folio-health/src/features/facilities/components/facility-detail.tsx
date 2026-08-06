@@ -59,7 +59,7 @@ function FacilityDetail({ facilityId }: { facilityId: string }) {
         {notFound ? (
           <EmptyState
             title="Facility not found"
-            description="This Organization doesn't exist on the server, or you don't have access to it."
+            description="This facility record doesn't exist, or you don't have access to it."
             action={
               <Button size="sm" render={<Link href="/facilities" />}>
                 Back to Facilities
@@ -69,7 +69,7 @@ function FacilityDetail({ facilityId }: { facilityId: string }) {
         ) : (
           <ErrorState
             title="Could not load this facility"
-            description={error instanceof Error ? error.message : "The Folio server did not respond."}
+            description={error instanceof Error ? error.message : "Could not reach Folio. Check your connection and try again."}
             action={
               <Button variant="outline" onClick={() => void refetch()}>
                 Try again
@@ -130,8 +130,7 @@ function FacilityDetail({ facilityId }: { facilityId: string }) {
           Patient count is scoped by <code className="font-mono">managingOrganization</code>; a
           patient with no facility reference counts against none. Staff-per-facility is not shown
           because the practitioner-to-facility link runs through{" "}
-          <code className="font-mono">PractitionerRole</code>, and none are recorded on this server
-          yet.
+          <code className="font-mono">PractitionerRole</code>, and none are recorded yet.
         </p>
       </div>
     </div>

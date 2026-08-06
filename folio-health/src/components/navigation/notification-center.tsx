@@ -35,7 +35,7 @@ function NotificationCenter() {
           </span>
           <p className="text-sm font-medium text-foreground">You&apos;re all caught up</p>
           <p className="text-xs text-muted-foreground">
-            Notifications will appear here once the server starts sending them.
+            New notifications will appear here.
           </p>
         </div>
         <div className="border-t border-border p-2">

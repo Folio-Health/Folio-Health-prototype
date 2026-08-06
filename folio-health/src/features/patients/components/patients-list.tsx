@@ -80,7 +80,7 @@ function PatientsList() {
         <ErrorState
           title="Could not load patients"
           description={
-            error instanceof Error ? error.message : "The Folio server did not respond."
+            error instanceof Error ? error.message : "Could not reach Folio. Check your connection and try again."
           }
           action={
             <Button variant="outline" onClick={() => void refetch()}>
