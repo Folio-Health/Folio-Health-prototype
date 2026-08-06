@@ -110,7 +110,7 @@ function PatientProfile({ patientId }: { patientId: string }) {
         {notFound ? (
           <EmptyState
             title="Patient not found"
-            description="This patient record doesn't exist on the server, or you don't have access to it."
+            description="This patient record doesn't exist, or you don't have access to it."
             action={
               <Button render={<Link href="/patients" />} size="sm">
                 Back to Patients
@@ -120,7 +120,7 @@ function PatientProfile({ patientId }: { patientId: string }) {
         ) : (
           <ErrorState
             title="Could not load this patient"
-            description={error instanceof Error ? error.message : "The Folio server did not respond."}
+            description={error instanceof Error ? error.message : "Could not reach Folio. Check your connection and try again."}
             action={
               <Button variant="outline" onClick={() => void refetch()}>
                 Try again
@@ -367,7 +367,7 @@ function PatientProfileContent({ patient }: { patient: PatientSummary }) {
           <DialogHeader>
             <DialogTitle>Edit patient</DialogTitle>
             <DialogDescription>
-              Changes are saved to the patient&apos;s record on the Folio server.
+              Changes are saved to the patient&apos;s record.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4">

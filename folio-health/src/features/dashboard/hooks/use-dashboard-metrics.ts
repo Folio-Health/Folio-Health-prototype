@@ -134,6 +134,76 @@ export function usePlatformMetrics() {
   })
 }
 
+export type Granularity = "week" | "month"
+
+export interface RegistrationBucket {
+  [key: string]: string | number
+  period: string
+  facilities: number
+}
+
+/**
+ * Facilities registered per week or per month.
+ *
+ * Registration time is taken from `meta.lastUpdated`. FHIR has no "created"
+ * field, and Medplum's versionId is a UUID rather than a counter — but a
+ * resource that has never been edited has exactly one version, so lastUpdated
+ * IS its creation time. Spot-checking this server's Organizations found single
+ * -version records, so the proxy holds here. A facility edited after onboarding
+ * would count in the bucket it was edited in, not the one it was created in.
+ *
+ * Counted one bucket at a time with `_summary=count` rather than fetching every
+ * Organization and grouping in the browser, so it stays correct past one page
+ * of results.
+ */
+export function useFacilityRegistrations(granularity: Granularity) {
+  return useQuery({
+    queryKey: ["facility-registrations", granularity],
+    queryFn: async (): Promise<RegistrationBucket[]> => {
+      const now = new Date()
+      const periods = granularity === "week" ? 8 : 6
+
+      const ranges: { label: string; start: Date; end: Date }[] = []
+      for (let i = periods - 1; i >= 0; i--) {
+        const start = new Date(now)
+        const end = new Date(now)
+        if (granularity === "week") {
+          // Week starting Monday, i weeks back.
+          const day = (start.getDay() + 6) % 7
+          start.setDate(start.getDate() - day - i * 7)
+          start.setHours(0, 0, 0, 0)
+          end.setTime(start.getTime())
+          end.setDate(start.getDate() + 7)
+        } else {
+          start.setMonth(start.getMonth() - i, 1)
+          start.setHours(0, 0, 0, 0)
+          end.setTime(start.getTime())
+          end.setMonth(start.getMonth() + 1)
+        }
+        ranges.push({
+          label:
+            granularity === "week"
+              ? start.toLocaleDateString(undefined, { day: "numeric", month: "short" })
+              : start.toLocaleDateString(undefined, { month: "short" }),
+          start,
+          end,
+        })
+      }
+
+      const counts = await Promise.all(
+        ranges.map((range) =>
+          countOf("Organization", {
+            // Repeated params are AND — a comma would mean OR and match everything.
+            _lastUpdated: [`ge${range.start.toISOString()}`, `lt${range.end.toISOString()}`],
+          })
+        )
+      )
+
+      return ranges.map((range, i) => ({ period: range.label, facilities: counts[i] }))
+    },
+  })
+}
+
 export interface DayCount {
   [key: string]: string | number
   day: string

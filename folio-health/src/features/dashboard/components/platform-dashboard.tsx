@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { Building2Icon, StethoscopeIcon, ScrollTextIcon, ArrowRightIcon } from "lucide-react"
@@ -14,12 +15,19 @@ import {
 import { Button } from "@/components/ui/button"
 import { StatCard } from "@/components/cards/stat-card"
 import { EmptyState, ErrorState } from "@/components/common/empty-state"
-import { ListSkeleton, StatCardGridSkeleton } from "@/components/common/loading-skeletons"
+import {
+  ChartCardSkeleton,
+  ListSkeleton,
+  StatCardGridSkeleton,
+} from "@/components/common/loading-skeletons"
 import { DonutChart, type DonutSlice } from "@/components/charts/donut-chart"
 import { BarChart } from "@/components/charts/bar-chart"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
+  useFacilityRegistrations,
   usePlatformMetrics,
   useRecentActivity,
+  type Granularity,
   type StatusBreakdown,
 } from "../hooks/use-dashboard-metrics"
 
@@ -32,14 +40,6 @@ function statusSlices(status: StatusBreakdown): DonutSlice[] {
   ].filter((slice) => slice.value > 0)
 }
 
-/** Bars keep every category, including zeros — "0 deactivated" is a real answer. */
-function statusBars(status: StatusBreakdown): Record<string, string | number>[] {
-  return [
-    { status: "Active", accounts: status.active },
-    { status: "Deactivated", accounts: status.inactive },
-    { status: "Not recorded", accounts: status.unspecified },
-  ]
-}
 
 /**
  * The operator's dashboard.
@@ -51,7 +51,9 @@ function statusBars(status: StatusBreakdown): Record<string, string | number>[] 
  * patient count has no business on this screen even as a number.
  */
 function PlatformDashboard() {
+  const [granularity, setGranularity] = useState<Granularity>("month")
   const metrics = usePlatformMetrics()
+  const registrations = useFacilityRegistrations(granularity)
   const activity = useRecentActivity(8)
 
   if (metrics.isError) {
@@ -61,7 +63,7 @@ function PlatformDashboard() {
         description={
           metrics.error instanceof Error
             ? metrics.error.message
-            : "The Folio server did not respond."
+            : "Could not reach Folio. Check your connection and try again."
         }
         action={
           <Button variant="outline" onClick={() => void metrics.refetch()}>
@@ -100,36 +102,62 @@ function PlatformDashboard() {
               <CardTitle>Facilities by status</CardTitle>
               <CardDescription>Active vs deactivated tenants</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-3">
               <DonutChart
                 data={statusSlices(data.facilityStatus)}
                 centerLabel="Facilities"
                 centerValue={data.facilityStatus.total}
                 size={150}
               />
+              {data.accountStatus.unspecified > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {data.accountStatus.unspecified} of {data.accountStatus.total} staff accounts
+                  have no active flag recorded. FHIR reads a missing flag as active, so a
+                  deactivated account cannot be distinguished from an enabled one when
+                  offboarding staff.
+                </p>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Staff accounts by status</CardTitle>
-              <CardDescription>Across every facility on the platform</CardDescription>
+              <CardTitle>Facility registrations</CardTitle>
+              <CardDescription>
+                New facilities onboarded per {granularity === "week" ? "week" : "month"}
+              </CardDescription>
+              <CardAction>
+                <ToggleGroup
+                  value={[granularity]}
+                  onValueChange={(value) => {
+                    const next = value[0]
+                    if (next === "week" || next === "month") setGranularity(next)
+                  }}
+                >
+                  <ToggleGroupItem value="week" className="h-7 px-2.5 text-xs">
+                    Weekly
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="month" className="h-7 px-2.5 text-xs">
+                    Monthly
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </CardAction>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-              <BarChart
-                data={statusBars(data.accountStatus)}
-                xKey="status"
-                series={[{ key: "accounts", label: "Accounts" }]}
-                height={200}
-              />
-              {data.accountStatus.unspecified > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {data.accountStatus.unspecified} account
-                  {data.accountStatus.unspecified === 1 ? " has" : "s have"} no active flag
-                  recorded. FHIR reads a missing flag as active, so these cannot be
-                  distinguished from enabled accounts when offboarding staff.
-                </p>
+              {registrations.isLoading ? (
+                <ChartCardSkeleton />
+              ) : (
+                <BarChart
+                  data={registrations.data ?? []}
+                  xKey="period"
+                  series={[{ key: "facilities", label: "Facilities registered" }]}
+                  height={200}
+                />
               )}
+              <p className="text-xs text-muted-foreground">
+                Registration date is the record&apos;s creation time. A facility edited after
+                onboarding counts in the period it was edited.
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -138,7 +166,7 @@ function PlatformDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Recent activity</CardTitle>
-          <CardDescription>From the server audit trail</CardDescription>
+          <CardDescription>Audit trail</CardDescription>
           <CardAction>
             <Button
               variant="ghost"

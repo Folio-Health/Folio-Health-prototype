@@ -57,6 +57,13 @@ function DonutChart({
               ))}
             </Pie>
             <Tooltip
+              // Recharts clamps the tooltip inside the chart's viewBox. On a
+              // donut this small that leaves nowhere to put it but on top of
+              // the centre label, so let it escape the box and sit clear of
+              // the cursor instead.
+              allowEscapeViewBox={{ x: true, y: true }}
+              offset={16}
+              wrapperStyle={{ zIndex: 20, pointerEvents: "none" }}
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null
                 const p = payload[0]
@@ -87,18 +94,20 @@ function DonutChart({
           </div>
         )}
       </div>
-      <div className="flex w-full flex-col gap-2.5">
+      {/* min-w-0 so the legend can shrink inside a narrow card instead of
+          overflowing and clipping its labels mid-word. */}
+      <div className="flex w-full min-w-0 flex-col gap-2.5">
         {resolved.map((slice) => (
           <div key={slice.label} className="flex items-center justify-between gap-3 text-sm">
-            <span className="flex items-center gap-2 text-muted-foreground">
+            <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
               <span
                 className="size-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: slice.color }}
               />
-              {slice.label}
+              <span className="truncate">{slice.label}</span>
             </span>
-            <span className="font-medium tabular-nums text-foreground">
-              {total ? Math.round((slice.value / total) * 100) : 0}%
+            <span className="shrink-0 font-medium tabular-nums text-foreground">
+              {slice.value} · {total ? Math.round((slice.value / total) * 100) : 0}%
             </span>
           </div>
         ))}

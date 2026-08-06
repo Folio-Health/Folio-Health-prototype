@@ -52,7 +52,7 @@ function AdminDashboard() {
         description={
           metrics.error instanceof Error
             ? metrics.error.message
-            : "The Folio server did not respond."
+            : "Could not reach Folio. Check your connection and try again."
         }
         action={
           <Button variant="outline" onClick={() => void metrics.refetch()}>
@@ -177,7 +177,7 @@ function AdminDashboard() {
             ) : (
               <EmptyState
                 title="Nothing scheduled"
-                description="No upcoming appointments on the server."
+                description="No upcoming appointments."
               />
             )}
           </CardContent>
@@ -187,7 +187,7 @@ function AdminDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>From the server audit trail</CardDescription>
+          <CardDescription>Audit trail</CardDescription>
           <CardAction>
             <Button
               variant="ghost"
