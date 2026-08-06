@@ -26,6 +26,7 @@ import {
   CircleHelpIcon,
   SmartphoneIcon,
   SparklesIcon,
+  Building2Icon,
 } from "lucide-react"
 
 export interface NavItem {
@@ -101,6 +102,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: "System",
     items: [
+      { title: "Facilities", href: "/facilities", icon: Building2Icon },
       { title: "Administration", href: "/administration", icon: ShieldCheckIcon },
       { title: "Settings", href: "/settings", icon: SettingsIcon },
       { title: "Help Center", href: "/help", icon: CircleHelpIcon },

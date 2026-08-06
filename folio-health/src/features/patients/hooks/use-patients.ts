@@ -29,9 +29,9 @@ function toSearchParams(filters: PatientFilters): Record<string, string | number
   }
 
   const search = filters.search?.trim()
-  // Medplum supports `_filter`-free multi-field matching via the `_content`
-  // param, but name/identifier/phone are the indexed fields that matter here.
-  if (search) params.name = search
+  // `:contains`, not a bare `name=`: FHIR string search defaults to
+  // starts-with, so searching a surname fragment would silently return nothing.
+  if (search) params["name:contains"] = search
 
   if (filters.gender === "Male" || filters.gender === "Female") {
     params.gender = filters.gender.toLowerCase()
