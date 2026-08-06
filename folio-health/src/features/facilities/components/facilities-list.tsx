@@ -19,6 +19,7 @@ import { ErrorState } from "@/components/common/empty-state"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
 import { downloadCsv } from "@/lib/csv-export"
 import { facilitiesColumns } from "./facilities-columns"
+import { AddFacilityDialog } from "./add-facility-dialog"
 import { useFacilities } from "../hooks/use-facilities"
 
 const ALL = "all"
@@ -82,10 +83,17 @@ function FacilitiesList() {
         }
         breadcrumbs={[{ label: "System" }, { label: "Facilities" }]}
         actions={
-          <Button variant="outline" onClick={handleExport} disabled={isLoading || !facilities.length}>
-            <DownloadIcon />
-            Export
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              disabled={isLoading || !facilities.length}
+            >
+              <DownloadIcon />
+              Export
+            </Button>
+            <AddFacilityDialog />
+          </>
         }
       />
 
