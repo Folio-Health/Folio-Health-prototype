@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { FOLIO_ROLE_SYSTEM } from "@/lib/auth/roles"
+import { FOLIO_ROLE_SYSTEM, TEMP_CREDENTIAL_EXTENSION_URL } from "@/lib/auth/roles"
 import { medplumUrl } from "@/lib/medplum/config"
 import { getAccessToken, refreshAccessToken } from "@/lib/medplum/session"
 
@@ -65,12 +65,27 @@ export async function GET() {
       .find((p: { name?: string }) => p?.name === "organization")
     const facility = facilityParam?.valueReference ?? null
 
-    // Untrusted: ordinary FHIR tags the user could PATCH. Reconciled client-side
-    // against `admin` and `facility` before they mean anything.
-    const roleTags: string[] = (profile.meta?.tag ?? [])
-      .filter((t: { system?: string }) => t.system === FOLIO_ROLE_SYSTEM)
-      .map((t: { code?: string }) => t.code)
+    // Untrusted: ordinary FHIR data the user could PATCH. Reconciled client-side
+    // against `admin` and `facility` before it means anything.
+    //
+    // Provisioning writes the role as a Practitioner IDENTIFIER, not a meta.tag
+    // (see setup-medplum-tenancy.mjs). Reading meta.tag returned nothing for
+    // every user, so everyone fell through to the unprovisioned default.
+    const roleTags: string[] = (profile.identifier ?? [])
+      .filter((i: { system?: string }) => i.system === FOLIO_ROLE_SYSTEM)
+      .map((i: { value?: string }) => i.value)
       .filter(Boolean)
+
+    // Provisioning stamps the owning facility on the Practitioner itself, which
+    // is a second source for the facility binding when the membership does not
+    // carry an %organization parameter.
+    const profileFacility = profile.meta?.account ?? null
+
+    // A first-login temporary credential the user must replace.
+    const mustChangePassword = (profile.extension ?? []).some(
+      (e: { url?: string; valueBoolean?: boolean }) =>
+        e.url === TEMP_CREDENTIAL_EXTENSION_URL && e.valueBoolean === true
+    )
 
     return NextResponse.json(
       {
@@ -80,9 +95,13 @@ export async function GET() {
         email: profile.telecom?.find((t: { system?: string }) => t.system === "email")?.value ?? null,
         admin: isProjectAdmin,
         project: body?.project?.name ?? null,
-        facilityId: facility?.reference?.split("/")[1] ?? null,
-        facilityName: facility?.display ?? null,
+        // Membership binding first (it is what the AccessPolicy actually
+        // parameterises); the Practitioner's own facility stamp is the fallback.
+        facilityId:
+          (facility?.reference ?? profileFacility?.reference)?.split("/")[1] ?? null,
+        facilityName: facility?.display ?? profileFacility?.display ?? null,
         roleTags,
+        mustChangePassword,
       },
       { headers: { "Cache-Control": "no-store" } }
     )
