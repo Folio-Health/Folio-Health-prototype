@@ -13,12 +13,13 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet"
 import { Logo } from "@/components/common/logo"
-import { NAV_SECTIONS } from "@/config/nav"
+import { useScopedNav } from "@/lib/auth/use-scoped-nav"
 import { cn } from "@/lib/utils"
 
 function MobileSidebar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const navSections = useScopedNav()
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -32,7 +33,7 @@ function MobileSidebar() {
         </div>
         <nav className="scrollbar-thin flex-1 overflow-y-auto px-3 py-4">
           <div className="flex flex-col gap-4">
-            {NAV_SECTIONS.map((section) => (
+            {(navSections ?? []).map((section) => (
               <div key={section.label} className="flex flex-col gap-0.5">
                 <p className="px-2.5 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground/70 uppercase">
                   {section.label}

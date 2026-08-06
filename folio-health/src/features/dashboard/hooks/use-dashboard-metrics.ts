@@ -77,6 +77,63 @@ export function useDashboardMetrics() {
 }
 
 /** Index signature so this satisfies TrendChart's `Record<string, string|number>` rows. */
+export interface StatusBreakdown {
+  total: number
+  active: number
+  inactive: number
+  /**
+   * Records with no `active` field at all. Tracked separately rather than
+   * folded into "active": FHIR treats a missing flag as active, but for an
+   * admin view "never recorded" and "explicitly enabled" are different facts —
+   * and only the first is a data-quality problem worth surfacing.
+   */
+  unspecified: number
+}
+
+export interface PlatformMetrics {
+  organizations: number
+  practitioners: number
+  auditEvents: number
+  facilityStatus: StatusBreakdown
+  accountStatus: StatusBreakdown
+}
+
+async function statusBreakdown(resourceType: string): Promise<StatusBreakdown> {
+  const [total, active, inactive] = await Promise.all([
+    countOf(resourceType),
+    countOf(resourceType, { active: "true" }),
+    countOf(resourceType, { active: "false" }),
+  ])
+  return { total, active, inactive, unspecified: Math.max(0, total - active - inactive) }
+}
+
+/**
+ * Operator-plane figures only.
+ *
+ * Organization / Practitioner are directory resources, not patient PHI (see
+ * SHARED_READONLY_RESOURCE_TYPES in the access model). No clinical counts are
+ * fetched here at all — not hidden in the UI, simply never requested.
+ */
+export function usePlatformMetrics() {
+  return useQuery({
+    queryKey: ["platform-metrics"],
+    queryFn: async (): Promise<PlatformMetrics> => {
+      const [auditEvents, facilityStatus, accountStatus] = await Promise.all([
+        countOf("AuditEvent"),
+        statusBreakdown("Organization"),
+        statusBreakdown("Practitioner"),
+      ])
+      return {
+        organizations: facilityStatus.total,
+        practitioners: accountStatus.total,
+        auditEvents,
+        facilityStatus,
+        accountStatus,
+      }
+    },
+  })
+}
+
 export interface DayCount {
   [key: string]: string | number
   day: string

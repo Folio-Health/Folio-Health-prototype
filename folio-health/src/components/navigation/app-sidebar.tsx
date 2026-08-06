@@ -7,9 +7,10 @@ import { Logo, LogoMark } from "@/components/common/logo"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { NAV_SECTIONS } from "@/config/nav"
 import { useUiStore } from "@/stores/ui-store"
 import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { useScopedNav } from "@/lib/auth/use-scoped-nav"
+import { ROLE_LABELS } from "@/lib/auth/roles"
 import { cn } from "@/lib/utils"
 
 function AppSidebar() {
@@ -17,10 +18,17 @@ function AppSidebar() {
   const collapsed = useUiStore((s) => s.sidebarCollapsed)
   const toggleSidebar = useUiStore((s) => s.toggleSidebar)
   const { data: user } = useCurrentUser()
+  const navSections = useScopedNav()
   // Who is actually signed in, per Medplum — not a mock staff record picked by
-  // whatever role happens to be selected locally.
+  // whatever role happens to be selected locally. The subtitle is the user's
+  // effective role, so the plane they are on is visible at a glance.
   const currentUser = user
-    ? { name: user.name, role: user.admin ? "Administrator" : (user.project ?? "Clinician") }
+    ? {
+        name: user.name,
+        role: user.roles.length
+          ? user.roles.map((r) => ROLE_LABELS[r]).join(" · ")
+          : (user.facilityName ?? user.project ?? "Staff"),
+      }
     : null
 
   return (
@@ -66,7 +74,7 @@ function AppSidebar() {
           </Button>
         )}
         <div className="flex flex-col gap-4">
-          {NAV_SECTIONS.map((section) => (
+          {(navSections ?? []).map((section) => (
             <div key={section.label} className="flex flex-col gap-0.5">
               {!collapsed && (
                 <p className="px-2.5 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground/70 uppercase">

@@ -13,14 +13,25 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command"
-import { ALL_NAV_ITEMS } from "@/config/nav"
-import { PATIENTS } from "@/lib/mock/patients"
 import { useUiStore } from "@/stores/ui-store"
+import { useScopedNav } from "@/lib/auth/use-scoped-nav"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { usePatients } from "@/features/patients/hooks/use-patients"
 
 function CommandPalette() {
   const router = useRouter()
   const open = useUiStore((s) => s.commandPaletteOpen)
   const setOpen = useUiStore((s) => s.setCommandPaletteOpen)
+  const navSections = useScopedNav()
+  const { data: user } = useCurrentUser()
+
+  // The operator plane must not browse patients, so the group is not merely
+  // hidden — the query never runs for them.
+  const canSeePatients = user !== undefined && !user.platformOnly
+  const { data: patientData } = usePatients({}, canSeePatients && open)
+  const patients = canSeePatients ? (patientData?.patients ?? []).slice(0, 8) : []
+
+  const navItems = (navSections ?? []).flatMap((section) => section.items)
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -44,27 +55,33 @@ function CommandPalette() {
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Modules">
-          {ALL_NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <CommandItem key={item.href} onSelect={() => go(item.href)}>
               <item.icon />
               {item.title}
             </CommandItem>
           ))}
         </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading="Patients">
-          {PATIENTS.slice(0, 8).map((patient) => (
-            <CommandItem
-              key={patient.id}
-              value={`${patient.name} ${patient.mrn}`}
-              onSelect={() => go(`/patients/${patient.id}`)}
-            >
-              <UserRoundIcon />
-              {patient.name}
-              <span className="ml-auto text-xs text-muted-foreground">{patient.mrn}</span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
+        {patients.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Patients">
+              {patients.map((patient) => (
+                <CommandItem
+                  key={patient.id}
+                  value={`${patient.name} ${patient.mrn}`}
+                  onSelect={() => go(`/patients/${patient.id}`)}
+                >
+                  <UserRoundIcon />
+                  {patient.name}
+                  <span className="ml-auto font-mono text-xs text-muted-foreground">
+                    {patient.mrn}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
       </CommandList>
     </CommandDialog>
   )

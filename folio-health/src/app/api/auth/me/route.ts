@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { FOLIO_ROLE_SYSTEM } from "@/lib/auth/roles"
 import { medplumUrl } from "@/lib/medplum/config"
 import { getAccessToken, refreshAccessToken } from "@/lib/medplum/session"
 
@@ -51,15 +52,37 @@ export async function GET() {
         name?.text ?? [name?.given?.join(" "), name?.family].filter(Boolean).join(" ")
     }
 
+    // ProjectMembership.admin is server-held and the user cannot edit it — it is
+    // the only thing that grants the platform plane.
+    const isProjectAdmin = Boolean(body?.membership?.admin)
+
+    // The facility the membership binds this user to, passed into the
+    // AccessPolicy's %organization variable.
+    const facilityParam = (body?.membership?.access ?? [])
+      .flatMap((entry: { parameter?: { name?: string; valueReference?: { reference?: string; display?: string } }[] }) =>
+        entry.parameter ?? []
+      )
+      .find((p: { name?: string }) => p?.name === "organization")
+    const facility = facilityParam?.valueReference ?? null
+
+    // Untrusted: ordinary FHIR tags the user could PATCH. Reconciled client-side
+    // against `admin` and `facility` before they mean anything.
+    const roleTags: string[] = (profile.meta?.tag ?? [])
+      .filter((t: { system?: string }) => t.system === FOLIO_ROLE_SYSTEM)
+      .map((t: { code?: string }) => t.code)
+      .filter(Boolean)
+
     return NextResponse.json(
       {
         id: profile.id ?? null,
         resourceType: profile.resourceType ?? null,
         name: displayName || "Signed-in user",
         email: profile.telecom?.find((t: { system?: string }) => t.system === "email")?.value ?? null,
-        // The admin flag lives on the ProjectMembership, not at the top level.
-        admin: Boolean(body?.membership?.admin),
+        admin: isProjectAdmin,
         project: body?.project?.name ?? null,
+        facilityId: facility?.reference?.split("/")[1] ?? null,
+        facilityName: facility?.display ?? null,
+        roleTags,
       },
       { headers: { "Cache-Control": "no-store" } }
     )

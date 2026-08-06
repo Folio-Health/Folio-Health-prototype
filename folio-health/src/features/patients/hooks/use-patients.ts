@@ -42,9 +42,14 @@ function toSearchParams(filters: PatientFilters): Record<string, string | number
   return params
 }
 
-export function usePatients(filters: PatientFilters = {}) {
+/**
+ * @param enabled pass false to skip the request entirely — used so the operator
+ *   plane, which may not browse patients, never issues the query at all.
+ */
+export function usePatients(filters: PatientFilters = {}, enabled = true) {
   return useQuery({
     queryKey: ["patients", filters],
+    enabled,
     queryFn: async (): Promise<{ patients: PatientSummary[]; total?: number }> => {
       const { resources, total } = await searchResources<FhirPatient>(
         "Patient",
