@@ -41,7 +41,12 @@ export default function RootLayout({
       className="h-full antialiased"
       suppressHydrationWarning
     >
-      <body className="min-h-full">
+      {/* Browser extensions (password managers, ColorZilla's `cz-shortcut-listen`,
+          Grammarly) inject attributes onto <body> before React hydrates, which
+          React reports as a hydration mismatch the app cannot fix. Suppressing
+          here covers only this element's own attributes — mismatches inside the
+          tree are still reported. */}
+      <body className="min-h-full" suppressHydrationWarning>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

@@ -109,6 +109,10 @@ export function isPlatformOnly(roles: RoleId[]): boolean {
  * deny it.
  */
 export const PLATFORM_NAV_HREFS: string[] = [
+  // The operator's dashboard is the PLATFORM overview (no clinical figures) —
+  // see PlatformDashboard. Omitting it here locked the operator out of their
+  // own landing page.
+  "/dashboard",
   "/facilities",
   "/administration",
   "/settings",
