@@ -144,3 +144,82 @@ export async function findAccessPolicyByName(
 
 /** Stable names of the installed policies this app binds users to. */
 export const FACILITY_ADMIN_ACCESS_POLICY_NAME = "Folio Facility Admin Access Policy"
+
+export interface FacilityMembership {
+  id: string
+  profileReference?: string
+  practitionerId?: string
+  name: string
+  /** Whether the membership is currently usable. Absent field means active. */
+  active: boolean
+  admin: boolean
+}
+
+/**
+ * Every ProjectMembership scoped to a facility.
+ *
+ * Medplum has no search parameter for "access[].parameter value", so this pages
+ * through memberships and filters in code. Fine at facility-network scale; if
+ * the project ever holds more than PAGE_LIMIT memberships this must move to a
+ * server-side index rather than silently truncating.
+ */
+const MEMBERSHIP_PAGE_LIMIT = 1000
+
+export async function findMembershipsForFacility(
+  organizationId: string
+): Promise<{ memberships: FacilityMembership[]; truncated: boolean }> {
+  const reference = `Organization/${organizationId}`
+  const bundle = await medplumFetch<{
+    total?: number
+    entry?: {
+      resource?: {
+        id?: string
+        active?: boolean
+        admin?: boolean
+        profile?: { reference?: string; display?: string }
+        access?: { parameter?: { name?: string; valueReference?: { reference?: string } }[] }[]
+      }
+    }[]
+  }>(`fhir/R4/ProjectMembership?_count=${MEMBERSHIP_PAGE_LIMIT}&_total=accurate`)
+
+  const all = (bundle.entry ?? []).map((e) => e.resource).filter(Boolean)
+  const memberships = all
+    .filter((m) =>
+      (m!.access ?? []).some((a) =>
+        (a.parameter ?? []).some(
+          (p) => p.name === "organization" && p.valueReference?.reference === reference
+        )
+      )
+    )
+    .map((m) => ({
+      id: m!.id ?? "",
+      profileReference: m!.profile?.reference,
+      practitionerId: m!.profile?.reference?.startsWith("Practitioner/")
+        ? m!.profile.reference.split("/")[1]
+        : undefined,
+      name: m!.profile?.display ?? m!.profile?.reference ?? "Unknown account",
+      active: m!.active !== false,
+      admin: Boolean(m!.admin),
+    }))
+
+  return {
+    memberships,
+    truncated: (bundle.total ?? all.length) > all.length,
+  }
+}
+
+/** Enable or disable a single membership. Returns true when it changed. */
+export async function setMembershipActive(
+  membershipId: string,
+  active: boolean
+): Promise<boolean> {
+  const current = await medplumFetch<Record<string, unknown> & { active?: boolean }>(
+    `fhir/R4/ProjectMembership/${encodeURIComponent(membershipId)}`
+  )
+  if ((current.active !== false) === active) return false
+  await medplumFetch(`fhir/R4/ProjectMembership/${encodeURIComponent(membershipId)}`, {
+    method: "PUT",
+    body: JSON.stringify({ ...current, active }),
+  })
+  return true
+}

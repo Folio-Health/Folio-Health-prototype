@@ -1,22 +1,27 @@
 import { NextResponse } from "next/server"
 import type { Organization } from "@medplum/fhirtypes"
-import { AdminError, medplumFetch, requirePlatformAdmin } from "@/lib/medplum/admin"
+import {
+  AdminError,
+  findMembershipsForFacility,
+  medplumFetch,
+  requirePlatformAdmin,
+  setMembershipActive,
+} from "@/lib/medplum/admin"
 
 /**
- * Activate or deactivate a facility.
+ * Activate or deactivate a facility, optionally revoking its staff's access.
  *
- * WHAT THIS DOES: flips FHIR `Organization.active`, the record-level flag for
- * "is this organization still in active use".
+ * Two distinct operations, deliberately separable:
  *
- * WHAT IT DOES NOT DO — and this is the important part: it does not revoke
- * anyone's access. Medplum scopes a user through their ProjectMembership's
- * `%organization` parameter and never consults `Organization.active`, so a
- * deactivated facility's staff can still sign in and reach their own records.
- * Real offboarding means disabling those memberships too, which is a separate,
- * far more destructive operation and is deliberately not bundled in here.
+ *  - `active` flips FHIR `Organization.active`, a record-level flag. On its own
+ *    it changes NOTHING about who can sign in: Medplum scopes users through
+ *    their ProjectMembership and never consults this field.
  *
- * The UI states this plainly rather than implying a security boundary that does
- * not exist.
+ *  - `revokeAccess` disables every ProjectMembership bound to the facility.
+ *    THIS is what actually locks people out — verified against the live server:
+ *    login returns 200, set `membership.active = false`, login returns 401, and
+ *    re-enabling restores it. Fully reversible, which is why offboarding does
+ *    not delete anything.
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -27,21 +32,44 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (typeof body.active !== "boolean") {
       return NextResponse.json({ error: "`active` must be true or false." }, { status: 400 })
     }
+    const active: boolean = body.active
+    const changeAccess: boolean = body.revokeAccess === true
 
     // Read-modify-write so no other field is clobbered by a stale copy.
     const current = await medplumFetch<Organization>(
       `fhir/R4/Organization/${encodeURIComponent(id)}`
     )
-
     const updated = await medplumFetch<Organization>(
       `fhir/R4/Organization/${encodeURIComponent(id)}`,
-      {
-        method: "PUT",
-        body: JSON.stringify({ ...current, active: body.active }),
-      }
+      { method: "PUT", body: JSON.stringify({ ...current, active }) }
     )
 
-    return NextResponse.json({ id: updated.id, name: updated.name, active: updated.active !== false })
+    let accountsChanged = 0
+    let accountsFailed = 0
+
+    if (changeAccess) {
+      const { memberships } = await findMembershipsForFacility(id)
+      for (const membership of memberships) {
+        try {
+          // Deactivating a facility disables its accounts; reactivating restores
+          // them. Mirrored so an accidental offboarding is one click to undo.
+          if (await setMembershipActive(membership.id, active)) accountsChanged += 1
+        } catch (error) {
+          // Keep going: a partial revoke that reports honestly beats aborting
+          // halfway and leaving the operator unsure who is still in.
+          accountsFailed += 1
+          console.error(`[admin/facilities/status] membership ${membership.id} failed`, error)
+        }
+      }
+    }
+
+    return NextResponse.json({
+      id: updated.id,
+      name: updated.name,
+      active: updated.active !== false,
+      accountsChanged,
+      accountsFailed,
+    })
   } catch (error) {
     if (error instanceof AdminError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
