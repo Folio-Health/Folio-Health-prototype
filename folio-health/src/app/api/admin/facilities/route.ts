@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server"
 import type { Organization } from "@medplum/fhirtypes"
 import { AdminError, medplumFetch, requirePlatformAdmin } from "@/lib/medplum/admin"
+import {
+  DEFAULT_ORGANIZATION_TYPE,
+  ORGANIZATION_TYPES,
+  ORGANIZATION_TYPE_SYSTEM,
+} from "@/lib/fhir/organization-types"
+
+/** Facility registration / licence number recorded at onboarding. */
+export const FACILITY_IDENTIFIER_SYSTEM = "https://folio.health/fhir/sid/facility"
 
 /**
  * Register a facility (FHIR `Organization`) — the tenant boundary.
@@ -34,21 +42,36 @@ export async function POST(request: Request) {
     const phone = String(body.phone ?? "").trim()
     const email = String(body.email ?? "").trim()
     const addressText = String(body.address ?? "").trim()
+    const identifierValue = String(body.identifier ?? "").trim()
+
+    const typeCode = String(body.type ?? DEFAULT_ORGANIZATION_TYPE).trim()
+    const chosenType =
+      ORGANIZATION_TYPES.find((t) => t.code === typeCode) ??
+      ORGANIZATION_TYPES.find((t) => t.code === DEFAULT_ORGANIZATION_TYPE)!
 
     const organization: Organization = {
       resourceType: "Organization",
+      // A newly registered facility is in active use. Deactivation is a
+      // deliberate later action, never the starting state.
       active: true,
       name,
+      ...(identifierValue
+        ? {
+            identifier: [
+              { system: FACILITY_IDENTIFIER_SYSTEM, value: identifierValue },
+            ],
+          }
+        : {}),
       type: [
         {
           coding: [
             {
-              system: "http://terminology.hl7.org/CodeSystem/organization-type",
-              code: "prov",
-              display: "Healthcare Provider",
+              system: ORGANIZATION_TYPE_SYSTEM,
+              code: chosenType.code,
+              display: chosenType.display,
             },
           ],
-          text: "Healthcare Provider",
+          text: chosenType.display,
         },
       ],
       ...(phone || email
