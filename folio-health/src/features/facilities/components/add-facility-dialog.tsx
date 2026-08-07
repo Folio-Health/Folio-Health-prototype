@@ -16,6 +16,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  DEFAULT_ORGANIZATION_TYPE,
+  ORGANIZATION_TYPES,
+} from "@/lib/fhir/organization-types"
 
 /** Register a facility. The tenant boundary, so operator-plane only. */
 function AddFacilityDialog() {
@@ -23,12 +34,16 @@ function AddFacilityDialog() {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [name, setName] = useState("")
+  const [type, setType] = useState(DEFAULT_ORGANIZATION_TYPE)
+  const [identifier, setIdentifier] = useState("")
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [address, setAddress] = useState("")
 
   function reset() {
     setName("")
+    setType(DEFAULT_ORGANIZATION_TYPE)
+    setIdentifier("")
     setPhone("")
     setEmail("")
     setAddress("")
@@ -42,7 +57,7 @@ function AddFacilityDialog() {
       const response = await fetch("/api/admin/facilities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, email, address }),
+        body: JSON.stringify({ name, type, identifier, phone, email, address }),
       })
       const body = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(body.error ?? "Could not create the facility.")
@@ -86,6 +101,35 @@ function AddFacilityDialog() {
                 placeholder="Ikeja Family Clinic"
                 required
               />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="facility-type">Type</Label>
+                <Select value={type} onValueChange={(v) => setType(v ?? DEFAULT_ORGANIZATION_TYPE)}>
+                  <SelectTrigger id="facility-type">
+                    <SelectValue placeholder="Select a type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ORGANIZATION_TYPES.map((option) => (
+                      <SelectItem key={option.code} value={option.code}>
+                        {option.display}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {ORGANIZATION_TYPES.find((t) => t.code === type)?.hint}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="facility-identifier">Registration number</Label>
+                <Input
+                  id="facility-identifier"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="Optional — licence or registration no."
+                />
+              </div>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">

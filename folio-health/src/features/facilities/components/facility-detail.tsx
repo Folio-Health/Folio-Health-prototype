@@ -18,6 +18,7 @@ import { EmptyState, ErrorState } from "@/components/common/empty-state"
 import { ListSkeleton, StatCardGridSkeleton } from "@/components/common/loading-skeletons"
 import { useFacility, useFacilityFootprint } from "../hooks/use-facilities"
 import { CreateFacilityAdminDialog } from "./create-facility-admin-dialog"
+import { FacilityStatusButton } from "./facility-status-button"
 
 function InfoRow({
   icon: Icon,
@@ -98,6 +99,11 @@ function FacilityDetail({ facilityId }: { facilityId: string }) {
           <>
             <StatusBadge status={facility.active ? "Active" : "Inactive"} />
             <CreateFacilityAdminDialog facilityId={facility.id} facilityName={facility.name} />
+            <FacilityStatusButton
+              facilityId={facility.id}
+              facilityName={facility.name}
+              active={facility.active}
+            />
           </>
         }
       />
