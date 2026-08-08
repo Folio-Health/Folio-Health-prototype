@@ -15,7 +15,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -25,16 +24,22 @@ import {
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { CLINICAL_ROLES } from "@/types/core"
 import { useUiStore } from "@/stores/ui-store"
-import { getStaffByRole } from "@/lib/mock/staff"
-import { clearSessionCookie } from "@/lib/session"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { signOut } from "@/lib/sign-out"
 
 function ProfileMenu() {
   const router = useRouter()
   const activeRole = useUiStore((s) => s.activeRole)
   const setActiveRole = useUiStore((s) => s.setActiveRole)
-  const currentUser = getStaffByRole(activeRole)[0]
+  const { data: user } = useCurrentUser()
 
-  if (!currentUser) return null
+  // Identity comes from the Medplum session, not from the locally-selected
+  // role. Until it resolves, show a neutral placeholder rather than a fake
+  // staff member.
+  const currentUser = {
+    name: user?.name ?? "Loading…",
+    email: user?.email ?? user?.project ?? "",
+  }
 
   return (
     <DropdownMenu>
@@ -71,41 +76,49 @@ function ProfileMenu() {
             <SettingsIcon />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/help" />}>
-            <HelpCircleIcon />
-            Help Center
-          </DropdownMenuItem>
+          {/* Help Center is facility-staff guidance — not part of the
+              operator plane, which cannot open the route either. */}
+          {!user?.platformOnly && (
+            <DropdownMenuItem render={<Link href="/help" />}>
+              <HelpCircleIcon />
+              Help Center
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
+        {/* "Preview as role" is a local demo switch with no bearing on what the
+            server authorises. On a platform account it is doubly wrong: the
+            operator plane has no clinical role to preview into, and offering
+            one implies an escalation the AccessPolicy would refuse anyway. */}
+        {!user?.platformOnly && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <RepeatIcon />
+                Preview as role
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {CLINICAL_ROLES.map((role) => (
+                  <DropdownMenuItem
+                    key={role}
+                    onClick={() => {
+                      setActiveRole(role)
+                      toast.success(`Now previewing as ${role}`)
+                      router.push("/dashboard")
+                    }}
+                  >
+                    {role}
+                    {role === activeRole && (
+                      <span className="ml-auto size-1.5 rounded-full bg-primary" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </>
+        )}
         <DropdownMenuSeparator />
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <RepeatIcon />
-            Preview as role
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            {CLINICAL_ROLES.map((role) => (
-              <DropdownMenuItem
-                key={role}
-                onClick={() => {
-                  setActiveRole(role)
-                  toast.success(`Now previewing as ${role}`)
-                  router.push("/dashboard")
-                }}
-              >
-                {role}
-                {role === activeRole && (
-                  <span className="ml-auto size-1.5 rounded-full bg-primary" />
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={() => clearSessionCookie()}
-          render={<Link href="/login" />}
-        >
+        <DropdownMenuItem variant="destructive" onClick={() => void signOut(router)}>
           <LogOutIcon />
           Log Out
         </DropdownMenuItem>

@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/navigation/app-sidebar"
 import { AppTopbar } from "@/components/navigation/app-topbar"
 import { CommandPalette } from "@/components/navigation/command-palette"
 import { AiAssistantLauncher } from "@/components/navigation/ai-assistant-launcher"
+import { PlaneGuard } from "@/components/layouts/plane-guard"
 
 function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -10,7 +11,9 @@ function AppShell({ children }: { children: ReactNode }) {
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <PlaneGuard>{children}</PlaneGuard>
+        </main>
       </div>
       <CommandPalette />
       <AiAssistantLauncher />
