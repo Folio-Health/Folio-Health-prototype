@@ -1,16 +1,14 @@
 import type { ReactNode } from "react"
 import Image from "next/image"
 import { Logo } from "@/components/common/logo"
-import { BackButton } from "@/components/common/back-button"
 import { unsplash, MEDICAL_IMAGES } from "@/lib/images"
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
       <div className="flex flex-col justify-between gap-10 px-6 py-8 sm:px-12 lg:px-16 lg:py-12">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center">
           <Logo size={32} />
-          <BackButton />
         </div>
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
           {children}
