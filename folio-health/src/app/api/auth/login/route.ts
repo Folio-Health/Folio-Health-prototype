@@ -1,9 +1,10 @@
 import { createHash, randomBytes } from "node:crypto"
 import { NextResponse } from "next/server"
 import { TEMP_CREDENTIAL_EXTENSION_URL } from "@/lib/auth/roles"
+import { DEMO_TOKEN_PREFIX, demoPersonaForEmail, isDemoMode } from "@/lib/demo/mode"
 import { medplumClientId, medplumUrl } from "@/lib/medplum/config"
 import { storeTokens } from "@/lib/medplum/session"
-import { MUST_CHANGE_PASSWORD_COOKIE } from "@/lib/session"
+import { ACCESS_TOKEN_COOKIE, MUST_CHANGE_PASSWORD_COOKIE } from "@/lib/session"
 
 /**
  * Email + password sign-in against Medplum.
@@ -76,6 +77,23 @@ export async function POST(request: Request) {
 
   if (!email || !password) {
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 })
+  }
+
+  // Demo mode: no Medplum. Any credentials sign in; the email picks the persona
+  // (see lib/demo/mode.ts). The demo token reuses the real session cookie so
+  // the edge proxy's presence check works unchanged.
+  if (isDemoMode()) {
+    const persona = demoPersonaForEmail(email)
+    const json = NextResponse.json({ ok: true, mustChangePassword: false })
+    json.cookies.set(ACCESS_TOKEN_COOKIE, DEMO_TOKEN_PREFIX + persona, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 14,
+    })
+    json.cookies.delete(MUST_CHANGE_PASSWORD_COOKIE)
+    return json
   }
 
   const codeVerifier = base64url(randomBytes(32))

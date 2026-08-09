@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { isDemoMode } from "@/lib/demo/mode"
 import { medplumUrl } from "@/lib/medplum/config"
 import { clearTempCredentialFlag } from "@/lib/medplum/service"
 import { clearTokens, getAccessToken, refreshAccessToken } from "@/lib/medplum/session"
@@ -90,6 +91,12 @@ export async function POST(request: Request) {
   let token = await getAccessToken()
   if (!token) token = await refreshAccessToken()
   if (!token) return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
+
+  // Demo mode: there is no real credential to change. Report success without
+  // touching anything so the settings flow can be exercised end to end.
+  if (isDemoMode()) {
+    return NextResponse.json({ ok: true, reauthenticationRequired: false, flagCleared: true })
+  }
 
   // BEFORE the change — this token stops working the moment Medplum accepts it.
   const practitionerId = await resolvePractitionerId(token)

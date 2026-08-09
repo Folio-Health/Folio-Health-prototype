@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { DEMO_TOKEN_PREFIX } from "@/lib/demo/mode"
 import { medplumUrl } from "@/lib/medplum/config"
 import { clearTokens, getAccessToken } from "@/lib/medplum/session"
 import { MUST_CHANGE_PASSWORD_COOKIE } from "@/lib/session"
@@ -11,7 +12,8 @@ import { MUST_CHANGE_PASSWORD_COOKIE } from "@/lib/session"
 export async function POST() {
   const accessToken = await getAccessToken()
 
-  if (accessToken) {
+  // Demo sessions exist only in this browser's cookie — nothing to revoke.
+  if (accessToken && !accessToken.startsWith(DEMO_TOKEN_PREFIX)) {
     try {
       await fetch(medplumUrl("auth/logout"), {
         method: "POST",

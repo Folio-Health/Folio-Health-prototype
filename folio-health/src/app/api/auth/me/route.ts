@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server"
 import { FOLIO_ROLE_SYSTEM, TEMP_CREDENTIAL_EXTENSION_URL } from "@/lib/auth/roles"
+import { demoPersonaFromToken, isDemoMode } from "@/lib/demo/mode"
+import { demoCurrentUser } from "@/lib/demo/store"
 import { medplumUrl } from "@/lib/medplum/config"
 import { getAccessToken, refreshSession } from "@/lib/medplum/session"
+import {
+  ACCESS_TOKEN_COOKIE,
+  MUST_CHANGE_PASSWORD_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+} from "@/lib/session"
 
 /**
  * The signed-in user.
@@ -20,6 +27,26 @@ function unreachable() {
 }
 
 export async function GET() {
+  // Demo mode: the persona is encoded in the session cookie; no Medplum call.
+  if (isDemoMode()) {
+    const persona = demoPersonaFromToken(await getAccessToken())
+    if (!persona) {
+      // A leftover REAL session (cookies from before the mode switch) is not a
+      // demo session. Delete it so the proxy stops treating the browser as
+      // signed in — otherwise /login is unreachable and the user is stuck in a
+      // 401 loop on /dashboard. Real mode self-heals the mirror case: Medplum
+      // rejects a demo token and `refreshSession` clears the cookies.
+      const response = NextResponse.json({ error: "Not authenticated." }, { status: 401 })
+      response.cookies.delete(ACCESS_TOKEN_COOKIE)
+      response.cookies.delete(REFRESH_TOKEN_COOKIE)
+      response.cookies.delete(MUST_CHANGE_PASSWORD_COOKIE)
+      return response
+    }
+    return NextResponse.json(demoCurrentUser(persona), {
+      headers: { "Cache-Control": "no-store" },
+    })
+  }
+
   let token = await getAccessToken()
   if (!token) {
     const refreshed = await refreshSession()

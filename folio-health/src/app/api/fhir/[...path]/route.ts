@@ -1,5 +1,7 @@
 import { cookies } from "next/headers"
 import { NextResponse, type NextRequest } from "next/server"
+import { demoPersonaFromToken, isDemoMode } from "@/lib/demo/mode"
+import { demoMedplumRequest } from "@/lib/demo/store"
 import { medplumUrl } from "@/lib/medplum/config"
 import { getAccessToken, refreshSession } from "@/lib/medplum/session"
 import { MUST_CHANGE_PASSWORD_COOKIE } from "@/lib/session"
@@ -51,6 +53,24 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
       { error: "Set a permanent password before using Folio." },
       { status: 403 }
     )
+  }
+
+  // Demo mode: answer from the in-memory store — no Medplum server involved.
+  if (isDemoMode()) {
+    if (!demoPersonaFromToken(await getAccessToken())) {
+      return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
+    }
+    const hasDemoBody = request.method !== "GET" && request.method !== "HEAD"
+    const demoBody = hasDemoBody ? await request.json().catch(() => undefined) : undefined
+    const result = demoMedplumRequest(
+      request.method,
+      `${FHIR_PREFIX}/${path.map(encodeURIComponent).join("/")}${request.nextUrl.search}`,
+      demoBody
+    )
+    return NextResponse.json(result.body, {
+      status: result.status,
+      headers: { "Cache-Control": "no-store" },
+    })
   }
 
   let accessToken = await getAccessToken()

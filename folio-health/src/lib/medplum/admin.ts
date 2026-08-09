@@ -2,6 +2,8 @@ import "server-only"
 
 import type { Practitioner } from "@medplum/fhirtypes"
 import { FOLIO_ROLE_SYSTEM, TEMP_CREDENTIAL_EXTENSION_URL } from "@/lib/auth/roles"
+import { demoPersonaFromToken, isDemoMode } from "@/lib/demo/mode"
+import { demoMedplumRequest } from "@/lib/demo/store"
 import { medplumUrl } from "./config"
 import { getAccessToken, refreshSession } from "./session"
 
@@ -44,6 +46,24 @@ export async function medplumFetch<T>(
   path: string,
   init: RequestInit = {}
 ): Promise<T> {
+  // Demo mode: the whole admin plane runs against the in-memory store. The
+  // persona still gates it — `requirePlatformAdmin` sees `membership.admin`
+  // only for the operator persona, so plane separation stays observable.
+  if (isDemoMode()) {
+    const persona = demoPersonaFromToken(await getAccessToken())
+    if (!persona) throw new AdminError("Not authenticated.", 401)
+    const body = typeof init.body === "string" ? JSON.parse(init.body) : undefined
+    const result = demoMedplumRequest(init.method ?? "GET", path, body, persona)
+    if (result.status >= 400) {
+      const detail = (result.body as { issue?: { details?: { text?: string } }[]; error?: string })
+      throw new AdminError(
+        detail?.issue?.[0]?.details?.text ?? detail?.error ?? `Request failed (${result.status})`,
+        result.status
+      )
+    }
+    return result.body as T
+  }
+
   let token = await tokenOrThrow()
 
   const send = (accessToken: string) =>
