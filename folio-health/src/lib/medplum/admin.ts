@@ -1,5 +1,7 @@
 import "server-only"
 
+import type { Practitioner } from "@medplum/fhirtypes"
+import { FOLIO_ROLE_SYSTEM, TEMP_CREDENTIAL_EXTENSION_URL } from "@/lib/auth/roles"
 import { medplumUrl } from "./config"
 import { getAccessToken, refreshSession } from "./session"
 
@@ -111,6 +113,58 @@ export async function requirePlatformAdmin(): Promise<{ projectId: string }> {
   return { projectId }
 }
 
+/**
+ * Assert the caller may provision staff for one specific facility.
+ *
+ * The privilege boundary for the facility plane, so it is checked against
+ * signals the caller cannot edit:
+ *
+ *   - `ProjectMembership.admin` (server-held) — the platform operator, who may
+ *     act on any facility.
+ *   - Otherwise the membership's own `%organization` binding, which is what the
+ *     AccessPolicy is parameterised with. It must MATCH the requested facility.
+ *
+ * The Practitioner role tag is deliberately NOT consulted: it is ordinary
+ * mutable FHIR data, so a user who could PATCH their own Practitioner would
+ * otherwise be able to award themselves the right to create accounts.
+ *
+ * Medplum would reject an unauthorised invite anyway — this exists so the app
+ * fails with a clear 403 rather than leaking a confusing upstream error, and so
+ * a facility admin can never provision INTO ANOTHER FACILITY.
+ */
+export async function requireFacilityProvisioner(
+  facilityId: string
+): Promise<{ projectId: string; isPlatformAdmin: boolean }> {
+  const me = await medplumFetch<
+    AuthMe & {
+      membership?: {
+        admin?: boolean
+        access?: { parameter?: { name?: string; valueReference?: { reference?: string } }[] }[]
+      }
+    }
+  >("auth/me")
+
+  const projectId = me.project?.id
+  if (!projectId) throw new AdminError("Could not determine the project.", 500)
+
+  if (me.membership?.admin) return { projectId, isPlatformAdmin: true }
+
+  const boundFacilities = (me.membership?.access ?? [])
+    .flatMap((entry) => entry.parameter ?? [])
+    .filter((p) => p.name === "organization")
+    .map((p) => p.valueReference?.reference)
+    .filter((ref): ref is string => Boolean(ref))
+
+  if (!boundFacilities.includes(`Organization/${facilityId}`)) {
+    throw new AdminError(
+      "You can only create staff accounts for your own facility.",
+      403
+    )
+  }
+
+  return { projectId, isPlatformAdmin: false }
+}
+
 interface Bundle<T> {
   entry?: { resource?: T }[]
 }
@@ -206,6 +260,70 @@ export async function findMembershipsForFacility(
     memberships,
     truncated: (bundle.total ?? all.length) > all.length,
   }
+}
+
+export interface FacilityStaffMember extends FacilityMembership {
+  email: string | null
+  /** Folio role identifier, or null when provisioning never stamped one. */
+  role: string | null
+  /** Still on the first-login temporary password. */
+  mustChangePassword: boolean
+}
+
+/**
+ * Add each member's real Practitioner details to their membership.
+ *
+ * One batched `_id=` search rather than a read per member: a facility with fifty
+ * staff would otherwise cost fifty round-trips to render one table.
+ *
+ * Enrichment is best-effort — if the search fails, memberships are still
+ * returned with null details. A staff list that renders without emails beats a
+ * page that fails to load.
+ */
+export async function enrichMembershipsWithPractitioners(
+  memberships: FacilityMembership[]
+): Promise<FacilityStaffMember[]> {
+  const ids = memberships.map((m) => m.practitionerId).filter((id): id is string => Boolean(id))
+
+  const blank = (m: FacilityMembership): FacilityStaffMember => ({
+    ...m,
+    email: null,
+    role: null,
+    mustChangePassword: false,
+  })
+
+  if (ids.length === 0) return memberships.map(blank)
+
+  let practitioners: Practitioner[] = []
+  try {
+    const bundle = await medplumFetch<Bundle<Practitioner>>(
+      `fhir/R4/Practitioner?_id=${encodeURIComponent(ids.join(","))}&_count=${ids.length}`
+    )
+    practitioners = (bundle.entry ?? [])
+      .map((e) => e.resource)
+      .filter((p): p is Practitioner => Boolean(p))
+  } catch (error) {
+    console.error("[medplum-admin] could not enrich staff with practitioner details", error)
+    return memberships.map(blank)
+  }
+
+  const byId = new Map(practitioners.map((p) => [p.id, p]))
+
+  return memberships.map((m) => {
+    const practitioner = m.practitionerId ? byId.get(m.practitionerId) : undefined
+    if (!practitioner) return blank(m)
+    return {
+      ...m,
+      email: practitioner.telecom?.find((t) => t.system === "email")?.value ?? null,
+      role:
+        practitioner.identifier?.find((i) => i.system === FOLIO_ROLE_SYSTEM)?.value ?? null,
+      mustChangePassword: Boolean(
+        practitioner.extension?.some(
+          (e) => e.url === TEMP_CREDENTIAL_EXTENSION_URL && e.valueBoolean === true
+        )
+      ),
+    }
+  })
 }
 
 /** Enable or disable a single membership. Returns true when it changed. */

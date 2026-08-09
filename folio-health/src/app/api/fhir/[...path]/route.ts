@@ -1,6 +1,8 @@
+import { cookies } from "next/headers"
 import { NextResponse, type NextRequest } from "next/server"
 import { medplumUrl } from "@/lib/medplum/config"
 import { getAccessToken, refreshSession } from "@/lib/medplum/session"
+import { MUST_CHANGE_PASSWORD_COOKIE } from "@/lib/session"
 
 /**
  * Authenticated FHIR proxy.
@@ -33,6 +35,24 @@ const STRIPPED_REQUEST_HEADERS = new Set([
 ])
 
 async function forward(request: NextRequest, path: string[]): Promise<NextResponse> {
+  /**
+   * A first-login temporary password reaches no clinical data.
+   *
+   * The proxy's matcher excludes `/api/`, so navigation being blocked would not
+   * on its own stop a temporary-credential session from calling this route
+   * directly. Blocking here is what makes "cannot access the system" true of
+   * the data as well as the pages.
+   *
+   * 403 rather than 401: the session is valid, the action is not permitted yet.
+   * A 401 would read as "signed out" and trigger a re-authentication loop.
+   */
+  if ((await cookies()).has(MUST_CHANGE_PASSWORD_COOKIE)) {
+    return NextResponse.json(
+      { error: "Set a permanent password before using Folio." },
+      { status: 403 }
+    )
+  }
+
   let accessToken = await getAccessToken()
   if (!accessToken) {
     const refreshed = await refreshSession()

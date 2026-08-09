@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Loader2Icon, LockIcon, MailIcon, TriangleAlertIcon } from "lucide-react"
+import { CheckCircle2Icon, Loader2Icon, LockIcon, MailIcon, TriangleAlertIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -30,6 +30,17 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [redirectTo, setRedirectTo] = useState("/dashboard")
+  const searchParams = useSearchParams()
+
+  // Derived during render rather than set from an effect: these only describe
+  // the URL, and writing them into state on mount costs a second render pass
+  // for a value that was already known.
+  //
+  // Set after a forced first-login password change. The session is gone by then
+  // (Medplum revokes it on change), so this banner is the only way to tell the
+  // user it worked instead of dropping them at a bare sign-in form.
+  const passwordUpdated = searchParams.get("passwordUpdated") === "1"
+  const flagWarning = passwordUpdated ? searchParams.get("warning") : null
 
   useEffect(() => {
     const from = new URLSearchParams(window.location.search).get("from")
@@ -89,6 +100,26 @@ export default function LoginPage() {
           Use your Folio Health staff account to continue.
         </p>
       </div>
+
+      {passwordUpdated && (
+        <div
+          role="status"
+          className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-sm text-foreground"
+        >
+          <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+          <span>Your password is set. Sign in with your new password to continue.</span>
+        </div>
+      )}
+
+      {flagWarning && (
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
+        >
+          <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>{flagWarning}</span>
+        </div>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">

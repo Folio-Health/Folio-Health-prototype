@@ -1,7 +1,9 @@
 import { createHash, randomBytes } from "node:crypto"
 import { NextResponse } from "next/server"
+import { TEMP_CREDENTIAL_EXTENSION_URL } from "@/lib/auth/roles"
 import { medplumClientId, medplumUrl } from "@/lib/medplum/config"
 import { storeTokens } from "@/lib/medplum/session"
+import { MUST_CHANGE_PASSWORD_COOKIE } from "@/lib/session"
 
 /**
  * Email + password sign-in against Medplum.
@@ -28,6 +30,36 @@ interface LoginResponse {
   memberships?: { id: string; profile?: { reference?: string; display?: string } }[]
   /** Medplum returns an OperationOutcome on failure. */
   issue?: { details?: { text?: string } }[]
+}
+
+/**
+ * Whether this account is still on its first-login temporary password.
+ *
+ * Read at sign-in so the proxy can gate every subsequent request from a cookie
+ * instead of calling Medplum on each one. The Practitioner extension remains the
+ * source of truth — this only decides where to send the user next.
+ *
+ * On any failure this returns `false`: a sign-in must not be blocked because the
+ * flag could not be read. `/api/auth/me` re-reads it authoritatively, and the
+ * client-side guard catches anyone who slips through.
+ */
+async function hasTemporaryCredential(accessToken: string): Promise<boolean> {
+  try {
+    const response = await fetch(medplumUrl("auth/me"), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    })
+    if (!response.ok) return false
+    const me = await response.json()
+    return Boolean(
+      (me?.profile?.extension ?? []).some(
+        (e: { url?: string; valueBoolean?: boolean }) =>
+          e.url === TEMP_CREDENTIAL_EXTENSION_URL && e.valueBoolean === true
+      )
+    )
+  } catch {
+    return false
+  }
 }
 
 export async function POST(request: Request) {
@@ -112,8 +144,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not complete sign-in." }, { status: 400 })
     }
 
-    await storeTokens(await tokenResponse.json())
-    return NextResponse.json({ ok: true })
+    const tokens = await tokenResponse.json()
+    await storeTokens(tokens)
+
+    // Decide once, here, where this session is allowed to go.
+    const mustChangePassword = await hasTemporaryCredential(tokens.access_token)
+
+    const json = NextResponse.json({ ok: true, mustChangePassword })
+    if (mustChangePassword) {
+      json.cookies.set(MUST_CHANGE_PASSWORD_COOKIE, "1", {
+        // Readable by the proxy only; the client learns this from the JSON body
+        // and from /api/auth/me, so it never needs to read the cookie itself.
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      })
+    } else {
+      // A previous forced-change session may have left this behind.
+      json.cookies.delete(MUST_CHANGE_PASSWORD_COOKIE)
+    }
+    return json
   } catch (error) {
     console.error("[auth/login] Medplum request failed", error)
     return NextResponse.json(

@@ -12,3 +12,21 @@
 
 export const ACCESS_TOKEN_COOKIE = "folio_at"
 export const REFRESH_TOKEN_COOKIE = "folio_rt"
+
+/**
+ * Set at sign-in when the account still carries the first-login temporary
+ * credential, and cleared once a permanent password is set.
+ *
+ * This is a ROUTING HINT, not the source of truth. The proxy needs to decide
+ * "force the password page" without a network round-trip to Medplum on every
+ * request, and it cannot read the Practitioner itself. The authoritative value
+ * is the `temp-credential` extension, re-read from Medplum by `/api/auth/me`
+ * and re-derived on every sign-in.
+ *
+ * Forging it buys nothing: clearing it early only skips a redirect, and every
+ * route that matters still authorises against Medplum with the user's token.
+ */
+export const MUST_CHANGE_PASSWORD_COOKIE = "folio_pwchg"
+
+/** Where a user is sent, and held, until they set a permanent password. */
+export const SET_PASSWORD_PATH = "/set-password"

@@ -54,6 +54,47 @@ const KNOWN_ROLES: RoleId[] = [
   "him-officer",
 ]
 
+/**
+ * The installed AccessPolicy each facility role binds to.
+ *
+ * These names MUST stay byte-identical with the policies authored by the
+ * platform's provisioning tooling (Folio-Web `packages/fhir-model/src/access.ts`).
+ * This app looks policies up BY NAME and never rebuilds them — two definitions of
+ * "what a nurse may read" drifting apart is a data breach, not a bug.
+ *
+ * `platform-admin` is absent deliberately: the platform plane comes from
+ * `ProjectMembership.admin`, not from a facility-scoped policy, so there is no
+ * policy to bind and no way to grant it by creating a staff account.
+ */
+export const ROLE_ACCESS_POLICY_NAMES: Record<Exclude<RoleId, "platform-admin">, string> = {
+  "facility-admin": "Folio Facility Admin Access Policy",
+  doctor: "Folio Doctor Access Policy",
+  nurse: "Folio Nurse Access Policy",
+  "front-desk": "Folio Front Desk Access Policy",
+  "him-officer": "Folio HIM Access Policy",
+}
+
+/**
+ * Roles a facility administrator may create within their own facility.
+ *
+ * Its own type, narrower than RoleId: `platform-admin` must be unrepresentable
+ * here, not merely absent from the array. `facility-admin` is excluded too —
+ * only the platform operator creates those, so a facility admin cannot mint
+ * peers who could then provision further accounts.
+ */
+export type FacilityAssignableRole = "doctor" | "nurse" | "front-desk" | "him-officer"
+
+export const FACILITY_ASSIGNABLE_ROLES: FacilityAssignableRole[] = [
+  "doctor",
+  "nurse",
+  "front-desk",
+  "him-officer",
+]
+
+export function isFacilityAssignableRole(value: string): value is FacilityAssignableRole {
+  return (FACILITY_ASSIGNABLE_ROLES as string[]).includes(value)
+}
+
 export function isRoleId(value: string): value is RoleId {
   return (KNOWN_ROLES as string[]).includes(value)
 }

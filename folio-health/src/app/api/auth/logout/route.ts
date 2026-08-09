@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { medplumUrl } from "@/lib/medplum/config"
 import { clearTokens, getAccessToken } from "@/lib/medplum/session"
+import { MUST_CHANGE_PASSWORD_COOKIE } from "@/lib/session"
 
 /**
  * Sign out: revoke the session on Medplum, then drop the local token cookies.
@@ -23,5 +24,10 @@ export async function POST() {
   }
 
   await clearTokens()
-  return NextResponse.json({ ok: true })
+
+  const response = NextResponse.json({ ok: true })
+  // Left behind, this would gate the NEXT person to sign in on this browser
+  // behind a password change that isn't theirs.
+  response.cookies.delete(MUST_CHANGE_PASSWORD_COOKIE)
+  return response
 }
