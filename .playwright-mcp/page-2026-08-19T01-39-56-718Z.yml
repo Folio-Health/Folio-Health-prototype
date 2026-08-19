@@ -1,0 +1,62 @@
+- generic [active] [ref=f7e1]:
+  - generic [ref=f7e2]:
+    - complementary [ref=f7e3]:
+      - generic [ref=f7e4]:
+        - generic [ref=f7e5]:
+          - img "Folio" [ref=f7e6]
+          - generic [ref=f7e7]: Folio
+        - button "Collapse sidebar" [ref=f7e8] [cursor=pointer]
+      - navigation [ref=f7e9]:
+        - generic [ref=f7e10]:
+          - generic [ref=f7e11]:
+            - paragraph [ref=f7e12]: Overview
+            - link "Dashboard" [ref=f7e13] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f7e20] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f7e25]:
+            - paragraph [ref=f7e26]: Front Desk
+            - link "Reception" [ref=f7e27] [cursor=pointer]:
+              - /url: /reception
+            - link "Appointments" [ref=f7e32] [cursor=pointer]:
+              - /url: /appointments
+          - generic [ref=f7e36]:
+            - paragraph [ref=f7e37]: Insights
+            - link "Communication" [ref=f7e38] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f7e42]:
+            - paragraph [ref=f7e43]: System
+            - link "Settings" [ref=f7e44] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f7e49] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f7e54]:
+        - generic [ref=f7e55]: DD
+        - generic [ref=f7e57]:
+          - generic [ref=f7e58]: Demo Doctor
+          - generic [ref=f7e59]: Receptionist (preview)
+    - generic [ref=f7e60]:
+      - banner [ref=f7e61]:
+        - button "Search patients, appointments... Ctrl K" [ref=f7e62] [cursor=pointer]:
+          - generic [ref=f7e66]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f7e67]:
+          - button "Quick create" [ref=f7e68] [cursor=pointer]
+          - button "Notifications" [ref=f7e69] [cursor=pointer]
+          - button "Toggle theme" [ref=f7e70] [cursor=pointer]
+          - button "Account menu" [ref=f7e72] [cursor=pointer]:
+            - generic [ref=f7e73]: DD
+      - main [ref=f7e75]:
+        - generic [ref=f7e77]:
+          - navigation "breadcrumb" [ref=f7e78]:
+            - list [ref=f7e79]:
+              - listitem [ref=f7e81]:
+                - link "Patients" [disabled] [ref=f7e82]
+          - heading "Patient" [level=1] [ref=f7e85]
+    - generic [ref=f7e112]:
+      - heading "Command Palette" [level=2] [ref=f7e113]
+      - paragraph [ref=f7e114]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f7e115] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f7e121] [cursor=pointer]
+  - alert [ref=f7e125]

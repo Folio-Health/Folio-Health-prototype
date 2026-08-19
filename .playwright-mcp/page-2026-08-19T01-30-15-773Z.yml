@@ -1,0 +1,90 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e331]:
+    - complementary [ref=f2e332]:
+      - generic [ref=f2e333]:
+        - generic [ref=f2e334]:
+          - img "Folio" [ref=f2e335]
+          - generic [ref=f2e336]: Folio
+        - button "Collapse sidebar" [ref=f2e337] [cursor=pointer]
+      - navigation [ref=f2e338]:
+        - generic [ref=f2e339]:
+          - generic [ref=f2e340]:
+            - paragraph [ref=f2e341]: Overview
+            - link "Dashboard" [ref=f2e342] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f2e349] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f2e354]:
+            - paragraph [ref=f2e355]: Front Desk
+            - link "Patients" [ref=f2e356] [cursor=pointer]:
+              - /url: /patients
+          - generic [ref=f2e440]:
+            - paragraph [ref=f2e441]: Insights
+            - link "Communication" [ref=f2e442] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f2e446]:
+            - paragraph [ref=f2e447]: System
+            - link "Settings" [ref=f2e448] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f2e453] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f2e458]:
+        - generic [ref=f2e459]: DD
+        - generic [ref=f2e461]:
+          - generic [ref=f2e462]: Demo Doctor
+          - generic [ref=f2e463]: Medical Records Officer (preview)
+    - generic [ref=f2e464]:
+      - banner [ref=f2e465]:
+        - button "Search patients, appointments... Ctrl K" [ref=f2e466] [cursor=pointer]:
+          - generic [ref=f2e470]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f2e471]:
+          - button "Quick create" [ref=f2e472] [cursor=pointer]
+          - button "Notifications" [ref=f2e473] [cursor=pointer]
+          - button "Toggle theme" [ref=f2e474] [cursor=pointer]
+          - button "Account menu" [active] [ref=f2e476] [cursor=pointer]:
+            - generic [ref=f2e477]: DD
+      - main [ref=f2e479]:
+        - generic [ref=f2e480]:
+          - generic [ref=f2e483]:
+            - heading "Dashboard" [level=1] [ref=f2e484]
+            - paragraph [ref=f2e485]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=f2e772]:
+            - generic [ref=f2e773]:
+              - generic [ref=f2e775]:
+                - paragraph [ref=f2e777]: Records Managed
+                - paragraph [ref=f2e783]: —
+              - generic [ref=f2e785]:
+                - paragraph [ref=f2e787]: Duplicate Flags
+                - paragraph [ref=f2e793]: —
+              - generic [ref=f2e795]:
+                - paragraph [ref=f2e797]: Release Requests
+                - paragraph [ref=f2e803]: —
+            - generic [ref=f2e804]:
+              - generic [ref=f2e805]:
+                - generic [ref=f2e806]:
+                  - generic [ref=f2e807]: Duplicate & Release Queue
+                  - generic [ref=f2e808]: Pending demographic corrections, duplicate merges, and approved record releases
+                - generic [ref=f2e815]:
+                  - paragraph [ref=f2e816]: No queue wired up yet
+                  - paragraph [ref=f2e817]: Duplicate-flagging and record-release requests aren't backed by a real workflow yet — this is where they'll appear once that's built.
+              - generic [ref=f2e818]:
+                - generic [ref=f2e819]: Quick Actions
+                - button "Search Patient Records" [ref=f2e822] [cursor=pointer]
+    - generic [ref=f2e561]:
+      - heading "Command Palette" [level=2] [ref=f2e562]
+      - paragraph [ref=f2e563]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f2e564] [cursor=pointer]
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f2e823]:
+        - button "Close toast" [ref=f2e824] [cursor=pointer]
+        - generic [ref=f2e832]: Now previewing as Medical Records Officer
+  - button "Open Next.js Dev Tools" [ref=f2e834] [cursor=pointer]:
+    - generic [ref=f2e837]:
+      - text: Rendering
+      - generic [ref=f2e838]:
+        - generic [ref=f2e839]: .
+        - generic [ref=f2e840]: .
+        - generic [ref=f2e841]: .
+  - alert [ref=f2e245]: Dashboard · Folio Health EMR

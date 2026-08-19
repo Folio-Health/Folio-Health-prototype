@@ -1,0 +1,44 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e276]:
+    - generic [ref=f2e277]:
+      - generic [ref=f2e279]:
+        - img "Folio" [ref=f2e280]
+        - generic [ref=f2e281]: Folio
+      - generic [ref=f2e283]:
+        - generic [ref=f2e284]:
+          - heading "Sign in" [level=1] [ref=f2e285]
+          - paragraph [ref=f2e286]: Use your Folio Health staff account to continue.
+        - generic [ref=f2e287]:
+          - generic [ref=f2e288]:
+            - generic [ref=f2e289]: Email address
+            - group [ref=f2e290]:
+              - group [ref=f2e291]
+              - textbox "you@foliohealth.example" [ref=f2e295]: doctor@test.com
+          - generic [ref=f2e296]:
+            - generic [ref=f2e297]:
+              - generic [ref=f2e298]: Password
+              - link "Forgot password?" [ref=f2e299] [cursor=pointer]:
+                - /url: /forgot-password
+            - group [ref=f2e300]:
+              - group [ref=f2e301]
+              - textbox "••••••••" [ref=f2e305]: Password123!
+          - button "Sign In" [disabled]
+        - paragraph [ref=f2e307]:
+          - text: Folio Health accounts are provisioned by your facility administrator.Having trouble signing in?
+          - link "Contact IT support" [ref=f2e308] [cursor=pointer]:
+            - /url: mailto:it-support@foliohealth.example
+      - paragraph [ref=f2e309]: © 2026 Folio Health EMR. All rights reserved.
+    - generic [ref=f2e310]:
+      - img "Folio Health EMR hospital campus" [ref=f2e311]
+      - generic [ref=f2e314]:
+        - heading "Delivering Better Healthcare" [level=2] [ref=f2e315]
+        - paragraph [ref=f2e316]: Integrated. Intelligent. Reliable. One system for every department, every role, every patient.
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f2e317] [cursor=pointer]:
+    - generic [ref=f2e320]:
+      - text: Compiling
+      - generic [ref=f2e321]:
+        - generic [ref=f2e322]: .
+        - generic [ref=f2e323]: .
+        - generic [ref=f2e324]: .
+  - alert [ref=f2e245]: "Folio Health EMR: Hospital Information System"

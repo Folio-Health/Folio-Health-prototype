@@ -1,0 +1,117 @@
+- generic [ref=f4e1]:
+  - generic [ref=f4e2]:
+    - complementary [ref=f4e3]:
+      - generic [ref=f4e4]:
+        - generic [ref=f4e5]:
+          - img "Folio" [ref=f4e6]
+          - generic [ref=f4e7]: Folio
+        - button "Collapse sidebar" [ref=f4e8] [cursor=pointer]
+      - navigation [ref=f4e9]:
+        - generic [ref=f4e40]:
+          - generic [ref=f4e41]:
+            - paragraph [ref=f4e42]: Overview
+            - link "Dashboard" [ref=f4e43] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f4e50] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f4e127]:
+            - paragraph [ref=f4e128]: Pharmacy & Finance
+            - link "Pharmacy" [ref=f4e129] [cursor=pointer]:
+              - /url: /pharmacy
+          - generic [ref=f4e134]:
+            - paragraph [ref=f4e135]: Facility
+            - link "Inventory" [ref=f4e540] [cursor=pointer]:
+              - /url: /inventory
+          - generic [ref=f4e141]:
+            - paragraph [ref=f4e142]: Insights
+            - link "Communication" [ref=f4e143] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f4e147]:
+            - paragraph [ref=f4e148]: System
+            - link "Settings" [ref=f4e149] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f4e154] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f4e159]:
+        - generic [ref=f4e160]: DD
+        - generic [ref=f4e162]:
+          - generic [ref=f4e163]: Demo Doctor
+          - generic [ref=f4e164]: Pharmacist (preview)
+    - generic [ref=f4e10]:
+      - banner [ref=f4e11]:
+        - button "Search patients, appointments... Ctrl K" [ref=f4e12] [cursor=pointer]:
+          - generic [ref=f4e16]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f4e17]:
+          - button "Quick create" [ref=f4e18] [cursor=pointer]
+          - button "Notifications" [ref=f4e19] [cursor=pointer]
+          - button "Toggle theme" [ref=f4e20] [cursor=pointer]
+          - button "Account menu" [active] [ref=f4e22] [cursor=pointer]:
+            - generic [ref=f4e23]: DD
+      - main [ref=f4e25]:
+        - generic [ref=f4e421]:
+          - generic [ref=f4e422]:
+            - navigation "breadcrumb" [ref=f4e423]:
+              - list [ref=f4e424]:
+                - generic [ref=f4e425]:
+                  - listitem [ref=f4e426]:
+                    - link "Patients" [ref=f4e427] [cursor=pointer]:
+                      - /url: /patients
+                  - listitem [ref=f4e428]
+                - listitem [ref=f4e432]:
+                  - link "Rory Rutherford" [disabled] [ref=f4e433]
+            - generic [ref=f4e435]:
+              - heading "Rory Rutherford" [level=1] [ref=f4e436]
+              - paragraph [ref=f4e437]: MRN MRN-295066
+          - generic [ref=f4e441]:
+            - generic [ref=f4e443]:
+              - generic [ref=f4e444]:
+                - generic [ref=f4e445]: RR
+                - generic [ref=f4e447]:
+                  - paragraph [ref=f4e448]: Rory Rutherford
+                  - paragraph [ref=f4e449]: MRN-295066
+                - generic [ref=f4e450]: Active
+              - generic [ref=f4e452]:
+                - generic [ref=f4e457]:
+                  - generic [ref=f4e458]: Age / Gender
+                  - generic [ref=f4e459]: 39 yrs · Male
+                - generic [ref=f4e463]:
+                  - generic [ref=f4e464]: Date of birth
+                  - generic [ref=f4e465]: 1986-11-02
+                - generic [ref=f4e469]:
+                  - generic [ref=f4e470]: Phone
+                  - generic [ref=f4e471]: "+19304537918"
+                - generic [ref=f4e476]:
+                  - generic [ref=f4e477]: Email
+                  - generic [ref=f4e478]: rory.rutherford1@yahoo.com
+                - generic [ref=f4e483]:
+                  - generic [ref=f4e484]: Address
+                  - generic [ref=f4e485]: 8688 Makenna Center, Lagos
+            - generic [ref=f4e486]:
+              - tablist [ref=f4e487]:
+                - tab "Overview" [selected] [ref=f4e488] [cursor=pointer]
+                - tab "Pharmacy" [ref=f4e493] [cursor=pointer]
+              - tabpanel "Overview" [ref=f4e494]:
+                - generic [ref=f4e495]:
+                  - generic [ref=f4e496]: Allergies
+                  - list [ref=f4e499]:
+                    - listitem [ref=f4e500]:
+                      - generic [ref=f4e501]: Peanuts
+                      - generic [ref=f4e502]: Active
+    - generic [ref=f4e26]:
+      - heading "Command Palette" [level=2] [ref=f4e27]
+      - paragraph [ref=f4e28]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f4e29] [cursor=pointer]
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f4e546]:
+        - button "Close toast" [ref=f4e547] [cursor=pointer]
+        - generic [ref=f4e555]: Now previewing as Pharmacist
+  - button "Open Next.js Dev Tools" [ref=f4e557] [cursor=pointer]:
+    - generic [ref=f4e560]:
+      - text: Rendering
+      - generic [ref=f4e561]:
+        - generic [ref=f4e562]: .
+        - generic [ref=f4e563]: .
+        - generic [ref=f4e564]: .
+  - alert [ref=f4e39]: Patient Profile · Folio Health EMR

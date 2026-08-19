@@ -1,0 +1,119 @@
+- generic [ref=e1]:
+  - generic [ref=e60]:
+    - complementary [ref=e289]:
+      - generic [ref=e290]:
+        - generic [ref=e291]:
+          - img "Folio" [ref=e292]
+          - generic [ref=e293]: Folio
+        - button "Collapse sidebar" [ref=e294] [cursor=pointer]
+      - navigation [ref=e169]:
+        - generic [ref=e170]:
+          - generic [ref=e171]:
+            - paragraph [ref=e172]: Overview
+            - link "Dashboard" [ref=e173] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=e180] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=e501]:
+            - paragraph [ref=e502]: Diagnostics
+            - link "Laboratory" [ref=e503] [cursor=pointer]:
+              - /url: /laboratory
+            - link "Blood Bank" [ref=e507] [cursor=pointer]:
+              - /url: /blood-bank
+          - generic [ref=e271]:
+            - paragraph [ref=e272]: Insights
+            - link "Communication" [ref=e273] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=e277]:
+            - paragraph [ref=e278]: System
+            - link "Settings" [ref=e279] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=e284] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=e295]:
+        - generic [ref=e296]: DD
+        - generic [ref=e298]:
+          - generic [ref=e299]: Demo Doctor
+          - generic [ref=e300]: Laboratory Scientist (preview)
+    - generic [ref=e61]:
+      - banner [ref=e62]:
+        - button "Search patients, appointments... Ctrl K" [ref=e64] [cursor=pointer]:
+          - generic [ref=e68]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=e69]:
+          - button "Quick create" [ref=e70] [cursor=pointer]
+          - button "Notifications" [ref=e71] [cursor=pointer]
+          - button "Toggle theme" [ref=e72] [cursor=pointer]
+          - button "Account menu" [active] [ref=e74] [cursor=pointer]:
+            - generic [ref=e75]: DD
+      - main [ref=e77]:
+        - generic [ref=e88]:
+          - generic [ref=e91]:
+            - heading "Dashboard" [level=1] [ref=e92]
+            - paragraph [ref=e93]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=e511]:
+            - generic [ref=e512]:
+              - generic [ref=e514]:
+                - paragraph [ref=e516]: Pending Tests
+                - paragraph [ref=e522]: "45"
+              - generic [ref=e524]:
+                - paragraph [ref=e526]: In Progress
+                - paragraph [ref=e531]: "12"
+              - generic [ref=e533]:
+                - paragraph [ref=e535]: Completed Today
+                - paragraph [ref=e541]: "38"
+              - generic [ref=e543]:
+                - paragraph [ref=e545]: Critical Results
+                - paragraph [ref=e550]: "3"
+            - generic [ref=e551]:
+              - generic [ref=e552]:
+                - generic [ref=e553]: Test Queue
+                - generic [ref=e554]: Samples awaiting processing or review
+                - button "View all" [ref=e556] [cursor=pointer]
+              - generic [ref=e557]:
+                - generic [ref=e558]:
+                  - generic [ref=e559]: LAB-0001
+                  - generic [ref=e560]: DS
+                  - generic [ref=e562]:
+                    - paragraph [ref=e563]: Darren Spinka
+                    - paragraph [ref=e564]: Complete Blood Count (CBC)
+                  - generic [ref=e565]: Pending
+                - generic [ref=e567]:
+                  - generic [ref=e568]: LAB-0002
+                  - generic [ref=e569]: AH
+                  - generic [ref=e571]:
+                    - paragraph [ref=e572]: Angelo Halvorson
+                    - paragraph [ref=e573]: Liver Function Test (LFT)
+                  - generic [ref=e574]: In Progress
+                - generic [ref=e576]:
+                  - generic [ref=e577]: LAB-0003
+                  - generic [ref=e578]: DR
+                  - generic [ref=e580]:
+                    - paragraph [ref=e581]: Delia Reilly
+                    - paragraph [ref=e582]: Fasting Blood Sugar
+                  - generic [ref=e583]: Completed
+                - generic [ref=e585]:
+                  - generic [ref=e586]: LAB-0004
+                  - generic [ref=e587]: LK
+                  - generic [ref=e589]:
+                    - paragraph [ref=e590]: Lorraine Kutch
+                    - paragraph [ref=e591]: Lipid Profile
+                  - generic [ref=e592]: Pending
+                - generic [ref=e594]:
+                  - generic [ref=e595]: LAB-0005
+                  - generic [ref=e596]: CL
+                  - generic [ref=e598]:
+                    - paragraph [ref=e599]: Christ Legros
+                    - paragraph [ref=e600]: Kidney Function Test (KFT)
+                  - generic [ref=e601]: Critical
+    - generic [ref=e78]:
+      - heading "Command Palette" [level=2] [ref=e79]
+      - paragraph [ref=e80]: Search for a command to run...
+    - button "Open AI Assistant" [ref=e81] [cursor=pointer]
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e603]:
+        - button "Close toast" [ref=e604] [cursor=pointer]
+        - generic [ref=e612]: Now previewing as Laboratory Scientist
+  - button "Open Next.js Dev Tools" [ref=e41] [cursor=pointer]
+  - alert [ref=e45]: Dashboard · Folio Health EMR

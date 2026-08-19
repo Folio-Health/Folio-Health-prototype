@@ -1,0 +1,126 @@
+- generic [ref=f6e1]:
+  - generic [ref=f6e2]:
+    - complementary [ref=f6e3]:
+      - generic [ref=f6e4]:
+        - generic [ref=f6e5]:
+          - img "Folio" [ref=f6e6]
+          - generic [ref=f6e7]: Folio
+        - button "Collapse sidebar" [ref=f6e8] [cursor=pointer]
+      - navigation [ref=f6e9]:
+        - generic [ref=f6e111]:
+          - generic [ref=f6e112]:
+            - paragraph [ref=f6e113]: Overview
+            - link "Dashboard" [ref=f6e114] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f6e121] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f6e197]:
+            - paragraph [ref=f6e198]: Front Desk
+            - link "Reception" [ref=f6e199] [cursor=pointer]:
+              - /url: /reception
+            - link "Appointments" [ref=f6e204] [cursor=pointer]:
+              - /url: /appointments
+          - generic [ref=f6e136]:
+            - paragraph [ref=f6e137]: Insights
+            - link "Communication" [ref=f6e138] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f6e142]:
+            - paragraph [ref=f6e143]: System
+            - link "Settings" [ref=f6e144] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f6e149] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f6e154]:
+        - generic [ref=f6e155]: DD
+        - generic [ref=f6e157]:
+          - generic [ref=f6e158]: Demo Doctor
+          - generic [ref=f6e159]: Receptionist (preview)
+    - generic [ref=f6e10]:
+      - banner [ref=f6e11]:
+        - button "Search patients, appointments... Ctrl K" [ref=f6e12] [cursor=pointer]:
+          - generic [ref=f6e16]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f6e17]:
+          - button "Quick create" [ref=f6e18] [cursor=pointer]
+          - button "Notifications" [ref=f6e19] [cursor=pointer]
+          - button "Toggle theme" [ref=f6e20] [cursor=pointer]
+          - button "Account menu" [active] [ref=f6e22] [cursor=pointer]:
+            - generic [ref=f6e23]: DD
+      - main [ref=f6e25]:
+        - generic [ref=f6e208]:
+          - generic [ref=f6e211]:
+            - heading "Dashboard" [level=1] [ref=f6e212]
+            - paragraph [ref=f6e213]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=f6e214]:
+            - generic [ref=f6e215]:
+              - generic [ref=f6e217]:
+                - paragraph [ref=f6e219]: Checked In Today
+                - paragraph [ref=f6e227]: "64"
+              - generic [ref=f6e229]:
+                - paragraph [ref=f6e231]: Waiting Queue
+                - paragraph [ref=f6e237]: "9"
+              - generic [ref=f6e239]:
+                - paragraph [ref=f6e241]: New Registrations
+                - paragraph [ref=f6e247]: "14"
+              - generic [ref=f6e249]:
+                - paragraph [ref=f6e251]: Appointments Today
+                - paragraph [ref=f6e257]: "86"
+            - generic [ref=f6e258]:
+              - generic [ref=f6e259]:
+                - generic [ref=f6e260]:
+                  - generic [ref=f6e261]: Front Desk Queue
+                  - generic [ref=f6e262]: Patients waiting for check-in or consultation
+                - generic [ref=f6e263]:
+                  - generic [ref=f6e264]:
+                    - generic [ref=f6e265]: "01"
+                    - generic [ref=f6e266]: PH
+                    - generic [ref=f6e268]:
+                      - paragraph [ref=f6e269]: Presley Haag
+                      - paragraph [ref=f6e270]: Dr. Delilah McClure
+                    - generic [ref=f6e271]: Scheduled
+                  - generic [ref=f6e273]:
+                    - generic [ref=f6e274]: "02"
+                    - generic [ref=f6e275]: CL
+                    - generic [ref=f6e277]:
+                      - paragraph [ref=f6e278]: Christ Legros
+                      - paragraph [ref=f6e279]: Dr. Benjamin Hintz
+                    - generic [ref=f6e280]: Scheduled
+                  - generic [ref=f6e282]:
+                    - generic [ref=f6e283]: "03"
+                    - generic [ref=f6e284]: KS
+                    - generic [ref=f6e286]:
+                      - paragraph [ref=f6e287]: Kelli Satterfield
+                      - paragraph [ref=f6e288]: Dr. Elfrieda Haag
+                    - generic [ref=f6e289]: Scheduled
+                  - generic [ref=f6e291]:
+                    - generic [ref=f6e292]: "04"
+                    - generic [ref=f6e293]: JZ
+                    - generic [ref=f6e295]:
+                      - paragraph [ref=f6e296]: Jeanette Zulauf
+                      - paragraph [ref=f6e297]: Dr. Wilbert Yundt
+                    - generic [ref=f6e298]: Checked In
+                  - generic [ref=f6e300]:
+                    - generic [ref=f6e301]: "05"
+                    - generic [ref=f6e302]: BS
+                    - generic [ref=f6e304]:
+                      - paragraph [ref=f6e305]: Bo Spinka
+                      - paragraph [ref=f6e306]: Dr. Annie Jast
+                    - generic [ref=f6e307]: Checked In
+              - generic [ref=f6e309]:
+                - generic [ref=f6e310]: Quick Actions
+                - generic [ref=f6e312]:
+                  - button "Register New Patient" [ref=f6e313] [cursor=pointer]
+                  - button "Patient Check-in" [ref=f6e314] [cursor=pointer]
+                  - button "Queue Management" [ref=f6e315] [cursor=pointer]
+                  - button "View Appointments" [ref=f6e316] [cursor=pointer]
+    - generic [ref=f6e26]:
+      - heading "Command Palette" [level=2] [ref=f6e27]
+      - paragraph [ref=f6e28]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f6e29] [cursor=pointer]
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f6e317]:
+        - button "Close toast" [ref=f6e318] [cursor=pointer]
+        - generic [ref=f6e326]: Now previewing as Receptionist
+  - button "Open Next.js Dev Tools" [ref=f6e35] [cursor=pointer]
+  - alert [ref=f6e182]: Dashboard · Folio Health EMR

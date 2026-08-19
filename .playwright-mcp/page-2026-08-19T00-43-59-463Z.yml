@@ -1,0 +1,38 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - img "Folio" [ref=e6]
+      - generic [ref=e7]: Folio
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - heading "Sign in" [level=1] [ref=e11]
+        - paragraph [ref=e12]: Use your Folio Health staff account to continue.
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]: Email address
+          - group [ref=e16]:
+            - group [ref=e17]
+            - textbox "you@foliohealth.example" [ref=e21]: doctor@test.com
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]: Password
+            - link "Forgot password?" [ref=e25] [cursor=pointer]:
+              - /url: /forgot-password
+          - group [ref=e26]:
+            - group [ref=e27]
+            - textbox "••••••••" [ref=e31]: anything123
+        - button "Sign In" [disabled]
+      - paragraph [ref=e33]:
+        - text: Folio Health accounts are provisioned by your facility administrator.Having trouble signing in?
+        - link "Contact IT support" [ref=e34] [cursor=pointer]:
+          - /url: mailto:it-support@foliohealth.example
+    - paragraph [ref=e35]: © 2026 Folio Health EMR. All rights reserved.
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e46] [cursor=pointer]:
+    - generic [ref=e49]:
+      - text: Compiling
+      - generic [ref=e50]:
+        - generic [ref=e51]: .
+        - generic [ref=e52]: .
+        - generic [ref=e53]: .
+  - alert [ref=e45]

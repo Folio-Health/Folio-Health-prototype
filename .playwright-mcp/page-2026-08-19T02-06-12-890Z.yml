@@ -1,0 +1,316 @@
+- generic [active] [ref=f15e1]:
+  - generic [ref=f15e2]:
+    - complementary [ref=f15e3]:
+      - generic [ref=f15e4]:
+        - generic [ref=f15e5]:
+          - img "Folio" [ref=f15e6]
+          - generic [ref=f15e7]: Folio
+        - button "Collapse sidebar" [ref=f15e8] [cursor=pointer]
+      - navigation [ref=f15e9]:
+        - generic [ref=f15e10]:
+          - generic [ref=f15e11]:
+            - paragraph [ref=f15e12]: Overview
+            - link "Dashboard" [ref=f15e13] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f15e20] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f15e25]:
+            - paragraph [ref=f15e26]: Diagnostics
+            - link "Laboratory" [ref=f15e27] [cursor=pointer]:
+              - /url: /laboratory
+            - link "Blood Bank" [ref=f15e31] [cursor=pointer]:
+              - /url: /blood-bank
+          - generic [ref=f15e35]:
+            - paragraph [ref=f15e36]: Insights
+            - link "Communication" [ref=f15e37] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f15e41]:
+            - paragraph [ref=f15e42]: System
+            - link "Settings" [ref=f15e43] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f15e48] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f15e53]:
+        - generic [ref=f15e54]: DD
+        - generic [ref=f15e56]:
+          - generic [ref=f15e57]: Demo Doctor
+          - generic [ref=f15e58]: Laboratory Scientist (preview)
+    - generic [ref=f15e59]:
+      - banner [ref=f15e60]:
+        - button "Search patients, appointments... Ctrl K" [ref=f15e61] [cursor=pointer]:
+          - generic [ref=f15e65]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f15e66]:
+          - button "Quick create" [ref=f15e67] [cursor=pointer]
+          - button "Notifications" [ref=f15e68] [cursor=pointer]
+          - button "Toggle theme" [ref=f15e69] [cursor=pointer]
+          - button "Account menu" [ref=f15e71] [cursor=pointer]:
+            - generic [ref=f15e72]: DD
+      - main [ref=f15e74]:
+        - generic [ref=f15e75]:
+          - generic [ref=f15e76]:
+            - navigation "breadcrumb" [ref=f15e77]:
+              - list [ref=f15e78]:
+                - generic [ref=f15e79]:
+                  - listitem [ref=f15e80]:
+                    - link "Diagnostics" [disabled] [ref=f15e81]
+                  - listitem [ref=f15e82]
+                - listitem [ref=f15e86]:
+                  - link "Laboratory" [disabled] [ref=f15e87]
+            - generic [ref=f15e89]:
+              - heading "Laboratory" [level=1] [ref=f15e90]
+              - paragraph [ref=f15e91]: 38 lab results on record
+          - generic [ref=f15e92]:
+            - generic [ref=f15e94]:
+              - paragraph [ref=f15e96]: Pending
+              - paragraph [ref=f15e102]: "2"
+            - generic [ref=f15e104]:
+              - paragraph [ref=f15e106]: In Progress
+              - paragraph [ref=f15e114]: "5"
+            - generic [ref=f15e116]:
+              - paragraph [ref=f15e118]: Completed Today
+              - paragraph [ref=f15e124]: "0"
+            - generic [ref=f15e126]:
+              - paragraph [ref=f15e128]: Critical Results
+              - paragraph [ref=f15e133]: "5"
+          - tablist [ref=f15e135]:
+            - tab "All Results" [selected] [ref=f15e136] [cursor=pointer]
+            - tab "Pending" [ref=f15e137] [cursor=pointer]
+            - tab "In Progress" [ref=f15e138] [cursor=pointer]
+            - tab "Completed" [ref=f15e139] [cursor=pointer]
+            - tab "Approved" [ref=f15e140] [cursor=pointer]
+          - generic [ref=f15e141]:
+            - group [ref=f15e142]:
+              - group [ref=f15e143]
+              - textbox "Search by test ID, name, or patient..." [ref=f15e147]
+            - table [ref=f15e150]:
+              - rowgroup [ref=f15e151]:
+                - row [ref=f15e152]:
+                  - columnheader [ref=f15e153]:
+                    - button "Test ID" [ref=f15e154] [cursor=pointer]
+                  - columnheader "Patient" [ref=f15e155]
+                  - columnheader [ref=f15e156]:
+                    - button "Test Name" [ref=f15e157] [cursor=pointer]
+                  - columnheader "Result" [ref=f15e158]
+                  - columnheader "Reference Range" [ref=f15e159]
+                  - columnheader "Status" [ref=f15e160]
+                  - columnheader [ref=f15e161]:
+                    - button "Date" [ref=f15e162] [cursor=pointer]
+                  - columnheader [ref=f15e163]
+              - rowgroup [ref=f15e164]:
+                - row [ref=f15e165] [cursor=pointer]:
+                  - cell "LAB-0008" [ref=f15e166]
+                  - cell [ref=f15e167]:
+                    - link "GE Grace Ernser PT-1150" [ref=f15e168]:
+                      - /url: /patients/PAT-0150
+                      - generic [ref=f15e169]: GE
+                      - generic [ref=f15e171]:
+                        - generic [ref=f15e172]: Grace Ernser
+                        - generic [ref=f15e173]: PT-1150
+                  - cell "Urinalysis Microbiology" [ref=f15e174]:
+                    - generic [ref=f15e175]:
+                      - generic [ref=f15e176]: Urinalysis
+                      - generic [ref=f15e177]: Microbiology
+                  - cell "1+ (+1 more)" [ref=f15e178]
+                  - cell "Negative" [ref=f15e179]
+                  - cell "Critical" [ref=f15e180]
+                  - cell "Aug 18, 2026" [ref=f15e183]
+                  - cell [ref=f15e184]:
+                    - button [ref=f15e185]
+                - row [ref=f15e186] [cursor=pointer]:
+                  - cell "LAB-0012" [ref=f15e187]
+                  - cell [ref=f15e188]:
+                    - link "DJ Doris Johns PT-1124" [ref=f15e189]:
+                      - /url: /patients/PAT-0124
+                      - generic [ref=f15e190]: DJ
+                      - generic [ref=f15e192]:
+                        - generic [ref=f15e193]: Doris Johns
+                        - generic [ref=f15e194]: PT-1124
+                  - cell "Complete Blood Count (CBC) Hematology" [ref=f15e195]:
+                    - generic [ref=f15e196]:
+                      - generic [ref=f15e197]: Complete Blood Count (CBC)
+                      - generic [ref=f15e198]: Hematology
+                  - cell "15.5 g/dL (+3 more)" [ref=f15e199]
+                  - cell "12 - 16 g/dL" [ref=f15e200]
+                  - cell "Normal" [ref=f15e201]
+                  - cell "Aug 17, 2026" [ref=f15e204]
+                  - cell [ref=f15e205]:
+                    - button [ref=f15e206]
+                - row [ref=f15e207] [cursor=pointer]:
+                  - cell "LAB-0026" [ref=f15e208]
+                  - cell [ref=f15e209]:
+                    - link "JW Jerald Wunsch PT-1121" [ref=f15e210]:
+                      - /url: /patients/PAT-0121
+                      - generic [ref=f15e211]: JW
+                      - generic [ref=f15e213]:
+                        - generic [ref=f15e214]: Jerald Wunsch
+                        - generic [ref=f15e215]: PT-1121
+                  - cell "Fasting Blood Sugar Biochemistry" [ref=f15e216]:
+                    - generic [ref=f15e217]:
+                      - generic [ref=f15e218]: Fasting Blood Sugar
+                      - generic [ref=f15e219]: Biochemistry
+                  - cell "N/A" [ref=f15e220]
+                  - cell "N/A" [ref=f15e221]
+                  - cell "Pending" [ref=f15e222]
+                  - cell "Aug 17, 2026" [ref=f15e225]
+                  - cell [ref=f15e226]:
+                    - button [ref=f15e227]
+                - row [ref=f15e228] [cursor=pointer]:
+                  - cell "LAB-0032" [ref=f15e229]
+                  - cell [ref=f15e230]:
+                    - link "JT Judy Tremblay PT-1041" [ref=f15e231]:
+                      - /url: /patients/PAT-0041
+                      - generic [ref=f15e232]: JT
+                      - generic [ref=f15e234]:
+                        - generic [ref=f15e235]: Judy Tremblay
+                        - generic [ref=f15e236]: PT-1041
+                  - cell "Complete Blood Count (CBC) Hematology" [ref=f15e237]:
+                    - generic [ref=f15e238]:
+                      - generic [ref=f15e239]: Complete Blood Count (CBC)
+                      - generic [ref=f15e240]: Hematology
+                  - cell "N/A" [ref=f15e241]
+                  - cell "N/A" [ref=f15e242]
+                  - cell "In Progress" [ref=f15e243]
+                  - cell "Aug 16, 2026" [ref=f15e246]
+                  - cell [ref=f15e247]:
+                    - button [ref=f15e248]
+                - row [ref=f15e249] [cursor=pointer]:
+                  - cell "LAB-0009" [ref=f15e250]
+                  - cell [ref=f15e251]:
+                    - link "OS Osvaldo Smith PT-1013" [ref=f15e252]:
+                      - /url: /patients/PAT-0013
+                      - generic [ref=f15e253]: OS
+                      - generic [ref=f15e255]:
+                        - generic [ref=f15e256]: Osvaldo Smith
+                        - generic [ref=f15e257]: PT-1013
+                  - cell "Malaria Parasite Test Microbiology" [ref=f15e258]:
+                    - generic [ref=f15e259]:
+                      - generic [ref=f15e260]: Malaria Parasite Test
+                      - generic [ref=f15e261]: Microbiology
+                  - cell "Negative" [ref=f15e262]
+                  - cell "Negative" [ref=f15e263]
+                  - cell "Normal" [ref=f15e264]
+                  - cell "Aug 16, 2026" [ref=f15e267]
+                  - cell [ref=f15e268]:
+                    - button [ref=f15e269]
+                - row [ref=f15e270] [cursor=pointer]:
+                  - cell "LAB-0024" [ref=f15e271]
+                  - cell [ref=f15e272]:
+                    - link "CM Caroline Marks PT-1093" [ref=f15e273]:
+                      - /url: /patients/PAT-0093
+                      - generic [ref=f15e274]: CM
+                      - generic [ref=f15e276]:
+                        - generic [ref=f15e277]: Caroline Marks
+                        - generic [ref=f15e278]: PT-1093
+                  - cell "Coagulation Profile (PT/INR) Hematology" [ref=f15e279]:
+                    - generic [ref=f15e280]:
+                      - generic [ref=f15e281]: Coagulation Profile (PT/INR)
+                      - generic [ref=f15e282]: Hematology
+                  - cell "11.9 sec (+1 more)" [ref=f15e283]
+                  - cell "11 - 13.5 sec" [ref=f15e284]
+                  - cell "Normal" [ref=f15e285]
+                  - cell "Aug 16, 2026" [ref=f15e288]
+                  - cell [ref=f15e289]:
+                    - button [ref=f15e290]
+                - row [ref=f15e291] [cursor=pointer]:
+                  - cell "LAB-0001" [ref=f15e292]
+                  - cell [ref=f15e293]:
+                    - link "HN Hailee Nolan PT-1131" [ref=f15e294]:
+                      - /url: /patients/PAT-0131
+                      - generic [ref=f15e295]: HN
+                      - generic [ref=f15e297]:
+                        - generic [ref=f15e298]: Hailee Nolan
+                        - generic [ref=f15e299]: PT-1131
+                  - cell "HbA1c Biochemistry" [ref=f15e300]:
+                    - generic [ref=f15e301]:
+                      - generic [ref=f15e302]: HbA1c
+                      - generic [ref=f15e303]: Biochemistry
+                  - cell "5 %" [ref=f15e304]
+                  - cell "4 - 5.6 %" [ref=f15e305]
+                  - cell "Normal" [ref=f15e306]
+                  - cell "Aug 16, 2026" [ref=f15e309]
+                  - cell [ref=f15e310]:
+                    - button [ref=f15e311]
+                - row [ref=f15e312] [cursor=pointer]:
+                  - cell "LAB-0013" [ref=f15e313]
+                  - cell [ref=f15e314]:
+                    - link "RH Raheem Heidenreich-Wuckert PT-1053" [ref=f15e315]:
+                      - /url: /patients/PAT-0053
+                      - generic [ref=f15e316]: RH
+                      - generic [ref=f15e318]:
+                        - generic [ref=f15e319]: Raheem Heidenreich-Wuckert
+                        - generic [ref=f15e320]: PT-1053
+                  - cell "Kidney Function Test (KFT) Biochemistry" [ref=f15e321]:
+                    - generic [ref=f15e322]:
+                      - generic [ref=f15e323]: Kidney Function Test (KFT)
+                      - generic [ref=f15e324]: Biochemistry
+                  - cell "24 mg/dL (+1 more)" [ref=f15e325]
+                  - cell "7 - 20 mg/dL" [ref=f15e326]
+                  - cell "Abnormal" [ref=f15e327]
+                  - cell "Aug 16, 2026" [ref=f15e330]
+                  - cell [ref=f15e331]:
+                    - button [ref=f15e332]
+                - row [ref=f15e333] [cursor=pointer]:
+                  - cell "LAB-0007" [ref=f15e334]
+                  - cell [ref=f15e335]:
+                    - link "HC Howard Casper PT-1008" [ref=f15e336]:
+                      - /url: /patients/PAT-0008
+                      - generic [ref=f15e337]: HC
+                      - generic [ref=f15e339]:
+                        - generic [ref=f15e340]: Howard Casper
+                        - generic [ref=f15e341]: PT-1008
+                  - cell "Fasting Blood Sugar Biochemistry" [ref=f15e342]:
+                    - generic [ref=f15e343]:
+                      - generic [ref=f15e344]: Fasting Blood Sugar
+                      - generic [ref=f15e345]: Biochemistry
+                  - cell "N/A" [ref=f15e346]
+                  - cell "N/A" [ref=f15e347]
+                  - cell "Pending" [ref=f15e348]
+                  - cell "Aug 14, 2026" [ref=f15e351]
+                  - cell [ref=f15e352]:
+                    - button [ref=f15e353]
+                - row [ref=f15e354] [cursor=pointer]:
+                  - cell "LAB-0017" [ref=f15e355]
+                  - cell [ref=f15e356]:
+                    - link "PG Pauline Gorczany PT-1009" [ref=f15e357]:
+                      - /url: /patients/PAT-0009
+                      - generic [ref=f15e358]: PG
+                      - generic [ref=f15e360]:
+                        - generic [ref=f15e361]: Pauline Gorczany
+                        - generic [ref=f15e362]: PT-1009
+                  - cell "Electrolyte Panel Biochemistry" [ref=f15e363]:
+                    - generic [ref=f15e364]:
+                      - generic [ref=f15e365]: Electrolyte Panel
+                      - generic [ref=f15e366]: Biochemistry
+                  - cell "140 mmol/L (+1 more)" [ref=f15e367]
+                  - cell "135 - 145 mmol/L" [ref=f15e368]
+                  - cell "Normal" [ref=f15e369]
+                  - cell "Aug 14, 2026" [ref=f15e372]
+                  - cell [ref=f15e373]:
+                    - button [ref=f15e374]
+            - generic [ref=f15e375]:
+              - paragraph [ref=f15e376]: Showing 1 to 10 of 38
+              - generic [ref=f15e377]:
+                - generic [ref=f15e378]:
+                  - paragraph [ref=f15e379]: Rows per page
+                  - combobox [ref=f15e380] [cursor=pointer]:
+                    - generic [ref=f15e381]: "10"
+                    - img: ▼
+                  - textbox [ref=f15e382]: "10"
+                - generic [ref=f15e383]:
+                  - button "First page" [disabled]
+                  - button "Previous page" [disabled]
+                  - button "1" [ref=f15e385] [cursor=pointer]
+                  - button "2" [ref=f15e387] [cursor=pointer]
+                  - generic [ref=f15e388]:
+                    - generic [ref=f15e389]: …
+                    - button "4" [ref=f15e390] [cursor=pointer]
+                  - button "Next page" [ref=f15e391] [cursor=pointer]
+                  - button "Last page" [ref=f15e392] [cursor=pointer]
+    - generic [ref=f15e393]:
+      - heading "Command Palette" [level=2] [ref=f15e394]
+      - paragraph [ref=f15e395]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f15e396] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f15e402] [cursor=pointer]
+  - alert [ref=f15e406]

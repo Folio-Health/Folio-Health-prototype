@@ -1,0 +1,186 @@
+- generic [ref=f9e1]:
+  - generic [ref=f9e2]:
+    - complementary [ref=f9e3]:
+      - generic [ref=f9e4]:
+        - generic [ref=f9e5]: Folio
+        - button [ref=f9e40] [cursor=pointer]
+      - navigation [ref=f9e9]:
+        - generic [ref=f9e41]:
+          - generic [ref=f9e42]:
+            - paragraph [ref=f9e43]: Overview
+            - link [ref=f9e44] [cursor=pointer]:
+              - /url: /dashboard
+              - generic [ref=f9e50]: Dashboard
+            - link [ref=f9e51] [cursor=pointer]:
+              - /url: /assistant
+              - generic [ref=f9e55]: AI Assistant
+          - generic [ref=f9e56]:
+            - paragraph [ref=f9e57]: Front Desk
+            - link [ref=f9e58] [cursor=pointer]:
+              - /url: /patients
+              - generic [ref=f9e64]: Patients
+            - link [ref=f9e65] [cursor=pointer]:
+              - /url: /appointments
+              - generic [ref=f9e68]: Appointments
+          - generic [ref=f9e69]:
+            - paragraph [ref=f9e70]: Clinical
+            - link [ref=f9e71] [cursor=pointer]:
+              - /url: /consultation
+              - generic [ref=f9e76]: Consultation
+            - link [ref=f9e77] [cursor=pointer]:
+              - /url: /vitals
+              - generic [ref=f9e80]: Vitals
+            - link [ref=f9e81] [cursor=pointer]:
+              - /url: /nursing
+              - generic [ref=f9e85]: Nursing
+            - link [ref=f9e86] [cursor=pointer]:
+              - /url: /emergency
+              - generic [ref=f9e92]: Emergency
+            - link [ref=f9e93] [cursor=pointer]:
+              - /url: /surgery
+              - generic [ref=f9e100]: Surgery
+            - link [ref=f9e101] [cursor=pointer]:
+              - /url: /pediatrics
+              - generic [ref=f9e105]: Pediatrics
+            - link [ref=f9e106] [cursor=pointer]:
+              - /url: /obstetrics
+              - generic [ref=f9e110]: Obstetrics
+          - generic [ref=f9e111]:
+            - paragraph [ref=f9e112]: Diagnostics
+            - link [ref=f9e113] [cursor=pointer]:
+              - /url: /laboratory
+              - generic [ref=f9e116]: Laboratory
+            - link [ref=f9e117] [cursor=pointer]:
+              - /url: /radiology
+              - generic [ref=f9e123]: Radiology
+            - link [ref=f9e124] [cursor=pointer]:
+              - /url: /blood-bank
+              - generic [ref=f9e127]: Blood Bank
+          - generic [ref=f9e128]:
+            - paragraph [ref=f9e129]: Pharmacy & Finance
+            - link [ref=f9e130] [cursor=pointer]:
+              - /url: /pharmacy
+              - generic [ref=f9e134]: Pharmacy
+          - generic [ref=f9e135]:
+            - paragraph [ref=f9e136]: Facility
+            - link [ref=f9e137] [cursor=pointer]:
+              - /url: /admissions
+              - generic [ref=f9e141]: Admissions
+          - generic [ref=f9e142]:
+            - paragraph [ref=f9e143]: Insights
+            - link [ref=f9e144] [cursor=pointer]:
+              - /url: /communication
+              - generic [ref=f9e147]: Communication
+          - generic [ref=f9e148]:
+            - paragraph [ref=f9e149]: System
+            - link [ref=f9e150] [cursor=pointer]:
+              - /url: /settings
+              - generic [ref=f9e154]: Settings
+            - link [ref=f9e155] [cursor=pointer]:
+              - /url: /help
+              - generic [ref=f9e159]: Help Center
+      - generic [ref=f9e160]:
+        - generic [ref=f9e161]: DD
+        - generic [ref=f9e163]:
+          - generic [ref=f9e164]: Demo Doctor
+          - generic [ref=f9e165]: Doctor
+    - generic [ref=f9e10]:
+      - banner [ref=f9e11]:
+        - button [ref=f9e166] [cursor=pointer]:
+          - generic [ref=f9e16]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f9e17]:
+          - button [ref=f9e167] [cursor=pointer]
+          - button [ref=f9e168] [cursor=pointer]
+          - button [ref=f9e169] [cursor=pointer]
+          - button [ref=f9e170] [cursor=pointer]:
+            - generic [ref=f9e23]: DD
+      - main [ref=f9e25]:
+        - generic [ref=f9e171]:
+          - generic [ref=f9e172]:
+            - navigation [ref=f9e173]:
+              - list [ref=f9e174]:
+                - generic [ref=f9e175]:
+                  - listitem [ref=f9e176]:
+                    - link [ref=f9e177] [cursor=pointer]:
+                      - /url: /patients
+                      - text: Patients
+                  - listitem [ref=f9e178]
+                - listitem [ref=f9e182]:
+                  - link [disabled] [ref=f9e183]: Rory Rutherford
+            - generic [ref=f9e184]:
+              - generic [ref=f9e185]:
+                - heading [level=1] [ref=f9e186]: Rory Rutherford
+                - paragraph [ref=f9e187]: MRN MRN-295066
+              - button [ref=f9e190] [cursor=pointer]: Emergency Access
+          - generic [ref=f9e191]:
+            - generic [ref=f9e193]:
+              - generic [ref=f9e194]:
+                - generic [ref=f9e195]: RR
+                - generic [ref=f9e197]:
+                  - paragraph [ref=f9e198]: Rory Rutherford
+                  - paragraph [ref=f9e199]: MRN-295066
+                - generic [ref=f9e200]: Active
+              - generic [ref=f9e202]:
+                - generic [ref=f9e207]:
+                  - generic [ref=f9e208]: Age / Gender
+                  - generic [ref=f9e209]: 39 yrs · Male
+                - generic [ref=f9e213]:
+                  - generic [ref=f9e214]: Date of birth
+                  - generic [ref=f9e215]: 1986-11-02
+                - generic [ref=f9e219]:
+                  - generic [ref=f9e220]: Phone
+                  - generic [ref=f9e221]: "+19304537918"
+                - generic [ref=f9e226]:
+                  - generic [ref=f9e227]: Email
+                  - generic [ref=f9e228]: rory.rutherford1@yahoo.com
+                - generic [ref=f9e233]:
+                  - generic [ref=f9e234]: Address
+                  - generic [ref=f9e235]: 8688 Makenna Center, Lagos
+            - generic [ref=f9e236]:
+              - tablist [ref=f9e237]:
+                - tab [selected] [ref=f9e238] [cursor=pointer]: Overview
+                - tab [ref=f9e239] [cursor=pointer]: Medical History
+                - tab [ref=f9e240] [cursor=pointer]: Appointments
+                - tab [ref=f9e241] [cursor=pointer]: Lab
+                - tab [ref=f9e242] [cursor=pointer]: Imaging
+                - tab [ref=f9e243] [cursor=pointer]: Pharmacy
+              - tabpanel [ref=f9e244]:
+                - generic [ref=f9e245]:
+                  - generic [ref=f9e246]: Allergies
+                  - list [ref=f9e249]:
+                    - listitem [ref=f9e250]:
+                      - generic [ref=f9e251]: Peanuts
+                      - generic [ref=f9e252]: Active
+    - generic [ref=f9e26]:
+      - heading [level=2] [ref=f9e254]: Command Palette
+      - paragraph [ref=f9e28]: Search for a command to run...
+    - button [ref=f9e255] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f9e35] [cursor=pointer]
+  - alert [ref=f9e256]
+  - dialog [ref=f9e260]:
+    - generic [ref=f9e261]:
+      - heading "Request emergency access" [level=2] [ref=f9e268]
+      - paragraph [ref=f9e269]: For Rory Rutherford. Use this only when normal access would delay urgent care — not out of curiosity, and not because the normal assignment process is inconvenient. Every request is logged and reviewed.
+    - generic [ref=f9e270]:
+      - paragraph [ref=f9e274]: Access granted this way is limited to this one patient and expires automatically after a short period. Printing, bulk export, deletion, and role administration stay blocked regardless.
+      - generic [ref=f9e275]:
+        - generic [ref=f9e276]: Confirm your password
+        - textbox "Confirm your password" [active] [ref=f9e277]:
+          - /placeholder: Re-enter your password to continue
+      - generic [ref=f9e278]:
+        - generic [ref=f9e279]: Reason
+        - combobox "Reason" [ref=f9e280] [cursor=pointer]:
+          - generic [ref=f9e281]: Select an emergency reason
+          - img: ▼
+        - textbox [ref=f9e282]
+      - generic [ref=f9e283]:
+        - generic [ref=f9e284]: Justification
+        - textbox "Justification" [ref=f9e285]:
+          - /placeholder: Briefly describe the emergency and why normal access isn't available in time
+        - paragraph [ref=f9e286]: 0/20 characters minimum
+    - generic [ref=f9e287]:
+      - button "Cancel" [ref=f9e288] [cursor=pointer]
+      - button "Confirm emergency access" [disabled]
+    - button "Close" [ref=f9e289] [cursor=pointer]

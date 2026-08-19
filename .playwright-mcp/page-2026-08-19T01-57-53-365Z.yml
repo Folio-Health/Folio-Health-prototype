@@ -1,0 +1,397 @@
+- generic [ref=f11e1]:
+  - generic [ref=f11e2]:
+    - complementary [ref=f11e3]:
+      - generic [ref=f11e4]:
+        - generic [ref=f11e5]:
+          - img "Folio" [ref=f11e6]
+          - generic [ref=f11e7]: Folio
+        - button "Collapse sidebar" [ref=f11e8] [cursor=pointer]
+      - navigation [ref=f11e9]:
+        - generic [ref=f11e10]:
+          - generic [ref=f11e11]:
+            - paragraph [ref=f11e12]: Overview
+            - link "Dashboard" [ref=f11e13] [cursor=pointer]:
+              - /url: /dashboard
+          - generic [ref=f11e20]:
+            - paragraph [ref=f11e21]: Facility
+            - link "Inventory" [ref=f11e22] [cursor=pointer]:
+              - /url: /inventory
+            - link "HR" [ref=f11e28] [cursor=pointer]:
+              - /url: /hr
+          - generic [ref=f11e34]:
+            - paragraph [ref=f11e35]: Insights
+            - link "Analytics" [ref=f11e36] [cursor=pointer]:
+              - /url: /analytics
+            - link "Communication" [ref=f11e40] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f11e44]:
+            - paragraph [ref=f11e45]: System
+            - link "Administration" [ref=f11e46] [cursor=pointer]:
+              - /url: /administration
+            - link "Settings" [ref=f11e51] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f11e56] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f11e61]:
+        - generic [ref=f11e62]: DD
+        - generic [ref=f11e64]:
+          - generic [ref=f11e65]: Demo Doctor
+          - generic [ref=f11e66]: Hospital admin (preview)
+    - generic [ref=f11e67]:
+      - banner [ref=f11e68]:
+        - button "Search patients, appointments... Ctrl K" [ref=f11e69] [cursor=pointer]:
+          - generic [ref=f11e73]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f11e74]:
+          - button "Quick create" [ref=f11e75] [cursor=pointer]
+          - button "Notifications" [ref=f11e76] [cursor=pointer]
+          - button "Toggle theme" [ref=f11e77] [cursor=pointer]
+          - button "Account menu" [expanded] [ref=f11e79] [cursor=pointer]:
+            - generic [ref=f11e80]: DD
+          - generic:
+            - generic:
+              - menu "Account menu":
+                - generic:
+                  - generic: DD
+                  - generic:
+                    - generic: Demo Doctor
+                    - generic: doctor@demo.folio
+                - separator
+                - group:
+                  - menuitem "My Profile"
+                  - menuitem "Settings"
+                  - menuitem "Help Center"
+                - separator
+                - menuitem "Preview as role" [expanded] [active] [ref=f11e771]
+                - menu "Preview as role" [ref=f11e777]:
+                  - menuitem "My role" [ref=f11e778]
+                  - separator [ref=f11e779]
+                  - menuitem "Hospital admin" [ref=f11e780]
+                  - menuitem "Doctor" [ref=f11e782]
+                  - menuitem "Nurse" [ref=f11e783]
+                  - menuitem "Receptionist" [ref=f11e784]
+                  - menuitem "Medical Records Officer" [ref=f11e785]
+                  - menuitem "Laboratory Scientist" [ref=f11e786]
+                  - menuitem "Pharmacist" [ref=f11e787]
+                  - menuitem "Billing / Cashier" [ref=f11e788]
+                - separator
+                - menuitem "Log Out"
+      - main [ref=f11e82]:
+        - generic [ref=f11e374]:
+          - generic [ref=f11e375]:
+            - navigation "breadcrumb" [ref=f11e376]:
+              - list [ref=f11e377]:
+                - generic [ref=f11e378]:
+                  - listitem [ref=f11e379]:
+                    - link "System" [disabled] [ref=f11e380]
+                  - listitem [ref=f11e381]
+                - generic [ref=f11e384]:
+                  - listitem [ref=f11e385]:
+                    - link "Administration" [disabled] [ref=f11e386]
+                  - listitem [ref=f11e387]
+                - listitem [ref=f11e391]:
+                  - link "Permissions" [disabled] [ref=f11e392]
+            - generic [ref=f11e394]:
+              - heading "Permission Matrix" [level=1] [ref=f11e395]
+              - paragraph [ref=f11e396]: What each role is granted in this build — defined in code, not editable here
+          - navigation [ref=f11e397]:
+            - link "Users" [ref=f11e398] [cursor=pointer]:
+              - /url: /administration/users
+            - link "Roles" [ref=f11e399] [cursor=pointer]:
+              - /url: /administration/roles
+            - link "Permissions" [ref=f11e400] [cursor=pointer]:
+              - /url: /administration/permissions
+            - link "Departments" [ref=f11e401] [cursor=pointer]:
+              - /url: /administration/departments
+            - link "Audit Logs" [ref=f11e402] [cursor=pointer]:
+              - /url: /administration/audit-logs
+            - link "Activity Logs" [ref=f11e403] [cursor=pointer]:
+              - /url: /administration/activity-logs
+            - link "Hospital Settings" [ref=f11e404] [cursor=pointer]:
+              - /url: /administration/hospital-settings
+            - link "System Configuration" [ref=f11e405] [cursor=pointer]:
+              - /url: /administration/system-configuration
+          - generic [ref=f11e406]:
+            - generic [ref=f11e407]:
+              - generic [ref=f11e408]: Permissions by Role
+              - generic [ref=f11e409]: A checkmark means the role holds that permission in the current release.
+            - table [ref=f11e413]:
+              - rowgroup [ref=f11e414]:
+                - row [ref=f11e415]:
+                  - columnheader "Permission" [ref=f11e416]
+                  - columnheader "Hospital admin" [ref=f11e417]
+                  - columnheader "Doctor" [ref=f11e418]
+                  - columnheader "Nurse" [ref=f11e419]
+                  - columnheader "Receptionist" [ref=f11e420]
+                  - columnheader "Medical Records Officer" [ref=f11e421]
+                  - columnheader "Laboratory Scientist" [ref=f11e422]
+                  - columnheader "Pharmacist" [ref=f11e423]
+                  - columnheader "Billing / Cashier" [ref=f11e424]
+              - rowgroup [ref=f11e425]:
+                - row [ref=f11e426]:
+                  - cell "View" [ref=f11e427]
+                  - cell [ref=f11e428]
+                  - cell [ref=f11e429]
+                  - cell [ref=f11e432]
+                  - cell [ref=f11e435]
+                  - cell [ref=f11e436]
+                  - cell [ref=f11e439]
+                  - cell [ref=f11e442]
+                  - cell [ref=f11e445]
+                - row [ref=f11e448]:
+                  - cell "Create" [ref=f11e449]
+                  - cell [ref=f11e450]
+                  - cell [ref=f11e451]
+                  - cell [ref=f11e454]
+                  - cell [ref=f11e457]
+                  - cell [ref=f11e460]
+                  - cell [ref=f11e461]
+                  - cell [ref=f11e462]
+                  - cell [ref=f11e463]
+                - row [ref=f11e464]:
+                  - cell "Amend" [ref=f11e465]
+                  - cell [ref=f11e466]
+                  - cell [ref=f11e467]
+                  - cell [ref=f11e470]
+                  - cell [ref=f11e471]
+                  - cell [ref=f11e472]
+                  - cell [ref=f11e475]
+                  - cell [ref=f11e476]
+                  - cell [ref=f11e477]
+                - row [ref=f11e478]:
+                  - cell "Sign" [ref=f11e479]
+                  - cell [ref=f11e480]
+                  - cell [ref=f11e481]
+                  - cell [ref=f11e484]
+                  - cell [ref=f11e485]
+                  - cell [ref=f11e486]
+                  - cell [ref=f11e487]
+                  - cell [ref=f11e488]
+                  - cell [ref=f11e489]
+                - row [ref=f11e490]:
+                  - cell "Prescribe" [ref=f11e491]
+                  - cell [ref=f11e492]
+                  - cell [ref=f11e493]
+                  - cell [ref=f11e496]
+                  - cell [ref=f11e497]
+                  - cell [ref=f11e498]
+                  - cell [ref=f11e499]
+                  - cell [ref=f11e500]
+                  - cell [ref=f11e501]
+                - row [ref=f11e502]:
+                  - cell "Order" [ref=f11e503]
+                  - cell [ref=f11e504]
+                  - cell [ref=f11e505]
+                  - cell [ref=f11e508]
+                  - cell [ref=f11e509]
+                  - cell [ref=f11e510]
+                  - cell [ref=f11e511]
+                  - cell [ref=f11e512]
+                  - cell [ref=f11e513]
+                - row [ref=f11e514]:
+                  - cell "Verify" [ref=f11e515]
+                  - cell [ref=f11e516]
+                  - cell [ref=f11e517]
+                  - cell [ref=f11e518]
+                  - cell [ref=f11e519]
+                  - cell [ref=f11e520]
+                  - cell [ref=f11e521]
+                  - cell [ref=f11e522]
+                  - cell [ref=f11e523]
+                - row [ref=f11e524]:
+                  - cell "Dispense" [ref=f11e525]
+                  - cell [ref=f11e526]
+                  - cell [ref=f11e527]
+                  - cell [ref=f11e528]
+                  - cell [ref=f11e529]
+                  - cell [ref=f11e530]
+                  - cell [ref=f11e531]
+                  - cell [ref=f11e532]
+                  - cell [ref=f11e533]
+                - row [ref=f11e534]:
+                  - cell "Administer" [ref=f11e535]
+                  - cell [ref=f11e536]
+                  - cell [ref=f11e537]
+                  - cell [ref=f11e538]
+                  - cell [ref=f11e541]
+                  - cell [ref=f11e542]
+                  - cell [ref=f11e543]
+                  - cell [ref=f11e544]
+                  - cell [ref=f11e545]
+                - row [ref=f11e546]:
+                  - cell "Print" [ref=f11e547]
+                  - cell [ref=f11e548]
+                  - cell [ref=f11e549]
+                  - cell [ref=f11e552]
+                  - cell [ref=f11e553]
+                  - cell [ref=f11e554]
+                  - cell [ref=f11e555]
+                  - cell [ref=f11e556]
+                  - cell [ref=f11e557]
+                - row [ref=f11e558]:
+                  - cell "Export" [ref=f11e559]
+                  - cell [ref=f11e560]
+                  - cell [ref=f11e561]
+                  - cell [ref=f11e562]
+                  - cell [ref=f11e563]
+                  - cell [ref=f11e564]
+                  - cell [ref=f11e567]
+                  - cell [ref=f11e568]
+                  - cell [ref=f11e569]
+                - row [ref=f11e570]:
+                  - cell "Disclose" [ref=f11e571]
+                  - cell [ref=f11e572]
+                  - cell [ref=f11e573]
+                  - cell [ref=f11e574]
+                  - cell [ref=f11e575]
+                  - cell [ref=f11e576]
+                  - cell [ref=f11e579]
+                  - cell [ref=f11e580]
+                  - cell [ref=f11e581]
+                - row [ref=f11e582]:
+                  - cell "Manage Users" [ref=f11e583]
+                  - cell [ref=f11e584]
+                  - cell [ref=f11e587]
+                  - cell [ref=f11e588]
+                  - cell [ref=f11e589]
+                  - cell [ref=f11e590]
+                  - cell [ref=f11e591]
+                  - cell [ref=f11e592]
+                  - cell [ref=f11e593]
+                - row [ref=f11e594]:
+                  - cell "Manage Roles" [ref=f11e595]
+                  - cell [ref=f11e596]
+                  - cell [ref=f11e599]
+                  - cell [ref=f11e600]
+                  - cell [ref=f11e601]
+                  - cell [ref=f11e602]
+                  - cell [ref=f11e603]
+                  - cell [ref=f11e604]
+                  - cell [ref=f11e605]
+                - row [ref=f11e606]:
+                  - cell "Manage Configuration" [ref=f11e607]
+                  - cell [ref=f11e608]
+                  - cell [ref=f11e611]
+                  - cell [ref=f11e612]
+                  - cell [ref=f11e613]
+                  - cell [ref=f11e614]
+                  - cell [ref=f11e615]
+                  - cell [ref=f11e616]
+                  - cell [ref=f11e617]
+                - row [ref=f11e618]:
+                  - cell "Lab Accept Specimen" [ref=f11e619]
+                  - cell [ref=f11e620]
+                  - cell [ref=f11e621]
+                  - cell [ref=f11e622]
+                  - cell [ref=f11e623]
+                  - cell [ref=f11e624]
+                  - cell [ref=f11e625]
+                  - cell [ref=f11e628]
+                  - cell [ref=f11e629]
+                - row [ref=f11e630]:
+                  - cell "Lab Enter Result" [ref=f11e631]
+                  - cell [ref=f11e632]
+                  - cell [ref=f11e633]
+                  - cell [ref=f11e634]
+                  - cell [ref=f11e635]
+                  - cell [ref=f11e636]
+                  - cell [ref=f11e637]
+                  - cell [ref=f11e640]
+                  - cell [ref=f11e641]
+                - row [ref=f11e642]:
+                  - cell "Lab Verify Result" [ref=f11e643]
+                  - cell [ref=f11e644]
+                  - cell [ref=f11e645]
+                  - cell [ref=f11e646]
+                  - cell [ref=f11e647]
+                  - cell [ref=f11e648]
+                  - cell [ref=f11e649]
+                  - cell [ref=f11e652]
+                  - cell [ref=f11e653]
+                - row [ref=f11e654]:
+                  - cell "Lab Release Result" [ref=f11e655]
+                  - cell [ref=f11e656]
+                  - cell [ref=f11e657]
+                  - cell [ref=f11e658]
+                  - cell [ref=f11e659]
+                  - cell [ref=f11e660]
+                  - cell [ref=f11e661]
+                  - cell [ref=f11e664]
+                  - cell [ref=f11e665]
+                - row [ref=f11e666]:
+                  - cell "Pharmacy Dispense" [ref=f11e667]
+                  - cell [ref=f11e668]
+                  - cell [ref=f11e669]
+                  - cell [ref=f11e670]
+                  - cell [ref=f11e671]
+                  - cell [ref=f11e672]
+                  - cell [ref=f11e673]
+                  - cell [ref=f11e674]
+                  - cell [ref=f11e677]
+                - row [ref=f11e678]:
+                  - cell "Pharmacy Reconcile" [ref=f11e679]
+                  - cell [ref=f11e680]
+                  - cell [ref=f11e681]
+                  - cell [ref=f11e682]
+                  - cell [ref=f11e683]
+                  - cell [ref=f11e684]
+                  - cell [ref=f11e685]
+                  - cell [ref=f11e686]
+                  - cell [ref=f11e689]
+                - row [ref=f11e690]:
+                  - cell "Pharmacy Document Intervention" [ref=f11e691]
+                  - cell [ref=f11e692]
+                  - cell [ref=f11e693]
+                  - cell [ref=f11e694]
+                  - cell [ref=f11e695]
+                  - cell [ref=f11e696]
+                  - cell [ref=f11e697]
+                  - cell [ref=f11e698]
+                  - cell [ref=f11e701]
+                - row [ref=f11e702]:
+                  - cell "Billing Post Charge" [ref=f11e703]
+                  - cell [ref=f11e704]
+                  - cell [ref=f11e705]
+                  - cell [ref=f11e706]
+                  - cell [ref=f11e707]
+                  - cell [ref=f11e708]
+                  - cell [ref=f11e709]
+                  - cell [ref=f11e710]
+                  - cell [ref=f11e711]
+                - row [ref=f11e714]:
+                  - cell "Billing Receive Payment" [ref=f11e715]
+                  - cell [ref=f11e716]
+                  - cell [ref=f11e717]
+                  - cell [ref=f11e718]
+                  - cell [ref=f11e719]
+                  - cell [ref=f11e720]
+                  - cell [ref=f11e721]
+                  - cell [ref=f11e722]
+                  - cell [ref=f11e723]
+                - row [ref=f11e726]:
+                  - cell "Billing Refund" [ref=f11e727]
+                  - cell [ref=f11e728]
+                  - cell [ref=f11e729]
+                  - cell [ref=f11e730]
+                  - cell [ref=f11e731]
+                  - cell [ref=f11e732]
+                  - cell [ref=f11e733]
+                  - cell [ref=f11e734]
+                  - cell [ref=f11e735]
+                - row [ref=f11e738]:
+                  - cell "Billing Claim" [ref=f11e739]
+                  - cell [ref=f11e740]
+                  - cell [ref=f11e741]
+                  - cell [ref=f11e742]
+                  - cell [ref=f11e743]
+                  - cell [ref=f11e744]
+                  - cell [ref=f11e745]
+                  - cell [ref=f11e746]
+                  - cell [ref=f11e747]
+    - generic [ref=f11e348]:
+      - heading "Command Palette" [level=2] [ref=f11e349]
+      - paragraph [ref=f11e350]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f11e351] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f11e750] [cursor=pointer]
+  - alert [ref=f11e365]: Permissions · Folio Health EMR

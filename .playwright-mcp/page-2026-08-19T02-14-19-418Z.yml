@@ -1,0 +1,299 @@
+- generic [ref=f17e1]:
+  - generic [ref=f17e2]:
+    - complementary [ref=f17e3]:
+      - generic [ref=f17e4]:
+        - generic [ref=f17e5]:
+          - img "Folio" [ref=f17e6]
+          - generic [ref=f17e7]: Folio
+        - button "Collapse sidebar" [ref=f17e8] [cursor=pointer]
+      - navigation [ref=f17e9]:
+        - generic [ref=f17e39]:
+          - generic [ref=f17e40]:
+            - paragraph [ref=f17e41]: Overview
+            - link "Dashboard" [ref=f17e42] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f17e49] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f17e54]:
+            - paragraph [ref=f17e55]: Front Desk
+            - link "Reception" [ref=f17e56] [cursor=pointer]:
+              - /url: /reception
+            - link "Appointments" [ref=f17e61] [cursor=pointer]:
+              - /url: /appointments
+          - generic [ref=f17e65]:
+            - paragraph [ref=f17e66]: Insights
+            - link "Communication" [ref=f17e67] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f17e71]:
+            - paragraph [ref=f17e72]: System
+            - link "Settings" [ref=f17e73] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f17e78] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f17e83]:
+        - generic [ref=f17e84]: DD
+        - generic [ref=f17e86]:
+          - generic [ref=f17e87]: Demo Doctor
+          - generic [ref=f17e88]: Receptionist (preview)
+    - generic [ref=f17e10]:
+      - banner [ref=f17e11]:
+        - button "Search patients, appointments... Ctrl K" [ref=f17e12] [cursor=pointer]:
+          - generic [ref=f17e16]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f17e17]:
+          - button "Quick create" [ref=f17e18] [cursor=pointer]
+          - button "Notifications" [ref=f17e19] [cursor=pointer]
+          - button "Toggle theme" [ref=f17e20] [cursor=pointer]
+          - button "Account menu" [ref=f17e22] [cursor=pointer]:
+            - generic [ref=f17e23]: DD
+      - main [ref=f17e25]:
+        - generic [ref=f17e89]:
+          - generic [ref=f17e90]:
+            - navigation "breadcrumb" [ref=f17e91]:
+              - list [ref=f17e92]:
+                - generic [ref=f17e93]:
+                  - listitem [ref=f17e94]:
+                    - link "Pharmacy & Finance" [disabled] [ref=f17e95]
+                  - listitem [ref=f17e96]
+                - listitem [ref=f17e100]:
+                  - link "Pharmacy" [disabled] [ref=f17e101]
+            - generic [ref=f17e103]:
+              - heading "Pharmacy" [level=1] [ref=f17e104]
+              - paragraph [ref=f17e105]: Prescriptions awaiting dispensing and dispensing history
+          - navigation [ref=f17e106]:
+            - link "Prescriptions" [ref=f17e107] [cursor=pointer]:
+              - /url: /pharmacy
+            - link "Inventory" [ref=f17e108] [cursor=pointer]:
+              - /url: /pharmacy/inventory
+            - link "Suppliers" [ref=f17e109] [cursor=pointer]:
+              - /url: /pharmacy/suppliers
+            - link "Purchase Orders" [ref=f17e110] [cursor=pointer]:
+              - /url: /pharmacy/purchase-orders
+          - generic [ref=f17e111]:
+            - generic [ref=f17e113]:
+              - paragraph [ref=f17e115]: To Dispense
+              - paragraph [ref=f17e121]: "13"
+            - generic [ref=f17e123]:
+              - paragraph [ref=f17e125]: Dispensed Today
+              - paragraph [ref=f17e131]: "2"
+            - generic [ref=f17e133]:
+              - paragraph [ref=f17e135]: Low Stock Items
+              - paragraph [ref=f17e140]: "15"
+            - generic [ref=f17e142]:
+              - paragraph [ref=f17e144]: Expiring This Month
+              - paragraph [ref=f17e151]: "2"
+          - tablist [ref=f17e153]:
+            - tab "All Prescriptions" [selected] [ref=f17e154] [cursor=pointer]
+            - tab "To Dispense" [ref=f17e155] [cursor=pointer]
+            - tab "Dispensed" [ref=f17e156] [cursor=pointer]
+            - tab "Cancelled" [ref=f17e157] [cursor=pointer]
+          - generic [ref=f17e159]:
+            - group [ref=f17e160]:
+              - group [ref=f17e161]
+              - textbox "Search by Rx ID, patient, or drug..." [ref=f17e165]
+            - table [ref=f17e168]:
+              - rowgroup [ref=f17e169]:
+                - row [ref=f17e170]:
+                  - columnheader [ref=f17e171]:
+                    - button "Rx ID" [ref=f17e172] [cursor=pointer]
+                  - columnheader "Patient" [ref=f17e173]
+                  - columnheader "Medications" [ref=f17e174]
+                  - columnheader "Prescribed By" [ref=f17e175]
+                  - columnheader [ref=f17e176]:
+                    - button "Date" [ref=f17e177] [cursor=pointer]
+                  - columnheader "Status" [ref=f17e178]
+                  - columnheader [ref=f17e179]
+              - rowgroup [ref=f17e180]:
+                - row [ref=f17e181] [cursor=pointer]:
+                  - cell "RX-0005" [ref=f17e182]
+                  - cell "NK Nelson Klocko PT-1156" [ref=f17e183]:
+                    - generic [ref=f17e184]:
+                      - generic [ref=f17e185]: NK
+                      - generic [ref=f17e187]:
+                        - generic [ref=f17e188]: Nelson Klocko
+                        - generic [ref=f17e189]: PT-1156
+                  - cell "Ciprofloxacin 500mg 1 sachet OD +2 more" [ref=f17e190]:
+                    - generic [ref=f17e191]:
+                      - generic [ref=f17e192]: Ciprofloxacin 500mg 1 sachet OD
+                      - generic [ref=f17e193]: +2 more
+                  - cell "Dr. Nathanial Effertz" [ref=f17e194]
+                  - cell "19 Aug 2026" [ref=f17e195]
+                  - cell "Dispensed" [ref=f17e196]
+                  - cell [ref=f17e199]:
+                    - button [ref=f17e200]
+                - row [ref=f17e201] [cursor=pointer]:
+                  - cell "RX-0003" [ref=f17e202]
+                  - cell "KM Kara Medhurst PT-1092" [ref=f17e203]:
+                    - generic [ref=f17e204]:
+                      - generic [ref=f17e205]: KM
+                      - generic [ref=f17e207]:
+                        - generic [ref=f17e208]: Kara Medhurst
+                        - generic [ref=f17e209]: PT-1092
+                  - cell "Losartan 50mg As directed +1 more" [ref=f17e210]:
+                    - generic [ref=f17e211]:
+                      - generic [ref=f17e212]: Losartan 50mg As directed
+                      - generic [ref=f17e213]: +1 more
+                  - cell "Dr. Stanley Roob" [ref=f17e214]
+                  - cell "19 Aug 2026" [ref=f17e215]
+                  - cell "Dispensed" [ref=f17e216]
+                  - cell [ref=f17e219]:
+                    - button [ref=f17e220]
+                - row [ref=f17e221] [cursor=pointer]:
+                  - cell "RX-0006" [ref=f17e222]
+                  - cell "ES Elna Shanahan PT-1059" [ref=f17e223]:
+                    - generic [ref=f17e224]:
+                      - generic [ref=f17e225]: ES
+                      - generic [ref=f17e227]:
+                        - generic [ref=f17e228]: Elna Shanahan
+                        - generic [ref=f17e229]: PT-1059
+                  - cell "Ketoconazole 200mg 1 tab BD x 5/7 +1 more" [ref=f17e230]:
+                    - generic [ref=f17e231]:
+                      - generic [ref=f17e232]: Ketoconazole 200mg 1 tab BD x 5/7
+                      - generic [ref=f17e233]: +1 more
+                  - cell "Dr. Keegan Hegmann" [ref=f17e234]
+                  - cell "19 Aug 2026" [ref=f17e235]
+                  - cell "To Dispense" [ref=f17e236]
+                  - cell [ref=f17e239]:
+                    - button [expanded] [ref=f17e241]
+                    - menu [active] [ref=f17e245]:
+                      - menuitem "View" [ref=f17e246]
+                      - menuitem "Print" [ref=f17e247]
+                - row [ref=f17e250] [cursor=pointer]:
+                  - cell "RX-0001" [ref=f17e251]
+                  - cell "AW Angelina Wolff PT-1046" [ref=f17e252]:
+                    - generic [ref=f17e253]:
+                      - generic [ref=f17e254]: AW
+                      - generic [ref=f17e256]:
+                        - generic [ref=f17e257]: Angelina Wolff
+                        - generic [ref=f17e258]: PT-1046
+                  - cell "Gliclazide 80mg 2 tabs TDS x 5/7 +2 more" [ref=f17e259]:
+                    - generic [ref=f17e260]:
+                      - generic [ref=f17e261]: Gliclazide 80mg 2 tabs TDS x 5/7
+                      - generic [ref=f17e262]: +2 more
+                  - cell "Dr. Louvenia Brakus" [ref=f17e263]
+                  - cell "19 Aug 2026" [ref=f17e264]
+                  - cell "To Dispense" [ref=f17e265]
+                  - cell [ref=f17e268]:
+                    - button [ref=f17e269]
+                - row [ref=f17e270] [cursor=pointer]:
+                  - cell "RX-0007" [ref=f17e271]
+                  - cell "KS Kevin Schneider PT-1065" [ref=f17e272]:
+                    - generic [ref=f17e273]:
+                      - generic [ref=f17e274]: KS
+                      - generic [ref=f17e276]:
+                        - generic [ref=f17e277]: Kevin Schneider
+                        - generic [ref=f17e278]: PT-1065
+                  - cell "Prednisolone 5mg As directed +2 more" [ref=f17e279]:
+                    - generic [ref=f17e280]:
+                      - generic [ref=f17e281]: Prednisolone 5mg As directed
+                      - generic [ref=f17e282]: +2 more
+                  - cell "Dr. Ramiro Brakus" [ref=f17e283]
+                  - cell "18 Aug 2026" [ref=f17e284]
+                  - cell "To Dispense" [ref=f17e285]
+                  - cell [ref=f17e288]:
+                    - button [ref=f17e289]
+                - row [ref=f17e290] [cursor=pointer]:
+                  - cell "RX-0004" [ref=f17e291]
+                  - cell "SL Stephanie Lynch PT-1043" [ref=f17e292]:
+                    - generic [ref=f17e293]:
+                      - generic [ref=f17e294]: SL
+                      - generic [ref=f17e296]:
+                        - generic [ref=f17e297]: Stephanie Lynch
+                        - generic [ref=f17e298]: PT-1043
+                  - cell "Cefuroxime 500mg 1 cap OD x 10/7" [ref=f17e299]
+                  - cell "Dr. Kali Koch" [ref=f17e302]
+                  - cell "18 Aug 2026" [ref=f17e303]
+                  - cell "Dispensed" [ref=f17e304]
+                  - cell [ref=f17e307]:
+                    - button [ref=f17e308]
+                - row [ref=f17e309] [cursor=pointer]:
+                  - cell "RX-0008" [ref=f17e310]
+                  - cell "AH Anastasia Haley PT-1007" [ref=f17e311]:
+                    - generic [ref=f17e312]:
+                      - generic [ref=f17e313]: AH
+                      - generic [ref=f17e315]:
+                        - generic [ref=f17e316]: Anastasia Haley
+                        - generic [ref=f17e317]: PT-1007
+                  - cell "Chlorpheniramine 4mg 1 sachet OD" [ref=f17e318]
+                  - cell "Dr. Stanley Roob" [ref=f17e321]
+                  - cell "18 Aug 2026" [ref=f17e322]
+                  - cell "Dispensed" [ref=f17e323]
+                  - cell [ref=f17e326]:
+                    - button [ref=f17e327]
+                - row [ref=f17e328] [cursor=pointer]:
+                  - cell "RX-0036" [ref=f17e329]
+                  - cell "KS Kevin Schneider PT-1065" [ref=f17e330]:
+                    - generic [ref=f17e331]:
+                      - generic [ref=f17e332]: KS
+                      - generic [ref=f17e334]:
+                        - generic [ref=f17e335]: Kevin Schneider
+                        - generic [ref=f17e336]: PT-1065
+                  - cell "Vitamin D3 1000IU As directed +2 more" [ref=f17e337]:
+                    - generic [ref=f17e338]:
+                      - generic [ref=f17e339]: Vitamin D3 1000IU As directed
+                      - generic [ref=f17e340]: +2 more
+                  - cell "Dr. Ivah Berge" [ref=f17e341]
+                  - cell "18 Aug 2026" [ref=f17e342]
+                  - cell "Dispensed" [ref=f17e343]
+                  - cell [ref=f17e346]:
+                    - button [ref=f17e347]
+                - row [ref=f17e348] [cursor=pointer]:
+                  - cell "RX-0002" [ref=f17e349]
+                  - cell "ES Ena Schowalter-Lang PT-1169" [ref=f17e350]:
+                    - generic [ref=f17e351]:
+                      - generic [ref=f17e352]: ES
+                      - generic [ref=f17e354]:
+                        - generic [ref=f17e355]: Ena Schowalter-Lang
+                        - generic [ref=f17e356]: PT-1169
+                  - cell "Paracetamol 500mg 2 tabs TDS x 5/7 +2 more" [ref=f17e357]:
+                    - generic [ref=f17e358]:
+                      - generic [ref=f17e359]: Paracetamol 500mg 2 tabs TDS x 5/7
+                      - generic [ref=f17e360]: +2 more
+                  - cell "Dr. Bertha Huels" [ref=f17e361]
+                  - cell "18 Aug 2026" [ref=f17e362]
+                  - cell "Dispensed" [ref=f17e363]
+                  - cell [ref=f17e366]:
+                    - button [ref=f17e367]
+                - row [ref=f17e368] [cursor=pointer]:
+                  - cell "RX-0013" [ref=f17e369]
+                  - cell "TC Tremayne Cartwright PT-1166" [ref=f17e370]:
+                    - generic [ref=f17e371]:
+                      - generic [ref=f17e372]: TC
+                      - generic [ref=f17e374]:
+                        - generic [ref=f17e375]: Tremayne Cartwright
+                        - generic [ref=f17e376]: PT-1166
+                  - cell "Folic Acid 5mg 1 cap OD x 10/7 +2 more" [ref=f17e377]:
+                    - generic [ref=f17e378]:
+                      - generic [ref=f17e379]: Folic Acid 5mg 1 cap OD x 10/7
+                      - generic [ref=f17e380]: +2 more
+                  - cell "Dr. Ramiro Brakus" [ref=f17e381]
+                  - cell "17 Aug 2026" [ref=f17e382]
+                  - cell "Dispensed" [ref=f17e383]
+                  - cell [ref=f17e386]:
+                    - button [ref=f17e387]
+            - generic [ref=f17e388]:
+              - paragraph [ref=f17e389]: Showing 1 to 10 of 46
+              - generic [ref=f17e390]:
+                - generic [ref=f17e391]:
+                  - paragraph [ref=f17e392]: Rows per page
+                  - combobox [ref=f17e393] [cursor=pointer]:
+                    - generic [ref=f17e394]: "10"
+                    - img: ▼
+                  - textbox [ref=f17e395]: "10"
+                - generic [ref=f17e396]:
+                  - button "First page" [disabled]
+                  - button "Previous page" [disabled]
+                  - button "1" [ref=f17e398] [cursor=pointer]
+                  - button "2" [ref=f17e400] [cursor=pointer]
+                  - generic [ref=f17e401]:
+                    - generic [ref=f17e402]: …
+                    - button "5" [ref=f17e403] [cursor=pointer]
+                  - button "Next page" [ref=f17e404] [cursor=pointer]
+                  - button "Last page" [ref=f17e405] [cursor=pointer]
+    - generic [ref=f17e26]:
+      - heading "Command Palette" [level=2] [ref=f17e27]
+      - paragraph [ref=f17e28]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f17e29] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f17e35] [cursor=pointer]
+  - alert [ref=f17e406]

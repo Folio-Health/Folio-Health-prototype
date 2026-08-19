@@ -1,0 +1,134 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e331]:
+    - complementary [ref=f2e332]:
+      - generic [ref=f2e333]:
+        - generic [ref=f2e334]:
+          - img "Folio" [ref=f2e335]
+          - generic [ref=f2e336]: Folio
+        - button "Collapse sidebar" [ref=f2e337] [cursor=pointer]
+      - navigation [ref=f2e338]:
+        - generic [ref=f2e339]:
+          - generic [ref=f2e340]:
+            - paragraph [ref=f2e341]: Overview
+            - link "Dashboard" [ref=f2e342] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f2e349] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f2e878]:
+            - paragraph [ref=f2e879]: Pharmacy & Finance
+            - link "Billing" [ref=f2e880] [cursor=pointer]:
+              - /url: /billing
+          - generic [ref=f2e440]:
+            - paragraph [ref=f2e441]: Insights
+            - link "Communication" [ref=f2e442] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f2e446]:
+            - paragraph [ref=f2e447]: System
+            - link "Settings" [ref=f2e448] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f2e453] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f2e458]:
+        - generic [ref=f2e459]: DD
+        - generic [ref=f2e461]:
+          - generic [ref=f2e462]: Demo Doctor
+          - generic [ref=f2e463]: Billing / Cashier (preview)
+    - generic [ref=f2e464]:
+      - banner [ref=f2e465]:
+        - button "Search patients, appointments... Ctrl K" [ref=f2e466] [cursor=pointer]:
+          - generic [ref=f2e470]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f2e471]:
+          - button "Quick create" [ref=f2e472] [cursor=pointer]
+          - button "Notifications" [ref=f2e473] [cursor=pointer]
+          - button "Toggle theme" [ref=f2e474] [cursor=pointer]
+          - button "Account menu" [expanded] [ref=f2e476] [cursor=pointer]:
+            - generic [ref=f2e477]: DD
+          - menu "Account menu" [active] [ref=f2e1017]:
+            - generic [ref=f2e1018]:
+              - generic [ref=f2e1019]: DD
+              - generic [ref=f2e1021]:
+                - generic [ref=f2e1022]: Demo Doctor
+                - generic [ref=f2e1023]: doctor@demo.folio
+            - separator [ref=f2e1024]
+            - group [ref=f2e1025]:
+              - menuitem "My Profile" [ref=f2e1026]
+              - menuitem "Settings" [ref=f2e1027]
+              - menuitem "Help Center" [ref=f2e1028]
+            - separator [ref=f2e1029]
+            - menuitem "Preview as role" [ref=f2e1030]
+            - separator [ref=f2e1031]
+            - menuitem "Log Out" [ref=f2e1032]
+      - main [ref=f2e479]:
+        - generic [ref=f2e480]:
+          - generic [ref=f2e483]:
+            - heading "Dashboard" [level=1] [ref=f2e484]
+            - paragraph [ref=f2e485]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=f2e885]:
+            - generic [ref=f2e886]:
+              - generic [ref=f2e888]:
+                - paragraph [ref=f2e890]: Total Invoices
+                - paragraph [ref=f2e896]: "250"
+              - generic [ref=f2e898]:
+                - paragraph [ref=f2e900]: Paid Invoices
+                - paragraph [ref=f2e906]: "180"
+              - generic [ref=f2e908]:
+                - paragraph [ref=f2e910]: Outstanding
+                - paragraph [ref=f2e915]: "70"
+              - generic [ref=f2e917]:
+                - paragraph [ref=f2e919]: Total Revenue (MTD)
+                - paragraph [ref=f2e925]: N12.45M
+            - generic [ref=f2e926]:
+              - generic [ref=f2e927]:
+                - generic [ref=f2e928]:
+                  - generic [ref=f2e929]: Revenue Trend
+                  - generic [ref=f2e930]: Last 6 months (₦ millions)
+                - application [ref=f2e936]:
+                  - generic [ref=f2e946]:
+                    - generic [ref=f2e947]:
+                      - generic [ref=f2e948]: Jan
+                      - generic [ref=f2e950]: Feb
+                      - generic [ref=f2e952]: Mar
+                      - generic [ref=f2e954]: Apr
+                      - generic [ref=f2e956]: May
+                      - generic [ref=f2e958]: Jun
+                    - generic [ref=f2e960]:
+                      - generic [ref=f2e961]: ₦0M
+                      - generic [ref=f2e963]: ₦4M
+                      - generic [ref=f2e965]: ₦8M
+                      - generic [ref=f2e967]: ₦12M
+                      - generic [ref=f2e969]: ₦16M
+              - generic [ref=f2e971]:
+                - generic [ref=f2e972]:
+                  - generic [ref=f2e973]: Outstanding Bills
+                  - button "View all" [ref=f2e975] [cursor=pointer]
+                - generic [ref=f2e976]:
+                  - generic [ref=f2e977]:
+                    - generic [ref=f2e978]:
+                      - paragraph [ref=f2e979]: Delia Reilly
+                      - paragraph [ref=f2e980]: INV-0032
+                    - generic [ref=f2e981]:
+                      - generic [ref=f2e982]: N45,000
+                      - generic [ref=f2e983]: Overdue
+                  - generic [ref=f2e985]:
+                    - generic [ref=f2e986]:
+                      - paragraph [ref=f2e987]: Lorraine Kutch
+                      - paragraph [ref=f2e988]: INV-0041
+                    - generic [ref=f2e989]:
+                      - generic [ref=f2e990]: N18,500
+                      - generic [ref=f2e991]: Partial
+                  - generic [ref=f2e993]:
+                    - generic [ref=f2e994]:
+                      - paragraph [ref=f2e995]: Christ Legros
+                      - paragraph [ref=f2e996]: INV-0055
+                    - generic [ref=f2e997]:
+                      - generic [ref=f2e998]: N62,000
+                      - generic [ref=f2e999]: Overdue
+    - generic [ref=f2e561]:
+      - heading "Command Palette" [level=2] [ref=f2e562]
+      - paragraph [ref=f2e563]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f2e564] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f2e35] [cursor=pointer]
+  - alert [ref=f2e245]: Dashboard
+  - generic [ref=f2e1012]: ₦0M

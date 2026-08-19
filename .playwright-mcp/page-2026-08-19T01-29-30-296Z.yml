@@ -1,0 +1,157 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e331]:
+    - complementary [ref=f2e332]:
+      - generic [ref=f2e333]:
+        - generic [ref=f2e334]:
+          - img "Folio" [ref=f2e335]
+          - generic [ref=f2e336]: Folio
+        - button "Collapse sidebar" [ref=f2e337] [cursor=pointer]
+      - navigation [ref=f2e338]:
+        - generic [ref=f2e339]:
+          - generic [ref=f2e340]:
+            - paragraph [ref=f2e341]: Overview
+            - link "Dashboard" [ref=f2e342] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f2e349] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f2e354]:
+            - paragraph [ref=f2e355]: Front Desk
+            - link "Patients" [ref=f2e356] [cursor=pointer]:
+              - /url: /patients
+            - link "Appointments" [ref=f2e363] [cursor=pointer]:
+              - /url: /appointments
+          - generic [ref=f2e367]:
+            - paragraph [ref=f2e368]: Clinical
+            - link "Consultation" [ref=f2e369] [cursor=pointer]:
+              - /url: /consultation
+            - link "Vitals" [ref=f2e375] [cursor=pointer]:
+              - /url: /vitals
+            - link "Nursing" [ref=f2e379] [cursor=pointer]:
+              - /url: /nursing
+            - link "Emergency" [ref=f2e384] [cursor=pointer]:
+              - /url: /emergency
+            - link "Surgery" [ref=f2e391] [cursor=pointer]:
+              - /url: /surgery
+            - link "Pediatrics" [ref=f2e399] [cursor=pointer]:
+              - /url: /pediatrics
+            - link "Obstetrics" [ref=f2e404] [cursor=pointer]:
+              - /url: /obstetrics
+          - generic [ref=f2e409]:
+            - paragraph [ref=f2e410]: Diagnostics
+            - link "Laboratory" [ref=f2e411] [cursor=pointer]:
+              - /url: /laboratory
+            - link "Radiology" [ref=f2e415] [cursor=pointer]:
+              - /url: /radiology
+            - link "Blood Bank" [ref=f2e422] [cursor=pointer]:
+              - /url: /blood-bank
+          - generic [ref=f2e426]:
+            - paragraph [ref=f2e427]: Pharmacy & Finance
+            - link "Pharmacy" [ref=f2e428] [cursor=pointer]:
+              - /url: /pharmacy
+          - generic [ref=f2e433]:
+            - paragraph [ref=f2e434]: Facility
+            - link "Admissions" [ref=f2e435] [cursor=pointer]:
+              - /url: /admissions
+          - generic [ref=f2e440]:
+            - paragraph [ref=f2e441]: Insights
+            - link "Communication" [ref=f2e442] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f2e446]:
+            - paragraph [ref=f2e447]: System
+            - link "Settings" [ref=f2e448] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f2e453] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f2e458]:
+        - generic [ref=f2e459]: DD
+        - generic [ref=f2e461]:
+          - generic [ref=f2e462]: Demo Doctor
+          - generic [ref=f2e463]: Doctor
+    - generic [ref=f2e464]:
+      - banner [ref=f2e465]:
+        - button "Search patients, appointments... Ctrl K" [ref=f2e466] [cursor=pointer]:
+          - generic [ref=f2e470]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f2e471]:
+          - button "Quick create" [ref=f2e472] [cursor=pointer]
+          - button "Notifications" [ref=f2e473] [cursor=pointer]
+          - button "Toggle theme" [ref=f2e474] [cursor=pointer]
+          - button "Account menu" [expanded] [ref=f2e476] [cursor=pointer]:
+            - generic [ref=f2e477]: DD
+          - generic:
+            - generic:
+              - menu "Account menu":
+                - generic:
+                  - generic: DD
+                  - generic:
+                    - generic: Demo Doctor
+                    - generic: doctor@demo.folio
+                - separator
+                - group:
+                  - menuitem "My Profile"
+                  - menuitem "Settings"
+                  - menuitem "Help Center"
+                - separator
+                - menuitem "Preview as role" [expanded] [active] [ref=f2e582]
+                - menu "Preview as role" [ref=f2e588]:
+                  - menuitem "My role" [ref=f2e589]
+                  - separator [ref=f2e591]
+                  - menuitem "Hospital admin" [ref=f2e592]
+                  - menuitem "Doctor" [ref=f2e593]
+                  - menuitem "Nurse" [ref=f2e594]
+                  - menuitem "Receptionist" [ref=f2e595]
+                  - menuitem "Medical Records Officer" [ref=f2e596]
+                  - menuitem "Laboratory Scientist" [ref=f2e597]
+                  - menuitem "Pharmacist" [ref=f2e598]
+                  - menuitem "Billing / Cashier" [ref=f2e599]
+                - separator
+                - menuitem "Log Out"
+      - main [ref=f2e479]:
+        - generic [ref=f2e480]:
+          - generic [ref=f2e483]:
+            - heading "Dashboard" [level=1] [ref=f2e484]
+            - paragraph [ref=f2e485]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=f2e486]:
+            - generic [ref=f2e488]:
+              - generic [ref=f2e489]:
+                - generic [ref=f2e490]: DD
+                - generic [ref=f2e492]:
+                  - paragraph [ref=f2e493]: Good morning, Demo Doctor
+                  - paragraph [ref=f2e494]: Attending Physician · Orthopedics
+              - button "Go to Workspace" [ref=f2e495] [cursor=pointer]
+            - generic [ref=f2e496]:
+              - generic [ref=f2e498]:
+                - paragraph [ref=f2e500]: Today's Appointments
+                - paragraph [ref=f2e506]: "12"
+              - generic [ref=f2e508]:
+                - paragraph [ref=f2e510]: Completed Today
+                - paragraph [ref=f2e516]: "5"
+              - generic [ref=f2e518]:
+                - paragraph [ref=f2e520]: Pending Reviews
+                - paragraph [ref=f2e526]: "8"
+              - generic [ref=f2e528]:
+                - paragraph [ref=f2e530]: Avg. Consult Time
+                - paragraph [ref=f2e536]: 18 min
+            - generic [ref=f2e537]:
+              - generic [ref=f2e538]:
+                - generic [ref=f2e539]:
+                  - generic [ref=f2e540]: Today's Schedule
+                  - generic [ref=f2e541]: Your appointments for today
+                  - button "View calendar" [ref=f2e543] [cursor=pointer]
+                - generic [ref=f2e550]:
+                  - paragraph [ref=f2e551]: No appointments today
+                  - paragraph [ref=f2e552]: Enjoy the quiet moment. New bookings will show up here.
+              - generic [ref=f2e553]:
+                - generic [ref=f2e554]: Quick Actions
+                - generic [ref=f2e556]:
+                  - button "Write Prescription" [ref=f2e557] [cursor=pointer]
+                  - button "Order Lab Test" [ref=f2e558] [cursor=pointer]
+                  - button "Request Imaging" [ref=f2e559] [cursor=pointer]
+                  - button "View My Patients" [ref=f2e560] [cursor=pointer]
+    - generic [ref=f2e561]:
+      - heading "Command Palette" [level=2] [ref=f2e562]
+      - paragraph [ref=f2e563]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f2e564] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f2e35] [cursor=pointer]
+  - alert [ref=f2e245]: Dashboard · Folio Health EMR

@@ -1,0 +1,113 @@
+- generic [ref=f9e1]:
+  - generic [ref=f9e2]:
+    - complementary [ref=f9e3]:
+      - generic [ref=f9e4]:
+        - generic [ref=f9e5]:
+          - img "Folio" [ref=f9e542]
+          - generic [ref=f9e7]: Folio
+        - button "Collapse sidebar" [ref=f9e543] [cursor=pointer]
+      - navigation [ref=f9e9]:
+        - generic [ref=f9e41]:
+          - generic [ref=f9e42]:
+            - paragraph [ref=f9e43]: Overview
+            - link "Dashboard" [ref=f9e544] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f9e545] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f9e128]:
+            - paragraph [ref=f9e129]: Pharmacy & Finance
+            - link "Billing" [ref=f9e618] [cursor=pointer]:
+              - /url: /billing
+          - generic [ref=f9e142]:
+            - paragraph [ref=f9e143]: Insights
+            - link "Communication" [ref=f9e560] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f9e148]:
+            - paragraph [ref=f9e149]: System
+            - link "Settings" [ref=f9e561] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f9e562] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f9e160]:
+        - generic [ref=f9e161]: DD
+        - generic [ref=f9e163]:
+          - generic [ref=f9e164]: Demo Doctor
+          - generic [ref=f9e165]: Billing / Cashier (preview)
+    - generic [ref=f9e10]:
+      - banner [ref=f9e11]:
+        - button "Search patients, appointments... Ctrl K" [ref=f9e563] [cursor=pointer]:
+          - generic [ref=f9e16]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f9e17]:
+          - button "Quick create" [ref=f9e564] [cursor=pointer]
+          - button "Notifications" [ref=f9e565] [cursor=pointer]
+          - button "Toggle theme" [ref=f9e566] [cursor=pointer]
+          - button "Account menu" [active] [ref=f9e568] [cursor=pointer]:
+            - generic [ref=f9e23]: DD
+      - main [ref=f9e25]:
+        - generic [ref=f9e171]:
+          - generic [ref=f9e172]:
+            - navigation "breadcrumb" [ref=f9e590]:
+              - list [ref=f9e174]:
+                - generic [ref=f9e175]:
+                  - listitem [ref=f9e176]:
+                    - link "Patients" [ref=f9e591] [cursor=pointer]:
+                      - /url: /patients
+                  - listitem [ref=f9e178]
+                - listitem [ref=f9e182]:
+                  - link "Rory Rutherford" [disabled] [ref=f9e592]
+            - generic [ref=f9e185]:
+              - heading "Rory Rutherford" [level=1] [ref=f9e593]
+              - paragraph [ref=f9e187]: MRN MRN-295066
+          - generic [ref=f9e191]:
+            - generic [ref=f9e193]:
+              - generic [ref=f9e194]:
+                - generic [ref=f9e195]: RR
+                - generic [ref=f9e197]:
+                  - paragraph [ref=f9e198]: Rory Rutherford
+                  - paragraph [ref=f9e199]: MRN-295066
+                - generic [ref=f9e200]: Active
+              - generic [ref=f9e202]:
+                - generic [ref=f9e207]:
+                  - generic [ref=f9e208]: Age / Gender
+                  - generic [ref=f9e209]: 39 yrs · Male
+                - generic [ref=f9e213]:
+                  - generic [ref=f9e214]: Date of birth
+                  - generic [ref=f9e215]: 1986-11-02
+                - generic [ref=f9e219]:
+                  - generic [ref=f9e220]: Phone
+                  - generic [ref=f9e221]: "+19304537918"
+                - generic [ref=f9e226]:
+                  - generic [ref=f9e227]: Email
+                  - generic [ref=f9e228]: rory.rutherford1@yahoo.com
+                - generic [ref=f9e233]:
+                  - generic [ref=f9e234]: Address
+                  - generic [ref=f9e235]: 8688 Makenna Center, Lagos
+            - generic [ref=f9e236]:
+              - tablist [ref=f9e237]:
+                - tab "Billing" [selected] [ref=f9e623] [cursor=pointer]
+              - tabpanel "Billing" [ref=f9e624]:
+                - generic [ref=f9e625]:
+                  - generic [ref=f9e630]:
+                    - paragraph [ref=f9e631]: Invoices
+                    - paragraph [ref=f9e632]: Invoices and claims are managed in the Billing module.
+                  - button "Open module" [ref=f9e633] [cursor=pointer]
+    - generic [ref=f9e26]:
+      - heading "Command Palette" [level=2] [ref=f9e602]
+      - paragraph [ref=f9e28]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f9e603] [cursor=pointer]
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f9e634]:
+        - button "Close toast" [ref=f9e635] [cursor=pointer]
+        - generic [ref=f9e643]: Now previewing as Billing / Cashier
+  - generic [ref=f9e34] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=f9e35]
+    - generic [ref=f9e645]:
+      - button "Open issues overlay" [ref=f9e646]:
+        - generic [ref=f9e647]:
+          - generic [ref=f9e648]: "0"
+          - generic [ref=f9e649]: "1"
+        - generic [ref=f9e650]: Issue
+      - button "Collapse issues badge" [ref=f9e651]
+  - alert [ref=f9e256]

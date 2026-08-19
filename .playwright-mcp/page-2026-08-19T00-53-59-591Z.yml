@@ -1,0 +1,150 @@
+- generic [ref=e1]:
+  - generic [ref=e60]:
+    - complementary [ref=e289]:
+      - generic [ref=e290]:
+        - generic [ref=e291]:
+          - img "Folio" [ref=e292]
+          - generic [ref=e293]: Folio
+        - button "Collapse sidebar" [ref=e294] [cursor=pointer]
+      - navigation [ref=e169]:
+        - generic [ref=e170]:
+          - generic [ref=e171]:
+            - paragraph [ref=e172]: Overview
+            - link "Dashboard" [ref=e173] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=e180] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=e185]:
+            - paragraph [ref=e186]: Front Desk
+            - link "Reception" [ref=e349] [cursor=pointer]:
+              - /url: /reception
+            - link "Appointments" [ref=e194] [cursor=pointer]:
+              - /url: /appointments
+          - generic [ref=e271]:
+            - paragraph [ref=e272]: Insights
+            - link "Communication" [ref=e273] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=e277]:
+            - paragraph [ref=e278]: System
+            - link "Settings" [ref=e279] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=e284] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=e295]:
+        - generic [ref=e296]: DD
+        - generic [ref=e298]:
+          - generic [ref=e299]: Demo Doctor
+          - generic [ref=e300]: Receptionist (preview)
+    - generic [ref=e61]:
+      - banner [ref=e62]:
+        - button "Search patients, appointments... Ctrl K" [ref=e64] [cursor=pointer]:
+          - generic [ref=e68]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=e69]:
+          - button "Quick create" [ref=e70] [cursor=pointer]
+          - button "Notifications" [ref=e71] [cursor=pointer]
+          - button "Toggle theme" [ref=e72] [cursor=pointer]
+          - button "Account menu" [expanded] [ref=e74] [cursor=pointer]:
+            - generic [ref=e75]: DD
+          - generic:
+            - generic:
+              - menu "Account menu":
+                - generic:
+                  - generic: DD
+                  - generic:
+                    - generic: Demo Doctor
+                    - generic: doctor@demo.folio
+                - separator
+                - group:
+                  - menuitem "My Profile"
+                  - menuitem "Settings"
+                  - menuitem "Help Center"
+                - separator
+                - menuitem "Preview as role" [expanded] [active] [ref=e482]
+                - menu "Preview as role" [ref=e488]:
+                  - menuitem "My role" [ref=e489]
+                  - separator [ref=e490]
+                  - menuitem "Hospital admin" [ref=e491]
+                  - menuitem "Doctor" [ref=e492]
+                  - menuitem "Nurse" [ref=e493]
+                  - menuitem "Receptionist" [ref=e494]
+                  - menuitem "Medical Records Officer" [ref=e496]
+                  - menuitem "Laboratory Scientist" [ref=e497]
+                  - menuitem "Pharmacist" [ref=e498]
+                  - menuitem "Billing / Cashier" [ref=e499]
+                - separator
+                - menuitem "Log Out"
+      - main [ref=e77]:
+        - generic [ref=e88]:
+          - generic [ref=e91]:
+            - heading "Dashboard" [level=1] [ref=e92]
+            - paragraph [ref=e93]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=e354]:
+            - generic [ref=e355]:
+              - generic [ref=e357]:
+                - paragraph [ref=e359]: Checked In Today
+                - paragraph [ref=e367]: "64"
+              - generic [ref=e369]:
+                - paragraph [ref=e371]: Waiting Queue
+                - paragraph [ref=e377]: "9"
+              - generic [ref=e379]:
+                - paragraph [ref=e381]: New Registrations
+                - paragraph [ref=e387]: "14"
+              - generic [ref=e389]:
+                - paragraph [ref=e391]: Appointments Today
+                - paragraph [ref=e397]: "86"
+            - generic [ref=e398]:
+              - generic [ref=e399]:
+                - generic [ref=e400]:
+                  - generic [ref=e401]: Front Desk Queue
+                  - generic [ref=e402]: Patients waiting for check-in or consultation
+                - generic [ref=e403]:
+                  - generic [ref=e404]:
+                    - generic [ref=e405]: "01"
+                    - generic [ref=e406]: PH
+                    - generic [ref=e408]:
+                      - paragraph [ref=e409]: Presley Haag
+                      - paragraph [ref=e410]: Dr. Delilah McClure
+                    - generic [ref=e411]: Scheduled
+                  - generic [ref=e413]:
+                    - generic [ref=e414]: "02"
+                    - generic [ref=e415]: CL
+                    - generic [ref=e417]:
+                      - paragraph [ref=e418]: Christ Legros
+                      - paragraph [ref=e419]: Dr. Benjamin Hintz
+                    - generic [ref=e420]: Scheduled
+                  - generic [ref=e422]:
+                    - generic [ref=e423]: "03"
+                    - generic [ref=e424]: KS
+                    - generic [ref=e426]:
+                      - paragraph [ref=e427]: Kelli Satterfield
+                      - paragraph [ref=e428]: Dr. Elfrieda Haag
+                    - generic [ref=e429]: Scheduled
+                  - generic [ref=e431]:
+                    - generic [ref=e432]: "04"
+                    - generic [ref=e433]: JZ
+                    - generic [ref=e435]:
+                      - paragraph [ref=e436]: Jeanette Zulauf
+                      - paragraph [ref=e437]: Dr. Wilbert Yundt
+                    - generic [ref=e438]: Checked In
+                  - generic [ref=e440]:
+                    - generic [ref=e441]: "05"
+                    - generic [ref=e442]: BS
+                    - generic [ref=e444]:
+                      - paragraph [ref=e445]: Bo Spinka
+                      - paragraph [ref=e446]: Dr. Annie Jast
+                    - generic [ref=e447]: Checked In
+              - generic [ref=e449]:
+                - generic [ref=e450]: Quick Actions
+                - generic [ref=e452]:
+                  - button "Register New Patient" [ref=e453] [cursor=pointer]
+                  - button "Patient Check-in" [ref=e454] [cursor=pointer]
+                  - button "Queue Management" [ref=e455] [cursor=pointer]
+                  - button "View Appointments" [ref=e456] [cursor=pointer]
+    - generic [ref=e78]:
+      - heading "Command Palette" [level=2] [ref=e79]
+      - paragraph [ref=e80]: Search for a command to run...
+    - button "Open AI Assistant" [ref=e81] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e41] [cursor=pointer]
+  - alert [ref=e45]: Dashboard · Folio Health EMR

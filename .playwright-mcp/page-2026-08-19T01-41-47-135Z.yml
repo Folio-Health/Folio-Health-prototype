@@ -1,0 +1,137 @@
+- generic [ref=f8e1]:
+  - generic [ref=f8e2]:
+    - complementary [ref=f8e3]:
+      - generic [ref=f8e4]:
+        - generic [ref=f8e5]:
+          - img "Folio" [ref=f8e6]
+          - generic [ref=f8e7]: Folio
+        - button "Collapse sidebar" [ref=f8e8] [cursor=pointer]
+      - navigation [ref=f8e9]:
+        - generic [ref=f8e10]:
+          - generic [ref=f8e11]:
+            - paragraph [ref=f8e12]: Overview
+            - link "Dashboard" [ref=f8e13] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f8e20] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f8e25]:
+            - paragraph [ref=f8e26]: Front Desk
+            - link "Patients" [ref=f8e27] [cursor=pointer]:
+              - /url: /patients
+            - link "Appointments" [ref=f8e240] [cursor=pointer]:
+              - /url: /appointments
+          - generic [ref=f8e244]:
+            - paragraph [ref=f8e245]: Clinical
+            - link "Consultation" [ref=f8e246] [cursor=pointer]:
+              - /url: /consultation
+            - link "Vitals" [ref=f8e252] [cursor=pointer]:
+              - /url: /vitals
+            - link "Nursing" [ref=f8e256] [cursor=pointer]:
+              - /url: /nursing
+            - link "Emergency" [ref=f8e261] [cursor=pointer]:
+              - /url: /emergency
+            - link "Surgery" [ref=f8e268] [cursor=pointer]:
+              - /url: /surgery
+            - link "Pediatrics" [ref=f8e276] [cursor=pointer]:
+              - /url: /pediatrics
+            - link "Obstetrics" [ref=f8e281] [cursor=pointer]:
+              - /url: /obstetrics
+          - generic [ref=f8e286]:
+            - paragraph [ref=f8e287]: Diagnostics
+            - link "Laboratory" [ref=f8e288] [cursor=pointer]:
+              - /url: /laboratory
+            - link "Radiology" [ref=f8e292] [cursor=pointer]:
+              - /url: /radiology
+            - link "Blood Bank" [ref=f8e299] [cursor=pointer]:
+              - /url: /blood-bank
+          - generic [ref=f8e303]:
+            - paragraph [ref=f8e304]: Pharmacy & Finance
+            - link "Pharmacy" [ref=f8e305] [cursor=pointer]:
+              - /url: /pharmacy
+          - generic [ref=f8e310]:
+            - paragraph [ref=f8e311]: Facility
+            - link "Admissions" [ref=f8e312] [cursor=pointer]:
+              - /url: /admissions
+          - generic [ref=f8e34]:
+            - paragraph [ref=f8e35]: Insights
+            - link "Communication" [ref=f8e36] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f8e40]:
+            - paragraph [ref=f8e41]: System
+            - link "Settings" [ref=f8e42] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f8e47] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f8e52]:
+        - generic [ref=f8e53]: DD
+        - generic [ref=f8e55]:
+          - generic [ref=f8e56]: Demo Doctor
+          - generic [ref=f8e57]: Doctor
+    - generic [ref=f8e58]:
+      - banner [ref=f8e59]:
+        - button "Search patients, appointments... Ctrl K" [ref=f8e60] [cursor=pointer]:
+          - generic [ref=f8e64]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f8e65]:
+          - button "Quick create" [ref=f8e66] [cursor=pointer]
+          - button "Notifications" [ref=f8e67] [cursor=pointer]
+          - button "Toggle theme" [ref=f8e68] [cursor=pointer]
+          - button "Account menu" [active] [ref=f8e70] [cursor=pointer]:
+            - generic [ref=f8e71]: DD
+      - main [ref=f8e73]:
+        - generic [ref=f8e317]:
+          - generic [ref=f8e320]:
+            - heading "Dashboard" [level=1] [ref=f8e321]
+            - paragraph [ref=f8e322]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=f8e323]:
+            - generic [ref=f8e325]:
+              - generic [ref=f8e326]:
+                - generic [ref=f8e327]: DD
+                - generic [ref=f8e329]:
+                  - paragraph [ref=f8e330]: Good morning, Demo Doctor
+                  - paragraph [ref=f8e331]: Attending Physician · Orthopedics
+              - button "Go to Workspace" [ref=f8e332] [cursor=pointer]
+            - generic [ref=f8e333]:
+              - generic [ref=f8e335]:
+                - paragraph [ref=f8e337]: Today's Appointments
+                - paragraph [ref=f8e343]: "12"
+              - generic [ref=f8e345]:
+                - paragraph [ref=f8e347]: Completed Today
+                - paragraph [ref=f8e353]: "5"
+              - generic [ref=f8e355]:
+                - paragraph [ref=f8e357]: Pending Reviews
+                - paragraph [ref=f8e363]: "4"
+              - generic [ref=f8e365]:
+                - paragraph [ref=f8e367]: Avg. Consult Time
+                - paragraph [ref=f8e373]: 18 min
+            - generic [ref=f8e374]:
+              - generic [ref=f8e375]:
+                - generic [ref=f8e376]:
+                  - generic [ref=f8e377]: Today's Schedule
+                  - generic [ref=f8e378]: Your appointments for today
+                  - button "View calendar" [ref=f8e380] [cursor=pointer]
+                - generic [ref=f8e387]:
+                  - paragraph [ref=f8e388]: No appointments today
+                  - paragraph [ref=f8e389]: Enjoy the quiet moment. New bookings will show up here.
+              - generic [ref=f8e390]:
+                - generic [ref=f8e391]: Quick Actions
+                - generic [ref=f8e393]:
+                  - button "Write Prescription" [ref=f8e394] [cursor=pointer]
+                  - button "Order Lab Test" [ref=f8e395] [cursor=pointer]
+                  - button "Request Imaging" [ref=f8e396] [cursor=pointer]
+                  - button "View My Patients" [ref=f8e397] [cursor=pointer]
+    - generic [ref=f8e110]:
+      - heading "Command Palette" [level=2] [ref=f8e111]
+      - paragraph [ref=f8e112]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f8e113] [cursor=pointer]
+  - region "Notifications alt+T"
+  - generic [ref=f8e118] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=f8e119]
+    - generic [ref=f8e398]:
+      - button "Open issues overlay" [ref=f8e399]:
+        - generic [ref=f8e400]:
+          - generic [ref=f8e401]: "0"
+          - generic [ref=f8e402]: "1"
+        - generic [ref=f8e403]: Issue
+      - button "Collapse issues badge" [ref=f8e404]
+  - alert [ref=f8e123]: Dashboard · Folio Health EMR

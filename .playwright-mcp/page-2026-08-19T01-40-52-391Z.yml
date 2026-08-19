@@ -1,0 +1,84 @@
+- generic [ref=f7e1]:
+  - generic [ref=f7e2]:
+    - complementary [ref=f7e3]:
+      - generic [ref=f7e4]:
+        - generic [ref=f7e5]:
+          - img "Folio" [ref=f7e6]
+          - generic [ref=f7e7]: Folio
+        - button "Collapse sidebar" [ref=f7e8] [cursor=pointer]
+      - navigation [ref=f7e9]:
+        - generic [ref=f7e10]:
+          - generic [ref=f7e11]:
+            - paragraph [ref=f7e12]: Overview
+            - link "Dashboard" [ref=f7e13] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f7e20] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f7e25]:
+            - paragraph [ref=f7e26]: Front Desk
+            - link "Patients" [ref=f7e242] [cursor=pointer]:
+              - /url: /patients
+          - generic [ref=f7e36]:
+            - paragraph [ref=f7e37]: Insights
+            - link "Communication" [ref=f7e38] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f7e42]:
+            - paragraph [ref=f7e43]: System
+            - link "Settings" [ref=f7e44] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f7e49] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f7e54]:
+        - generic [ref=f7e55]: DD
+        - generic [ref=f7e57]:
+          - generic [ref=f7e58]: Demo Doctor
+          - generic [ref=f7e59]: Medical Records Officer (preview)
+    - generic [ref=f7e60]:
+      - banner [ref=f7e61]:
+        - button "Search patients, appointments... Ctrl K" [ref=f7e62] [cursor=pointer]:
+          - generic [ref=f7e66]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f7e67]:
+          - button "Quick create" [ref=f7e68] [cursor=pointer]
+          - button "Notifications" [ref=f7e69] [cursor=pointer]
+          - button "Toggle theme" [ref=f7e70] [cursor=pointer]
+          - button "Account menu" [active] [ref=f7e72] [cursor=pointer]:
+            - generic [ref=f7e73]: DD
+      - main [ref=f7e75]:
+        - generic [ref=f7e249]:
+          - generic [ref=f7e252]:
+            - heading "Dashboard" [level=1] [ref=f7e253]
+            - paragraph [ref=f7e254]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=f7e255]:
+            - generic [ref=f7e256]:
+              - generic [ref=f7e258]:
+                - paragraph [ref=f7e260]: Records Managed
+                - paragraph [ref=f7e266]: —
+              - generic [ref=f7e268]:
+                - paragraph [ref=f7e270]: Duplicate Flags
+                - paragraph [ref=f7e276]: —
+              - generic [ref=f7e278]:
+                - paragraph [ref=f7e280]: Release Requests
+                - paragraph [ref=f7e286]: —
+            - generic [ref=f7e287]:
+              - generic [ref=f7e288]:
+                - generic [ref=f7e289]:
+                  - generic [ref=f7e290]: Duplicate & Release Queue
+                  - generic [ref=f7e291]: Pending demographic corrections, duplicate merges, and approved record releases
+                - generic [ref=f7e298]:
+                  - paragraph [ref=f7e299]: No queue wired up yet
+                  - paragraph [ref=f7e300]: Duplicate-flagging and record-release requests aren't backed by a real workflow yet — this is where they'll appear once that's built.
+              - generic [ref=f7e301]:
+                - generic [ref=f7e302]: Quick Actions
+                - button "Search Patient Records" [ref=f7e305] [cursor=pointer]
+    - generic [ref=f7e112]:
+      - heading "Command Palette" [level=2] [ref=f7e113]
+      - paragraph [ref=f7e114]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f7e115] [cursor=pointer]
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f7e306]:
+        - button "Close toast" [ref=f7e307] [cursor=pointer]
+        - generic [ref=f7e315]: Now previewing as Medical Records Officer
+  - button "Open Next.js Dev Tools" [ref=f7e121] [cursor=pointer]
+  - alert [ref=f7e125]: Dashboard · Folio Health EMR

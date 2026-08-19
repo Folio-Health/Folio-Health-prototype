@@ -1,0 +1,194 @@
+- generic [active] [ref=f11e1]:
+  - generic [ref=f11e2]:
+    - complementary [ref=f11e3]:
+      - generic [ref=f11e4]:
+        - generic [ref=f11e5]:
+          - img "Folio" [ref=f11e6]
+          - generic [ref=f11e7]: Folio
+        - button "Collapse sidebar" [ref=f11e8] [cursor=pointer]
+      - navigation [ref=f11e9]:
+        - generic [ref=f11e10]:
+          - generic [ref=f11e11]:
+            - paragraph [ref=f11e12]: Overview
+            - link "Dashboard" [ref=f11e13] [cursor=pointer]:
+              - /url: /dashboard
+          - generic [ref=f11e20]:
+            - paragraph [ref=f11e21]: Facility
+            - link "Inventory" [ref=f11e22] [cursor=pointer]:
+              - /url: /inventory
+            - link "HR" [ref=f11e28] [cursor=pointer]:
+              - /url: /hr
+          - generic [ref=f11e34]:
+            - paragraph [ref=f11e35]: Insights
+            - link "Analytics" [ref=f11e36] [cursor=pointer]:
+              - /url: /analytics
+            - link "Communication" [ref=f11e40] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f11e44]:
+            - paragraph [ref=f11e45]: System
+            - link "Administration" [ref=f11e46] [cursor=pointer]:
+              - /url: /administration
+            - link "Settings" [ref=f11e51] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f11e56] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f11e61]:
+        - generic [ref=f11e62]: DD
+        - generic [ref=f11e64]:
+          - generic [ref=f11e65]: Demo Doctor
+          - generic [ref=f11e66]: Hospital admin (preview)
+    - generic [ref=f11e67]:
+      - banner [ref=f11e68]:
+        - button "Search patients, appointments... Ctrl K" [ref=f11e69] [cursor=pointer]:
+          - generic [ref=f11e73]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f11e74]:
+          - button "Quick create" [ref=f11e75] [cursor=pointer]
+          - button "Notifications" [ref=f11e76] [cursor=pointer]
+          - button "Toggle theme" [ref=f11e77] [cursor=pointer]
+          - button "Account menu" [ref=f11e79] [cursor=pointer]:
+            - generic [ref=f11e80]: DD
+      - main [ref=f11e82]:
+        - generic [ref=f11e83]:
+          - generic [ref=f11e84]:
+            - navigation "breadcrumb" [ref=f11e85]:
+              - list [ref=f11e86]:
+                - generic [ref=f11e87]:
+                  - listitem [ref=f11e88]:
+                    - link "System" [disabled] [ref=f11e89]
+                  - listitem [ref=f11e90]
+                - generic [ref=f11e93]:
+                  - listitem [ref=f11e94]:
+                    - link "Administration" [disabled] [ref=f11e95]
+                  - listitem [ref=f11e96]
+                - listitem [ref=f11e100]:
+                  - link "Roles" [disabled] [ref=f11e101]
+            - generic [ref=f11e103]:
+              - heading "Roles" [level=1] [ref=f11e104]
+              - paragraph [ref=f11e105]: 8 roles defined for Version 1
+          - navigation [ref=f11e106]:
+            - link "Users" [ref=f11e107] [cursor=pointer]:
+              - /url: /administration/users
+            - link "Roles" [ref=f11e108] [cursor=pointer]:
+              - /url: /administration/roles
+            - link "Permissions" [ref=f11e109] [cursor=pointer]:
+              - /url: /administration/permissions
+            - link "Departments" [ref=f11e110] [cursor=pointer]:
+              - /url: /administration/departments
+            - link "Audit Logs" [ref=f11e111] [cursor=pointer]:
+              - /url: /administration/audit-logs
+            - link "Activity Logs" [ref=f11e112] [cursor=pointer]:
+              - /url: /administration/activity-logs
+            - link "Hospital Settings" [ref=f11e113] [cursor=pointer]:
+              - /url: /administration/hospital-settings
+            - link "System Configuration" [ref=f11e114] [cursor=pointer]:
+              - /url: /administration/system-configuration
+          - generic [ref=f11e115]:
+            - generic [ref=f11e116]:
+              - generic [ref=f11e117]:
+                - generic [ref=f11e118]: Hospital admin
+                - generic [ref=f11e123]: 0 users
+              - generic [ref=f11e125]:
+                - generic [ref=f11e126]:
+                  - generic [ref=f11e127]: Manage Users
+                  - generic [ref=f11e131]: Manage Roles
+                  - generic [ref=f11e135]: Manage Configuration
+                - paragraph [ref=f11e139]: "Server policy: Folio Facility Admin Access Policy"
+                - button "View Permission Matrix" [ref=f11e140] [cursor=pointer]
+            - generic [ref=f11e141]:
+              - generic [ref=f11e142]:
+                - generic [ref=f11e143]: Doctor
+                - generic [ref=f11e148]: 0 users
+              - generic [ref=f11e150]:
+                - generic [ref=f11e151]:
+                  - generic [ref=f11e152]: View
+                  - generic [ref=f11e156]: Create
+                  - generic [ref=f11e160]: Amend
+                  - generic [ref=f11e164]: Sign
+                  - generic [ref=f11e168]: Prescribe
+                  - generic [ref=f11e172]: Order
+                  - generic [ref=f11e176]: Print
+                - paragraph [ref=f11e180]: "Server policy: Folio Doctor Access Policy"
+                - button "View Permission Matrix" [ref=f11e181] [cursor=pointer]
+            - generic [ref=f11e182]:
+              - generic [ref=f11e183]:
+                - generic [ref=f11e184]: Nurse
+                - generic [ref=f11e189]: 0 users
+              - generic [ref=f11e191]:
+                - generic [ref=f11e192]:
+                  - generic [ref=f11e193]: View
+                  - generic [ref=f11e197]: Create
+                  - generic [ref=f11e201]: Administer
+                - paragraph [ref=f11e205]: "Server policy: Folio Nurse Access Policy"
+                - button "View Permission Matrix" [ref=f11e206] [cursor=pointer]
+            - generic [ref=f11e207]:
+              - generic [ref=f11e208]:
+                - generic [ref=f11e209]: Receptionist
+                - generic [ref=f11e214]: 0 users
+              - generic [ref=f11e216]:
+                - generic [ref=f11e217]: Create
+                - paragraph [ref=f11e222]: "Server policy: Folio Front Desk Access Policy"
+                - button "View Permission Matrix" [ref=f11e223] [cursor=pointer]
+            - generic [ref=f11e224]:
+              - generic [ref=f11e225]:
+                - generic [ref=f11e226]: Medical Records Officer
+                - generic [ref=f11e231]: 0 users
+              - generic [ref=f11e233]:
+                - generic [ref=f11e234]:
+                  - generic [ref=f11e235]: View
+                  - generic [ref=f11e239]: Amend
+                  - generic [ref=f11e243]: Export
+                  - generic [ref=f11e247]: Disclose
+                - paragraph [ref=f11e251]: "Server policy: Folio HIM Access Policy"
+                - button "View Permission Matrix" [ref=f11e252] [cursor=pointer]
+            - generic [ref=f11e253]:
+              - generic [ref=f11e254]:
+                - generic [ref=f11e255]: Laboratory Scientist
+                - generic [ref=f11e260]: 0 users
+              - generic [ref=f11e262]:
+                - generic [ref=f11e263]:
+                  - generic [ref=f11e264]: View
+                  - generic [ref=f11e268]: Lab Accept Specimen
+                  - generic [ref=f11e272]: Lab Enter Result
+                  - generic [ref=f11e276]: Lab Verify Result
+                  - generic [ref=f11e280]: Lab Release Result
+                - paragraph [ref=f11e284]: "Server policy: Folio Lab Scientist Access Policy"
+                - button "View Permission Matrix" [ref=f11e285] [cursor=pointer]
+            - generic [ref=f11e286]:
+              - generic [ref=f11e287]:
+                - generic [ref=f11e288]: Pharmacist
+                - generic [ref=f11e293]: 0 users
+              - generic [ref=f11e295]:
+                - generic [ref=f11e296]:
+                  - generic [ref=f11e297]: View
+                  - generic [ref=f11e301]: Pharmacy Dispense
+                  - generic [ref=f11e305]: Pharmacy Reconcile
+                  - generic [ref=f11e309]: Pharmacy Document Intervention
+                - paragraph [ref=f11e313]: "Server policy: Folio Pharmacist Access Policy"
+                - button "View Permission Matrix" [ref=f11e314] [cursor=pointer]
+            - generic [ref=f11e315]:
+              - generic [ref=f11e316]:
+                - generic [ref=f11e317]: Billing / Cashier
+                - generic [ref=f11e322]: 0 users
+              - generic [ref=f11e324]:
+                - generic [ref=f11e325]:
+                  - generic [ref=f11e326]: View
+                  - generic [ref=f11e330]: Billing Post Charge
+                  - generic [ref=f11e334]: Billing Receive Payment
+                  - generic [ref=f11e338]: Billing Refund
+                  - generic [ref=f11e342]: Billing Claim
+                - paragraph [ref=f11e346]: "Server policy: Folio Billing Access Policy"
+                - button "View Permission Matrix" [ref=f11e347] [cursor=pointer]
+    - generic [ref=f11e348]:
+      - heading "Command Palette" [level=2] [ref=f11e349]
+      - paragraph [ref=f11e350]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f11e351] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f11e357] [cursor=pointer]:
+    - generic [ref=f11e360]:
+      - text: Compiling
+      - generic [ref=f11e361]:
+        - generic [ref=f11e362]: .
+        - generic [ref=f11e363]: .
+        - generic [ref=f11e364]: .
+  - alert [ref=f11e365]

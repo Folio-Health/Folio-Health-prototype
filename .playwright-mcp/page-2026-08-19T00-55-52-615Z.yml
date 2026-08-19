@@ -1,0 +1,146 @@
+- generic [ref=e1]:
+  - generic [ref=e60]:
+    - complementary [ref=e289]:
+      - generic [ref=e290]:
+        - generic [ref=e291]:
+          - img "Folio" [ref=e292]
+          - generic [ref=e293]: Folio
+        - button "Collapse sidebar" [ref=e294] [cursor=pointer]
+      - navigation [ref=e169]:
+        - generic [ref=e170]:
+          - generic [ref=e171]:
+            - paragraph [ref=e172]: Overview
+            - link "Dashboard" [ref=e173] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=e180] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=e650]:
+            - paragraph [ref=e651]: Pharmacy & Finance
+            - link "Pharmacy" [ref=e652] [cursor=pointer]:
+              - /url: /pharmacy
+          - generic [ref=e657]:
+            - paragraph [ref=e658]: Facility
+            - link "Inventory" [ref=e659] [cursor=pointer]:
+              - /url: /inventory
+          - generic [ref=e271]:
+            - paragraph [ref=e272]: Insights
+            - link "Communication" [ref=e273] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=e277]:
+            - paragraph [ref=e278]: System
+            - link "Settings" [ref=e279] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=e284] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=e295]:
+        - generic [ref=e296]: DD
+        - generic [ref=e298]:
+          - generic [ref=e299]: Demo Doctor
+          - generic [ref=e300]: Pharmacist (preview)
+    - generic [ref=e61]:
+      - banner [ref=e62]:
+        - button "Search patients, appointments... Ctrl K" [ref=e64] [cursor=pointer]:
+          - generic [ref=e68]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=e69]:
+          - button "Quick create" [ref=e70] [cursor=pointer]
+          - button "Notifications" [ref=e71] [cursor=pointer]
+          - button "Toggle theme" [ref=e72] [cursor=pointer]
+          - button "Account menu" [expanded] [ref=e74] [cursor=pointer]:
+            - generic [ref=e75]: DD
+          - generic:
+            - generic:
+              - menu "Account menu":
+                - generic:
+                  - generic: DD
+                  - generic:
+                    - generic: Demo Doctor
+                    - generic: doctor@demo.folio
+                - separator
+                - group:
+                  - menuitem "My Profile"
+                  - menuitem "Settings"
+                  - menuitem "Help Center"
+                - separator
+                - menuitem "Preview as role" [expanded] [active] [ref=e777]
+                - menu "Preview as role" [ref=e783]:
+                  - menuitem "My role" [ref=e784]
+                  - separator [ref=e785]
+                  - menuitem "Hospital admin" [ref=e786]
+                  - menuitem "Doctor" [ref=e787]
+                  - menuitem "Nurse" [ref=e788]
+                  - menuitem "Receptionist" [ref=e789]
+                  - menuitem "Medical Records Officer" [ref=e790]
+                  - menuitem "Laboratory Scientist" [ref=e791]
+                  - menuitem "Pharmacist" [ref=e792]
+                  - menuitem "Billing / Cashier" [ref=e794]
+                - separator
+                - menuitem "Log Out"
+      - main [ref=e77]:
+        - generic [ref=e88]:
+          - generic [ref=e91]:
+            - heading "Dashboard" [level=1] [ref=e92]
+            - paragraph [ref=e93]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=e665]:
+            - generic [ref=e666]:
+              - generic [ref=e668]:
+                - paragraph [ref=e670]: To Dispense
+                - paragraph [ref=e676]: "23"
+              - generic [ref=e678]:
+                - paragraph [ref=e680]: Dispensed Today
+                - paragraph [ref=e686]: "57"
+              - generic [ref=e688]:
+                - paragraph [ref=e690]: Low Stock Items
+                - paragraph [ref=e699]: "3"
+              - generic [ref=e701]:
+                - paragraph [ref=e703]: Expiring This Month
+                - paragraph [ref=e710]: "9"
+            - generic [ref=e711]:
+              - generic [ref=e712]:
+                - generic [ref=e713]:
+                  - generic [ref=e714]: Prescription Queue
+                  - generic [ref=e715]: Awaiting dispensing
+                  - button "View all" [ref=e717] [cursor=pointer]
+                - generic [ref=e718]:
+                  - generic [ref=e719]:
+                    - generic [ref=e720]: RX-0001
+                    - generic [ref=e721]: DS
+                    - generic [ref=e723]:
+                      - paragraph [ref=e724]: Darren Spinka
+                      - paragraph [ref=e725]: Amoxicillin 500mg
+                    - generic [ref=e726]: To Dispense
+                  - generic [ref=e728]:
+                    - generic [ref=e729]: RX-0002
+                    - generic [ref=e730]: AH
+                    - generic [ref=e732]:
+                      - paragraph [ref=e733]: Angelo Halvorson
+                      - paragraph [ref=e734]: Atorvastatin 20mg
+                    - generic [ref=e735]: Dispensed
+                  - generic [ref=e737]:
+                    - generic [ref=e738]: RX-0003
+                    - generic [ref=e739]: DR
+                    - generic [ref=e741]:
+                      - paragraph [ref=e742]: Delia Reilly
+                      - paragraph [ref=e743]: Metformin 500mg
+                    - generic [ref=e744]: To Dispense
+              - generic [ref=e746]:
+                - generic [ref=e747]:
+                  - generic [ref=e748]: Low Stock Alerts
+                  - generic [ref=e749]: Below reorder level
+                - generic [ref=e750]:
+                  - generic [ref=e751]:
+                    - paragraph [ref=e752]: Amoxicillin 500mg
+                    - generic [ref=e753]: 12 capsules
+                  - generic [ref=e754]:
+                    - paragraph [ref=e755]: Paracetamol 500mg
+                    - generic [ref=e756]: 34 tablets
+                  - generic [ref=e757]:
+                    - paragraph [ref=e758]: Insulin Glargine
+                    - generic [ref=e759]: 5 vials
+    - generic [ref=e78]:
+      - heading "Command Palette" [level=2] [ref=e79]
+      - paragraph [ref=e80]: Search for a command to run...
+    - button "Open AI Assistant" [ref=e81] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e41] [cursor=pointer]
+  - alert [ref=e45]: Dashboard · Folio Health EMR

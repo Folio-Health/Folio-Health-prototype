@@ -1,0 +1,83 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e331]:
+    - complementary [ref=f2e332]:
+      - generic [ref=f2e333]:
+        - generic [ref=f2e334]:
+          - img "Folio" [ref=f2e335]
+          - generic [ref=f2e336]: Folio
+        - button "Collapse sidebar" [ref=f2e337] [cursor=pointer]
+      - navigation [ref=f2e338]:
+        - generic [ref=f2e339]:
+          - generic [ref=f2e340]:
+            - paragraph [ref=f2e341]: Overview
+            - link "Dashboard" [ref=f2e342] [cursor=pointer]:
+              - /url: /dashboard
+          - generic [ref=f2e1049]:
+            - paragraph [ref=f2e1050]: Facility
+            - link "Inventory" [ref=f2e1051] [cursor=pointer]:
+              - /url: /inventory
+            - link "HR" [ref=f2e1057] [cursor=pointer]:
+              - /url: /hr
+          - generic [ref=f2e440]:
+            - paragraph [ref=f2e441]: Insights
+            - link "Analytics" [ref=f2e1063] [cursor=pointer]:
+              - /url: /analytics
+            - link "Communication" [ref=f2e442] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f2e446]:
+            - paragraph [ref=f2e447]: System
+            - link "Administration" [ref=f2e1067] [cursor=pointer]:
+              - /url: /administration
+            - link "Settings" [ref=f2e448] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f2e453] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f2e458]:
+        - generic [ref=f2e459]: DD
+        - generic [ref=f2e461]:
+          - generic [ref=f2e462]: Demo Doctor
+          - generic [ref=f2e463]: Hospital admin (preview)
+    - generic [ref=f2e464]:
+      - banner [ref=f2e465]:
+        - button "Search patients, appointments... Ctrl K" [ref=f2e466] [cursor=pointer]:
+          - generic [ref=f2e470]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f2e471]:
+          - button "Quick create" [ref=f2e472] [cursor=pointer]
+          - button "Notifications" [ref=f2e473] [cursor=pointer]
+          - button "Toggle theme" [ref=f2e474] [cursor=pointer]
+          - button "Account menu" [active] [ref=f2e476] [cursor=pointer]:
+            - generic [ref=f2e477]: DD
+      - main [ref=f2e479]:
+        - generic [ref=f2e480]:
+          - generic [ref=f2e483]:
+            - heading "Dashboard" [level=1] [ref=f2e484]
+            - paragraph [ref=f2e485]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=f2e1072]:
+            - generic [ref=f2e1110]:
+              - generic [ref=f2e1112]:
+                - generic [ref=f2e1113]: Appointment Volume
+                - generic [ref=f2e1114]: Last 7 days
+              - generic [ref=f2e1123]:
+                - generic [ref=f2e1124]: Upcoming Appointments
+                - button "View all" [ref=f2e1126] [cursor=pointer]
+            - generic [ref=f2e1154]:
+              - generic [ref=f2e1155]:
+                - generic [ref=f2e1156]: Recent Activity
+                - generic [ref=f2e1157]: Audit trail
+                - button "View all" [ref=f2e1159] [cursor=pointer]
+              - button "Go to Patients" [ref=f2e1187] [cursor=pointer]
+    - generic [ref=f2e561]:
+      - heading "Command Palette" [level=2] [ref=f2e562]
+      - paragraph [ref=f2e563]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f2e564] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f2e1188] [cursor=pointer]:
+    - generic [ref=f2e1191]:
+      - text: Compiling
+      - generic [ref=f2e1192]:
+        - generic [ref=f2e1193]: .
+        - generic [ref=f2e1194]: .
+        - generic [ref=f2e1195]: .
+  - alert [ref=f2e245]: Dashboard
+  - generic [ref=f2e1012]: ₦0M

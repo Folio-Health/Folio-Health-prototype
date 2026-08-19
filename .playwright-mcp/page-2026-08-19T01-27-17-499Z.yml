@@ -1,0 +1,135 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - complementary [ref=f1e3]:
+      - generic [ref=f1e4]:
+        - generic [ref=f1e5]:
+          - img "Folio" [ref=f1e6]
+          - generic [ref=f1e7]: Folio
+        - button "Collapse sidebar" [ref=f1e8] [cursor=pointer]
+      - navigation [ref=f1e9]:
+        - generic [ref=f1e43]:
+          - generic [ref=f1e44]:
+            - paragraph [ref=f1e45]: Overview
+            - link "Dashboard" [ref=f1e46] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f1e53] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f1e58]:
+            - paragraph [ref=f1e59]: Front Desk
+            - link "Patients" [ref=f1e60] [cursor=pointer]:
+              - /url: /patients
+            - link "Appointments" [ref=f1e67] [cursor=pointer]:
+              - /url: /appointments
+          - generic [ref=f1e71]:
+            - paragraph [ref=f1e72]: Clinical
+            - link "Consultation" [ref=f1e73] [cursor=pointer]:
+              - /url: /consultation
+            - link "Vitals" [ref=f1e79] [cursor=pointer]:
+              - /url: /vitals
+            - link "Nursing" [ref=f1e83] [cursor=pointer]:
+              - /url: /nursing
+            - link "Emergency" [ref=f1e88] [cursor=pointer]:
+              - /url: /emergency
+            - link "Surgery" [ref=f1e95] [cursor=pointer]:
+              - /url: /surgery
+            - link "Pediatrics" [ref=f1e103] [cursor=pointer]:
+              - /url: /pediatrics
+            - link "Obstetrics" [ref=f1e108] [cursor=pointer]:
+              - /url: /obstetrics
+          - generic [ref=f1e113]:
+            - paragraph [ref=f1e114]: Diagnostics
+            - link "Laboratory" [ref=f1e115] [cursor=pointer]:
+              - /url: /laboratory
+            - link "Radiology" [ref=f1e119] [cursor=pointer]:
+              - /url: /radiology
+            - link "Blood Bank" [ref=f1e126] [cursor=pointer]:
+              - /url: /blood-bank
+          - generic [ref=f1e130]:
+            - paragraph [ref=f1e131]: Pharmacy & Finance
+            - link "Pharmacy" [ref=f1e132] [cursor=pointer]:
+              - /url: /pharmacy
+          - generic [ref=f1e137]:
+            - paragraph [ref=f1e138]: Facility
+            - link "Admissions" [ref=f1e139] [cursor=pointer]:
+              - /url: /admissions
+          - generic [ref=f1e144]:
+            - paragraph [ref=f1e145]: Insights
+            - link "Communication" [ref=f1e146] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f1e150]:
+            - paragraph [ref=f1e151]: System
+            - link "Settings" [ref=f1e152] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f1e157] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f1e162]:
+        - generic [ref=f1e163]: DD
+        - generic [ref=f1e165]:
+          - generic [ref=f1e166]: Demo Doctor
+          - generic [ref=f1e167]: Doctor
+    - generic [ref=f1e10]:
+      - banner [ref=f1e11]:
+        - button "Search patients, appointments... Ctrl K" [ref=f1e12] [cursor=pointer]:
+          - generic [ref=f1e16]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f1e17]:
+          - button "Quick create" [ref=f1e18] [cursor=pointer]
+          - button "Notifications" [ref=f1e19] [cursor=pointer]
+          - button "Toggle theme" [ref=f1e20] [cursor=pointer]
+          - button "Account menu" [active] [ref=f1e22] [cursor=pointer]:
+            - generic [ref=f1e23]: DD
+      - main [ref=f1e25]:
+        - generic [ref=f1e168]:
+          - generic [ref=f1e171]:
+            - heading "Dashboard" [level=1] [ref=f1e172]
+            - paragraph [ref=f1e173]: Sunrise Medical Centre overview for Wednesday 19 August
+          - generic [ref=f1e174]:
+            - generic [ref=f1e176]:
+              - generic [ref=f1e177]:
+                - generic [ref=f1e178]: DD
+                - generic [ref=f1e180]:
+                  - paragraph [ref=f1e181]: Good morning, Demo Doctor
+                  - paragraph [ref=f1e182]: Attending Physician · Orthopedics
+              - button "Go to Workspace" [ref=f1e183] [cursor=pointer]
+            - generic [ref=f1e184]:
+              - generic [ref=f1e186]:
+                - paragraph [ref=f1e188]: Today's Appointments
+                - paragraph [ref=f1e194]: "12"
+              - generic [ref=f1e196]:
+                - paragraph [ref=f1e198]: Completed Today
+                - paragraph [ref=f1e204]: "5"
+              - generic [ref=f1e206]:
+                - paragraph [ref=f1e208]: Pending Reviews
+                - paragraph [ref=f1e214]: "4"
+              - generic [ref=f1e216]:
+                - paragraph [ref=f1e218]: Avg. Consult Time
+                - paragraph [ref=f1e224]: 18 min
+            - generic [ref=f1e225]:
+              - generic [ref=f1e226]:
+                - generic [ref=f1e227]:
+                  - generic [ref=f1e228]: Today's Schedule
+                  - generic [ref=f1e229]: Your appointments for today
+                  - button "View calendar" [ref=f1e231] [cursor=pointer]
+                - generic [ref=f1e238]:
+                  - paragraph [ref=f1e239]: No appointments today
+                  - paragraph [ref=f1e240]: Enjoy the quiet moment. New bookings will show up here.
+              - generic [ref=f1e241]:
+                - generic [ref=f1e242]: Quick Actions
+                - generic [ref=f1e244]:
+                  - button "Write Prescription" [ref=f1e245] [cursor=pointer]
+                  - button "Order Lab Test" [ref=f1e246] [cursor=pointer]
+                  - button "Request Imaging" [ref=f1e247] [cursor=pointer]
+                  - button "View My Patients" [ref=f1e248] [cursor=pointer]
+    - generic [ref=f1e26]:
+      - heading "Command Palette" [level=2] [ref=f1e27]
+      - paragraph [ref=f1e28]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f1e29] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f1e276] [cursor=pointer]:
+    - generic [ref=f1e279]:
+      - text: Compiling
+      - generic [ref=f1e280]:
+        - generic [ref=f1e281]: .
+        - generic [ref=f1e282]: .
+        - generic [ref=f1e283]: .
+  - alert [ref=f1e253]

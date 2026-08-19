@@ -1,0 +1,123 @@
+- generic [ref=f7e1]:
+  - generic [ref=f7e2]:
+    - complementary [ref=f7e3]:
+      - generic [ref=f7e4]:
+        - generic [ref=f7e5]:
+          - img "Folio" [ref=f7e6]
+          - generic [ref=f7e7]: Folio
+        - button "Collapse sidebar" [ref=f7e8] [cursor=pointer]
+      - navigation [ref=f7e9]:
+        - generic [ref=f7e10]:
+          - generic [ref=f7e11]:
+            - paragraph [ref=f7e12]: Overview
+            - link "Dashboard" [ref=f7e13] [cursor=pointer]:
+              - /url: /dashboard
+            - link "AI Assistant" [ref=f7e20] [cursor=pointer]:
+              - /url: /assistant
+          - generic [ref=f7e25]:
+            - paragraph [ref=f7e26]: Front Desk
+            - link "Reception" [ref=f7e27] [cursor=pointer]:
+              - /url: /reception
+            - link "Appointments" [ref=f7e32] [cursor=pointer]:
+              - /url: /appointments
+          - generic [ref=f7e36]:
+            - paragraph [ref=f7e37]: Insights
+            - link "Communication" [ref=f7e38] [cursor=pointer]:
+              - /url: /communication
+          - generic [ref=f7e42]:
+            - paragraph [ref=f7e43]: System
+            - link "Settings" [ref=f7e44] [cursor=pointer]:
+              - /url: /settings
+            - link "Help Center" [ref=f7e49] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=f7e54]:
+        - generic [ref=f7e55]: DD
+        - generic [ref=f7e57]:
+          - generic [ref=f7e58]: Demo Doctor
+          - generic [ref=f7e59]: Receptionist (preview)
+    - generic [ref=f7e60]:
+      - banner [ref=f7e61]:
+        - button "Search patients, appointments... Ctrl K" [ref=f7e62] [cursor=pointer]:
+          - generic [ref=f7e66]: Search patients, appointments...
+          - generic: Ctrl K
+        - generic [ref=f7e67]:
+          - button "Quick create" [ref=f7e68] [cursor=pointer]
+          - button "Notifications" [ref=f7e69] [cursor=pointer]
+          - button "Toggle theme" [ref=f7e70] [cursor=pointer]
+          - button "Account menu" [expanded] [ref=f7e72] [cursor=pointer]:
+            - generic [ref=f7e73]: DD
+          - menu "Account menu" [active] [ref=f7e210]:
+            - generic [ref=f7e211]:
+              - generic [ref=f7e212]: DD
+              - generic [ref=f7e214]:
+                - generic [ref=f7e215]: Demo Doctor
+                - generic [ref=f7e216]: doctor@demo.folio
+            - separator [ref=f7e217]
+            - group [ref=f7e218]:
+              - menuitem "My Profile" [ref=f7e219]
+              - menuitem "Settings" [ref=f7e220]
+              - menuitem "Help Center" [ref=f7e221]
+            - separator [ref=f7e222]
+            - menuitem "Preview as role" [ref=f7e223]
+            - separator [ref=f7e224]
+            - menuitem "Log Out" [ref=f7e225]
+      - main [ref=f7e75]:
+        - generic [ref=f7e126]:
+          - generic [ref=f7e127]:
+            - navigation "breadcrumb" [ref=f7e128]:
+              - list [ref=f7e129]:
+                - generic [ref=f7e130]:
+                  - listitem [ref=f7e131]:
+                    - link "Patients" [ref=f7e132] [cursor=pointer]:
+                      - /url: /patients
+                  - listitem [ref=f7e133]
+                - listitem [ref=f7e137]:
+                  - link "Rory Rutherford" [disabled] [ref=f7e138]
+            - generic [ref=f7e139]:
+              - generic [ref=f7e140]:
+                - heading "Rory Rutherford" [level=1] [ref=f7e141]
+                - paragraph [ref=f7e142]: MRN MRN-295066
+              - button "Edit" [ref=f7e145] [cursor=pointer]
+          - generic [ref=f7e146]:
+            - generic [ref=f7e148]:
+              - generic [ref=f7e149]:
+                - generic [ref=f7e150]: RR
+                - generic [ref=f7e152]:
+                  - paragraph [ref=f7e153]: Rory Rutherford
+                  - paragraph [ref=f7e154]: MRN-295066
+                - generic [ref=f7e155]: Active
+              - generic [ref=f7e157]:
+                - generic [ref=f7e162]:
+                  - generic [ref=f7e163]: Age / Gender
+                  - generic [ref=f7e164]: 39 yrs · Male
+                - generic [ref=f7e168]:
+                  - generic [ref=f7e169]: Date of birth
+                  - generic [ref=f7e170]: 1986-11-02
+                - generic [ref=f7e174]:
+                  - generic [ref=f7e175]: Phone
+                  - generic [ref=f7e176]: "+19304537918"
+                - generic [ref=f7e181]:
+                  - generic [ref=f7e182]: Email
+                  - generic [ref=f7e183]: rory.rutherford1@yahoo.com
+                - generic [ref=f7e188]:
+                  - generic [ref=f7e189]: Address
+                  - generic [ref=f7e190]: 8688 Makenna Center, Lagos
+            - generic [ref=f7e191]:
+              - tablist [ref=f7e192]:
+                - tab "Appointments" [selected] [ref=f7e193] [cursor=pointer]
+              - tabpanel "Appointments" [ref=f7e194]:
+                - generic [ref=f7e195]:
+                  - generic [ref=f7e196]: Appointments
+                  - list [ref=f7e199]:
+                    - listitem [ref=f7e200]:
+                      - generic [ref=f7e201]:
+                        - generic [ref=f7e202]: Antenatal check
+                        - generic [ref=f7e203]: 27 Aug 2026, 15:00
+                      - generic [ref=f7e204]: booked
+    - generic [ref=f7e112]:
+      - heading "Command Palette" [level=2] [ref=f7e113]
+      - paragraph [ref=f7e114]: Search for a command to run...
+    - button "Open AI Assistant" [ref=f7e115] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f7e121] [cursor=pointer]
+  - alert [ref=f7e125]
