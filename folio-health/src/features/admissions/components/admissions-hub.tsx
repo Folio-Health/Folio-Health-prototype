@@ -12,6 +12,7 @@ import {
   ClockIcon,
 } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { Button } from "@/components/ui/button"
@@ -151,10 +152,12 @@ function AdmissionsHub() {
         description={`${allAdmissions.length} admission records on file`}
         breadcrumbs={[{ label: "Inpatient" }, { label: "Admissions" }]}
         actions={
-          <Button onClick={() => setNewOpen(true)}>
-            <PlusIcon />
-            New Admission
-          </Button>
+          <RoleGate roles={["doctor", "nurse"]}>
+            <Button onClick={() => setNewOpen(true)}>
+              <PlusIcon />
+              New Admission
+            </Button>
+          </RoleGate>
         }
       />
 
@@ -214,19 +217,21 @@ function AdmissionsHub() {
         }
       />
 
-      <ConfirmDialog
-        open={pendingDischarge !== null}
-        onOpenChange={(open) => !open && setPendingDischarge(null)}
-        title="Discharge patient?"
-        description={
-          pendingDischarge
-            ? `This will discharge ${getPatientById(pendingDischarge.patientId)?.name ?? "this patient"} and free up their bed for cleaning.`
-            : ""
-        }
-        confirmLabel="Discharge"
-        destructive={false}
-        onConfirm={confirmDischarge}
-      />
+      <RoleGate roles={["doctor", "nurse"]}>
+        <ConfirmDialog
+          open={pendingDischarge !== null}
+          onOpenChange={(open) => !open && setPendingDischarge(null)}
+          title="Discharge patient?"
+          description={
+            pendingDischarge
+              ? `This will discharge ${getPatientById(pendingDischarge.patientId)?.name ?? "this patient"} and free up their bed for cleaning.`
+              : ""
+          }
+          confirmLabel="Discharge"
+          destructive={false}
+          onConfirm={confirmDischarge}
+        />
+      </RoleGate>
 
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent className="sm:max-w-md">
@@ -322,7 +327,9 @@ function AdmissionsHub() {
             <Button variant="outline" onClick={() => setNewOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateAdmission}>Admit Patient</Button>
+            <RoleGate roles={["doctor", "nurse"]}>
+              <Button onClick={handleCreateAdmission}>Admit Patient</Button>
+            </RoleGate>
           </DialogFooter>
         </DialogContent>
       </Dialog>

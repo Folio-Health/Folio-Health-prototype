@@ -27,6 +27,9 @@ export type RoleId =
   | "nurse"
   | "front-desk"
   | "him-officer"
+  | "lab-scientist"
+  | "pharmacist"
+  | "billing-cashier"
 
 /**
  * Role system written onto the Practitioner by provisioning.
@@ -52,6 +55,9 @@ const KNOWN_ROLES: RoleId[] = [
   "nurse",
   "front-desk",
   "him-officer",
+  "lab-scientist",
+  "pharmacist",
+  "billing-cashier",
 ]
 
 /**
@@ -72,6 +78,14 @@ export const ROLE_ACCESS_POLICY_NAMES: Record<Exclude<RoleId, "platform-admin">,
   nurse: "Folio Nurse Access Policy",
   "front-desk": "Folio Front Desk Access Policy",
   "him-officer": "Folio HIM Access Policy",
+  // Added for the EMR V1 RBAC spec's 8-role model. These three policies do not
+  // exist on the Medplum project yet — until Folio-Web's provisioning tooling
+  // (packages/fhir-model/src/access.ts) authors them under these exact names,
+  // findAccessPolicyByName() will reject an invite for these roles. The UI side
+  // (nav, dashboards, permission gating) is ready ahead of that.
+  "lab-scientist": "Folio Lab Scientist Access Policy",
+  pharmacist: "Folio Pharmacist Access Policy",
+  "billing-cashier": "Folio Billing Access Policy",
 }
 
 /**
@@ -82,13 +96,23 @@ export const ROLE_ACCESS_POLICY_NAMES: Record<Exclude<RoleId, "platform-admin">,
  * only the platform operator creates those, so a facility admin cannot mint
  * peers who could then provision further accounts.
  */
-export type FacilityAssignableRole = "doctor" | "nurse" | "front-desk" | "him-officer"
+export type FacilityAssignableRole =
+  | "doctor"
+  | "nurse"
+  | "front-desk"
+  | "him-officer"
+  | "lab-scientist"
+  | "pharmacist"
+  | "billing-cashier"
 
 export const FACILITY_ASSIGNABLE_ROLES: FacilityAssignableRole[] = [
   "doctor",
   "nurse",
   "front-desk",
   "him-officer",
+  "lab-scientist",
+  "pharmacist",
+  "billing-cashier",
 ]
 
 export function isFacilityAssignableRole(value: string): value is FacilityAssignableRole {
@@ -104,8 +128,11 @@ export const ROLE_LABELS: Record<RoleId, string> = {
   "facility-admin": "Hospital admin",
   doctor: "Doctor",
   nurse: "Nurse",
-  "front-desk": "Front desk",
-  "him-officer": "HIM officer",
+  "front-desk": "Receptionist",
+  "him-officer": "Medical Records Officer",
+  "lab-scientist": "Laboratory Scientist",
+  pharmacist: "Pharmacist",
+  "billing-cashier": "Billing / Cashier",
 }
 
 /**
@@ -181,5 +208,116 @@ export const PLATFORM_ALLOWED_ROUTES: string[] = [...PLATFORM_NAV_HREFS, "/platf
 export function platformCanAccess(pathname: string): boolean {
   return PLATFORM_ALLOWED_ROUTES.some(
     (allowed) => pathname === allowed || pathname.startsWith(allowed + "/")
+  )
+}
+
+/**
+ * Nav hrefs each FACILITY role may see (EMR V1 RBAC spec §16).
+ *
+ * Same allow-list philosophy as PLATFORM_NAV_HREFS: a new module added to
+ * nav.ts is hidden from every facility role by default, not exposed until
+ * someone remembers to add it here. This is UI-layer routing convenience —
+ * it hides links a role shouldn't act on, it does not grant or deny data
+ * access. The server-side AccessPolicy (see ROLE_ACCESS_POLICY_NAMES) is
+ * the actual boundary; this must never be treated as a substitute for it.
+ *
+ * `facility-admin` is deliberately narrow, not "everything in the facility":
+ * the spec's separation-of-duties principle (§3, §7.8) applies to any admin
+ * role, not only the platform operator — technical/administrative authority
+ * must not imply routine clinical content access.
+ */
+export const ROLE_NAV_HREFS: Record<Exclude<RoleId, "platform-admin">, string[]> = {
+  "facility-admin": [
+    "/dashboard",
+    "/administration",
+    "/analytics",
+    "/hr",
+    "/inventory",
+    "/communication",
+    "/help",
+    "/settings",
+  ],
+  doctor: [
+    "/dashboard",
+    "/assistant",
+    "/patients",
+    "/appointments",
+    "/consultation",
+    "/vitals",
+    "/nursing",
+    "/emergency",
+    "/surgery",
+    "/pediatrics",
+    "/obstetrics",
+    "/laboratory",
+    "/radiology",
+    "/blood-bank",
+    "/pharmacy",
+    "/admissions",
+    "/communication",
+    "/help",
+    "/settings",
+  ],
+  nurse: [
+    "/dashboard",
+    "/assistant",
+    "/patients",
+    "/vitals",
+    "/nursing",
+    "/consultation",
+    "/emergency",
+    "/surgery",
+    "/pediatrics",
+    "/obstetrics",
+    "/laboratory",
+    "/blood-bank",
+    "/pharmacy",
+    "/admissions",
+    "/communication",
+    "/help",
+    "/settings",
+  ],
+  // Registration/identity search happens inside /reception itself. No
+  // /patients: the spec is explicit that reception must not receive a
+  // general Patients page exposing the complete chart (§9, §12).
+  "front-desk": ["/dashboard", "/assistant", "/reception", "/appointments", "/communication", "/help", "/settings"],
+  // Identity/demographics and document work needs the patient record, but
+  // not its clinical sections — the patient workspace itself narrows what
+  // an HIM officer sees once inside a chart (spec §19).
+  "him-officer": ["/dashboard", "/assistant", "/patients", "/communication", "/help", "/settings"],
+  // Deliberately module-only — the spec calls this out explicitly: "no
+  // broad patient chart browsing" (§7.3, §16).
+  "lab-scientist": ["/dashboard", "/assistant", "/laboratory", "/blood-bank", "/communication", "/help", "/settings"],
+  // Module-only; inventory is pharmacy stock, not the clinical chart.
+  pharmacist: ["/dashboard", "/assistant", "/pharmacy", "/inventory", "/communication", "/help", "/settings"],
+  // No /patients: billing must not open the complete chart (§7.7, §16).
+  // Diagnosis coding needed for a claim is a field inside /billing itself.
+  "billing-cashier": ["/dashboard", "/assistant", "/billing", "/communication", "/help", "/settings"],
+}
+
+/**
+ * Whether a facility-plane user may open `pathname` — the render-blocking
+ * counterpart to ROLE_NAV_HREFS, in the same spirit as PLATFORM_ALLOWED_ROUTES
+ * / platformCanAccess. Hiding a nav link is not access control on its own; a
+ * URL typed directly into the address bar still has to be blocked.
+ *
+ * `/patients/<id>` (one specific chart) is deliberately exempted from the
+ * general prefix check: roles without general patient-browsing rights
+ * (billing, reception, HIM, facility-admin) can still be linked to one
+ * specific patient from their own module (an invoice, an appointment, a
+ * registration) and see the restricted view getVisiblePatientTabs()
+ * already builds for them. `/patients` itself (the full roster) still
+ * requires the role to hold it in ROLE_NAV_HREFS — browsing every patient
+ * in the facility is a different, broader capability than opening one.
+ */
+export function facilityRouteAllowed(pathname: string, roles: RoleId[]): boolean {
+  if (pathname.startsWith("/patients/")) return true
+
+  const facilityRoles = roles.filter((r): r is Exclude<RoleId, "platform-admin"> => r !== "platform-admin")
+  // No recognized role tag yet: same permissive fallback as useScopedNav().
+  if (facilityRoles.length === 0) return true
+
+  return facilityRoles.some((role) =>
+    ROLE_NAV_HREFS[role]?.some((href) => pathname === href || pathname.startsWith(href + "/"))
   )
 }

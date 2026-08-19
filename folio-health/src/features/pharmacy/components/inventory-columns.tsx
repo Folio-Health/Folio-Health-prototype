@@ -5,6 +5,7 @@ import { format } from "date-fns"
 import { MoreHorizontalIcon, EyeIcon, PackagePlusIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
 import { StatusBadge } from "@/components/common/status-badge"
+import { RoleGate } from "@/components/common/role-gate"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -74,7 +75,7 @@ function getInventoryColumns({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
             >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
@@ -83,10 +84,12 @@ function getInventoryColumns({
                 <EyeIcon />
                 View
               </DropdownMenuItem>
-              <DropdownMenuItem disabled={!canReorder} onClick={() => onReorder(drug)}>
-                <PackagePlusIcon />
-                Reorder
-              </DropdownMenuItem>
+              <RoleGate roles={["pharmacist", "facility-admin"]}>
+                <DropdownMenuItem disabled={!canReorder} onClick={() => onReorder(drug)}>
+                  <PackagePlusIcon />
+                  Reorder
+                </DropdownMenuItem>
+              </RoleGate>
             </DropdownMenuContent>
           </DropdownMenu>
         )

@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { MoreHorizontalIcon, DoorOpenIcon, PrinterIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
@@ -76,15 +77,17 @@ function dischargeColumns(
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
             >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onComplete(admission)}>
-                <DoorOpenIcon />
-                Complete Discharge
-              </DropdownMenuItem>
+              <RoleGate roles={["doctor", "nurse"]}>
+                <DropdownMenuItem onClick={() => onComplete(admission)}>
+                  <DoorOpenIcon />
+                  Complete Discharge
+                </DropdownMenuItem>
+              </RoleGate>
               <DropdownMenuItem
                 disabled={!admission.dischargeSummaryReady}
                 onClick={() => onPrint(admission)}

@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { SearchIcon, ReceiptIcon, WalletIcon, TriangleAlertIcon, TrendingUpIcon, WalletCardsIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { StatusBadge } from "@/components/common/status-badge"
@@ -230,15 +231,17 @@ function InvoicesList() {
 
               <DialogFooter showCloseButton>
                 {viewing.balance > 0 && (
-                  <Button
-                    onClick={() => {
-                      setViewing(null)
-                      openRecordPayment(viewing)
-                    }}
-                  >
-                    <WalletCardsIcon />
-                    Record Payment
-                  </Button>
+                  <RoleGate permission="BILLING_RECEIVE_PAYMENT">
+                    <Button
+                      onClick={() => {
+                        setViewing(null)
+                        openRecordPayment(viewing)
+                      }}
+                    >
+                      <WalletCardsIcon />
+                      Record Payment
+                    </Button>
+                  </RoleGate>
                 )}
               </DialogFooter>
             </>
@@ -271,7 +274,9 @@ function InvoicesList() {
                 <Button variant="outline" onClick={() => setPaying(null)}>
                   Cancel
                 </Button>
-                <Button onClick={submitPayment}>Confirm Payment</Button>
+                <RoleGate permission="BILLING_RECEIVE_PAYMENT">
+                  <Button onClick={submitPayment}>Confirm Payment</Button>
+                </RoleGate>
               </DialogFooter>
             </>
           )}

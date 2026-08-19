@@ -133,7 +133,12 @@ function LoginForm() {
       )}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        {/* method="post" is a safety net, not the real submit path (onSubmit
+            below always intercepts once hydrated) — without it, a submit
+            that lands in the brief pre-hydration window falls back to the
+            browser's default GET, putting the password in the URL, browser
+            history, and referrer. */}
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           {formError && (
             <div
               role="alert"

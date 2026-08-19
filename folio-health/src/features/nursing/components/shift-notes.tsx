@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { PlusIcon, ClipboardListIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/common/status-badge"
@@ -82,10 +83,12 @@ function ShiftNotes() {
         description="Nurse to nurse handover notes by patient and shift"
         breadcrumbs={[{ label: "Clinical" }, { label: "Nursing", href: "/nursing" }, { label: "Shift Notes" }]}
         actions={
-          <Button onClick={() => setOpen(true)}>
-            <PlusIcon />
-            New Shift Note
-          </Button>
+          <RoleGate roles={["nurse"]}>
+            <Button onClick={() => setOpen(true)}>
+              <PlusIcon />
+              New Shift Note
+            </Button>
+          </RoleGate>
         }
       />
 
@@ -174,7 +177,9 @@ function ShiftNotes() {
           </div>
           <DialogFooter>
             <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
-            <Button onClick={handleSubmit}>Save Note</Button>
+            <RoleGate roles={["nurse"]}>
+              <Button onClick={handleSubmit}>Save Note</Button>
+            </RoleGate>
           </DialogFooter>
         </DialogContent>
       </Dialog>

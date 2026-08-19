@@ -6,6 +6,7 @@ import { PaperclipIcon, UploadCloudIcon, XIcon } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/common/empty-state"
+import { RoleGate } from "@/components/common/role-gate"
 import { cn } from "@/lib/utils"
 import type { AttachmentItem } from "@/features/consultation/types"
 
@@ -40,22 +41,24 @@ function AttachmentsSection({
         <CardDescription>Consent forms, referral letters, and scanned documents for this visit</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div
-          {...getRootProps()}
-          className={cn(
-            "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-6 py-10 text-center transition-colors",
-            isDragActive && "border-primary bg-primary/5"
-          )}
-        >
-          <input {...getInputProps()} />
-          <div className="flex size-11 items-center justify-center rounded-full bg-muted">
-            <UploadCloudIcon className="size-5 text-muted-foreground" />
+        <RoleGate roles={["doctor", "nurse"]}>
+          <div
+            {...getRootProps()}
+            className={cn(
+              "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-6 py-10 text-center transition-colors",
+              isDragActive && "border-primary bg-primary/5"
+            )}
+          >
+            <input {...getInputProps()} />
+            <div className="flex size-11 items-center justify-center rounded-full bg-muted">
+              <UploadCloudIcon className="size-5 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium text-foreground">
+              {isDragActive ? "Drop files to attach" : "Drag & drop files here, or click to browse"}
+            </p>
+            <p className="text-xs text-muted-foreground">PDFs, images, and documents up to 10MB</p>
           </div>
-          <p className="text-sm font-medium text-foreground">
-            {isDragActive ? "Drop files to attach" : "Drag & drop files here, or click to browse"}
-          </p>
-          <p className="text-xs text-muted-foreground">PDFs, images, and documents up to 10MB</p>
-        </div>
+        </RoleGate>
 
         {attachments.length === 0 ? (
           <EmptyState icon={PaperclipIcon} title="No attachments yet" description="Files added for this visit will appear here." />

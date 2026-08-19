@@ -22,15 +22,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PersonAvatar } from "@/components/common/person-avatar"
-import { CLINICAL_ROLES } from "@/types/core"
+import { FACILITY_ASSIGNABLE_ROLES, ROLE_LABELS, type RoleId } from "@/lib/auth/roles"
 import { useUiStore } from "@/stores/ui-store"
 import { useCurrentUser } from "@/lib/fhir/use-current-user"
 import { signOut } from "@/lib/sign-out"
 
+/** Roles worth previewing a dashboard for. "facility-admin" is not
+ * assignable via provisioning but is still a real dashboard to preview. */
+const PREVIEWABLE_ROLES: Exclude<RoleId, "platform-admin">[] = [
+  "facility-admin",
+  ...FACILITY_ASSIGNABLE_ROLES,
+]
+
 function ProfileMenu() {
   const router = useRouter()
-  const activeRole = useUiStore((s) => s.activeRole)
-  const setActiveRole = useUiStore((s) => s.setActiveRole)
+  const previewRole = useUiStore((s) => s.previewRole)
+  const setPreviewRole = useUiStore((s) => s.setPreviewRole)
   const { data: user } = useCurrentUser()
 
   // Identity comes from the Medplum session, not from the locally-selected
@@ -85,10 +92,13 @@ function ProfileMenu() {
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
-        {/* "Preview as role" is a local demo switch with no bearing on what the
-            server authorises. On a platform account it is doubly wrong: the
-            operator plane has no clinical role to preview into, and offering
-            one implies an escalation the AccessPolicy would refuse anyway. */}
+        {/* "Preview as role" only swaps which dashboard/nav renders locally —
+            it has no bearing on what the server authorises (the FHIR proxy
+            still forwards every request under the signed-in user's own
+            token, scoped by their real AccessPolicy). On a platform account
+            it is doubly wrong: the operator plane has no clinical role to
+            preview into, and offering one implies an escalation the
+            AccessPolicy would refuse anyway. */}
         {!user?.platformOnly && (
           <>
             <DropdownMenuSeparator />
@@ -98,17 +108,30 @@ function ProfileMenu() {
                 Preview as role
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-                {CLINICAL_ROLES.map((role) => (
+                <DropdownMenuItem
+                  onClick={() => {
+                    setPreviewRole(null)
+                    toast.success("Showing your own role")
+                    router.push("/dashboard")
+                  }}
+                >
+                  My role
+                  {previewRole === null && (
+                    <span className="ml-auto size-1.5 rounded-full bg-primary" />
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {PREVIEWABLE_ROLES.map((role) => (
                   <DropdownMenuItem
                     key={role}
                     onClick={() => {
-                      setActiveRole(role)
-                      toast.success(`Now previewing as ${role}`)
+                      setPreviewRole(role)
+                      toast.success(`Now previewing as ${ROLE_LABELS[role]}`)
                       router.push("/dashboard")
                     }}
                   >
-                    {role}
-                    {role === activeRole && (
+                    {ROLE_LABELS[role]}
+                    {role === previewRole && (
                       <span className="ml-auto size-1.5 rounded-full bg-primary" />
                     )}
                   </DropdownMenuItem>

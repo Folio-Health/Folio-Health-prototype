@@ -24,6 +24,21 @@ import { downloadCsv } from "@/lib/csv-export"
 
 const ALL = "all"
 
+// SelectValue doesn't reliably resolve a value back to its item's label on
+// its own (confirmed: without this, these three showed the raw value "all"
+// instead of "All Genders" etc.) — an explicit render function is the
+// robust fix, not relying on automatic lookup.
+const GENDER_LABELS: Record<string, string> = { [ALL]: "All Genders", Male: "Male", Female: "Female" }
+const AGE_RANGE_LABELS: Record<string, string> = {
+  [ALL]: "All Ages",
+  "0-12": "0 to 12",
+  "13-19": "13 to 19",
+  "20-39": "20 to 39",
+  "40-59": "40 to 59",
+  "60-120": "60+",
+}
+const STATUS_LABELS: Record<string, string> = { [ALL]: "All Statuses", Active: "Active", Inactive: "Inactive" }
+
 function PatientsList() {
   const router = useRouter()
   const [search, setSearch] = useState("")
@@ -137,8 +152,10 @@ function PatientsList() {
               />
             </InputGroup>
             <Select value={gender} onValueChange={(v) => setGender(v ?? ALL)}>
-              <SelectTrigger className="h-9 w-32">
-                <SelectValue placeholder="Gender" />
+              <SelectTrigger className="h-9 w-32" aria-label="Filter by gender">
+                <SelectValue placeholder="Gender">
+                  {(v: string | null) => GENDER_LABELS[v ?? ALL]}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>All Genders</SelectItem>
@@ -147,8 +164,10 @@ function PatientsList() {
               </SelectContent>
             </Select>
             <Select value={ageRange} onValueChange={(v) => setAgeRange(v ?? ALL)}>
-              <SelectTrigger className="h-9 w-32">
-                <SelectValue placeholder="Age Range" />
+              <SelectTrigger className="h-9 w-32" aria-label="Filter by age range">
+                <SelectValue placeholder="Age Range">
+                  {(v: string | null) => AGE_RANGE_LABELS[v ?? ALL]}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>All Ages</SelectItem>
@@ -160,8 +179,10 @@ function PatientsList() {
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={(v) => setStatus(v ?? ALL)}>
-              <SelectTrigger className="h-9 w-36">
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className="h-9 w-36" aria-label="Filter by status">
+                <SelectValue placeholder="Status">
+                  {(v: string | null) => STATUS_LABELS[v ?? ALL]}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>All Statuses</SelectItem>

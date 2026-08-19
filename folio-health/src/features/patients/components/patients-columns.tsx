@@ -85,7 +85,7 @@ export const patientsColumns: ColumnDef<PatientSummary>[] = [
     cell: ({ row }) => (
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+          render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
         >
           <MoreHorizontalIcon className="size-4" />
         </DropdownMenuTrigger>

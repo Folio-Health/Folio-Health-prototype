@@ -8,6 +8,7 @@ import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { StatusBadge } from "@/components/common/status-badge"
 import { PersonAvatar } from "@/components/common/person-avatar"
+import { RoleGate } from "@/components/common/role-gate"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
@@ -195,10 +196,12 @@ function PharmacyList() {
 
               <DialogFooter showCloseButton>
                 {viewing.status === "To Dispense" && (
-                  <Button onClick={() => handleDispense(viewing)}>
-                    <PillIcon />
-                    Dispense
-                  </Button>
+                  <RoleGate permission="PHARMACY_DISPENSE">
+                    <Button onClick={() => handleDispense(viewing)}>
+                      <PillIcon />
+                      Dispense
+                    </Button>
+                  </RoleGate>
                 )}
               </DialogFooter>
             </>

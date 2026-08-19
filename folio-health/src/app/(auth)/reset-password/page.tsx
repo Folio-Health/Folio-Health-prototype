@@ -61,7 +61,8 @@ export default function ResetPasswordPage() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        {/* method="post" is a pre-hydration safety net — see login/page.tsx. */}
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <FormField
             control={form.control}
             name="password"

@@ -17,9 +17,9 @@ const REVENUE_TREND = [
 ]
 
 const OUTSTANDING = [
-  { id: "INV-0032", patient: PATIENTS[2], amount: "N45,000", status: "Overdue" },
-  { id: "INV-0041", patient: PATIENTS[3], amount: "N18,500", status: "Partial" },
-  { id: "INV-0055", patient: PATIENTS[4], amount: "N62,000", status: "Overdue" },
+  { id: "INV-0032", patient: PATIENTS[2], amount: "₦45,000", status: "Overdue" },
+  { id: "INV-0041", patient: PATIENTS[3], amount: "₦18,500", status: "Partial" },
+  { id: "INV-0055", patient: PATIENTS[4], amount: "₦62,000", status: "Overdue" },
 ]
 
 function AccountantDashboard() {
@@ -29,7 +29,7 @@ function AccountantDashboard() {
         <StatCard label="Total Invoices" value={250} icon={ReceiptIcon} />
         <StatCard label="Paid Invoices" value={180} icon={WalletIcon} tone="emerald" />
         <StatCard label="Outstanding" value={70} icon={TriangleAlertIcon} tone="red" />
-        <StatCard label="Total Revenue (MTD)" value="N12.45M" icon={TrendingUpIcon} tone="violet" />
+        <StatCard label="Total Revenue (MTD)" value="₦12.45M" icon={TrendingUpIcon} tone="violet" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

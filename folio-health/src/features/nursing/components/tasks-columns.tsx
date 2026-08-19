@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { StatusBadge } from "@/components/common/status-badge"
 import type { NursingTask } from "@/lib/mock/nursing"
 import { getPatientById } from "@/lib/mock/patients"
@@ -26,11 +27,13 @@ function getTasksColumns({
       id: "done",
       header: "",
       cell: ({ row }) => (
-        <Checkbox
-          checked={row.original.status === "Done"}
-          onCheckedChange={() => onToggleDone(row.original)}
-          onClick={(e) => e.stopPropagation()}
-        />
+        <RoleGate roles={["nurse"]}>
+          <Checkbox
+            checked={row.original.status === "Done"}
+            onCheckedChange={() => onToggleDone(row.original)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </RoleGate>
       ),
     },
     {

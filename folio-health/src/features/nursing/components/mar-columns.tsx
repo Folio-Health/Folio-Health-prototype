@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { CheckIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
@@ -78,18 +79,20 @@ function getMarColumns({
       cell: ({ row }) => {
         const order = row.original
         return (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={order.status === "Given"}
-            onClick={(e) => {
-              e.stopPropagation()
-              onMarkGiven(order)
-            }}
-          >
-            <CheckIcon />
-            Mark as Given
-          </Button>
+          <RoleGate permission="ADMINISTER">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={order.status === "Given"}
+              onClick={(e) => {
+                e.stopPropagation()
+                onMarkGiven(order)
+              }}
+            >
+              <CheckIcon />
+              Mark as Given
+            </Button>
+          </RoleGate>
         )
       },
     },

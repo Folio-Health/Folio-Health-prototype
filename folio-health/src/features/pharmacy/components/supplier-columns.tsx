@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontalIcon, EyeIcon, MailIcon, BanIcon, CheckCircle2Icon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
 import { StatusBadge } from "@/components/common/status-badge"
+import { RoleGate } from "@/components/common/role-gate"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -59,7 +60,7 @@ function getSupplierColumns({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
             >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
@@ -72,13 +73,15 @@ function getSupplierColumns({
                 <MailIcon />
                 Email Supplier
               </DropdownMenuItem>
-              <DropdownMenuItem
-                variant={supplier.status === "Active" ? "destructive" : undefined}
-                onClick={() => onToggleStatus(supplier)}
-              >
-                {supplier.status === "Active" ? <BanIcon /> : <CheckCircle2Icon />}
-                {supplier.status === "Active" ? "Deactivate" : "Activate"}
-              </DropdownMenuItem>
+              <RoleGate roles={["pharmacist", "facility-admin"]}>
+                <DropdownMenuItem
+                  variant={supplier.status === "Active" ? "destructive" : undefined}
+                  onClick={() => onToggleStatus(supplier)}
+                >
+                  {supplier.status === "Active" ? <BanIcon /> : <CheckCircle2Icon />}
+                  {supplier.status === "Active" ? "Deactivate" : "Activate"}
+                </DropdownMenuItem>
+              </RoleGate>
             </DropdownMenuContent>
           </DropdownMenu>
         )

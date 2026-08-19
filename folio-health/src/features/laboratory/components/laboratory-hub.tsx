@@ -14,6 +14,7 @@ import {
 import { PageHeader } from "@/components/common/page-header"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
+import { RoleGate } from "@/components/common/role-gate"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
@@ -165,10 +166,12 @@ function LaboratoryHub() {
         description={`${allResults.length} lab results on record`}
         breadcrumbs={[{ label: "Diagnostics" }, { label: "Laboratory" }]}
         actions={
-          <Button onClick={() => setNewOpen(true)}>
-            <PlusIcon />
-            New Lab Order
-          </Button>
+          <RoleGate permission="ORDER">
+            <Button onClick={() => setNewOpen(true)}>
+              <PlusIcon />
+              New Lab Order
+            </Button>
+          </RoleGate>
         }
       />
 
@@ -270,7 +273,9 @@ function LaboratoryHub() {
             <Button variant="outline" onClick={() => setNewOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateOrder}>Place Order</Button>
+            <RoleGate permission="ORDER">
+              <Button onClick={handleCreateOrder}>Place Order</Button>
+            </RoleGate>
           </DialogFooter>
         </DialogContent>
       </Dialog>

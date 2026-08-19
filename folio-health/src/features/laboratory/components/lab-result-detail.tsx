@@ -12,6 +12,7 @@ import {
   ClipboardCheckIcon,
 } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -81,10 +82,12 @@ function LabResultDetail({ resultId }: { resultId: string }) {
                 Approved
               </Button>
             ) : (
-              <Button disabled={!canApprove} onClick={() => setLocallyApproved(true)}>
-                <CheckCircleIcon />
-                Approve Result
-              </Button>
+              <RoleGate permission="LAB_RELEASE_RESULT">
+                <Button disabled={!canApprove} onClick={() => setLocallyApproved(true)}>
+                  <CheckCircleIcon />
+                  Approve Result
+                </Button>
+              </RoleGate>
             )}
           </>
         }

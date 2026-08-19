@@ -9,7 +9,6 @@ import {
   StethoscopeIcon,
   Building2Icon,
   FlaskConicalIcon,
-  ArrowRightIcon,
 } from "lucide-react"
 import {
   Card,
@@ -225,15 +224,6 @@ function AdminDashboard() {
           ) : (
             <EmptyState title="No recorded activity" description="The audit trail is empty." />
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-1 w-fit gap-1.5"
-            render={<Link href="/patients" />}
-          >
-            Go to Patients
-            <ArrowRightIcon className="size-3.5" />
-          </Button>
         </CardContent>
       </Card>
     </div>

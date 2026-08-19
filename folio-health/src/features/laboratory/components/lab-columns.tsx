@@ -7,6 +7,7 @@ import { MoreHorizontalIcon, EyeIcon, CheckCircleIcon, PrinterIcon } from "lucid
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
+import { RoleGate } from "@/components/common/role-gate"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -95,7 +96,7 @@ function getLabColumns({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
             >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
@@ -104,13 +105,15 @@ function getLabColumns({
                 <EyeIcon />
                 View Result
               </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={result.workflowStatus !== "Completed"}
-                onClick={() => onApprove(result)}
-              >
-                <CheckCircleIcon />
-                Approve
-              </DropdownMenuItem>
+              <RoleGate permission="LAB_RELEASE_RESULT">
+                <DropdownMenuItem
+                  disabled={result.workflowStatus !== "Completed"}
+                  onClick={() => onApprove(result)}
+                >
+                  <CheckCircleIcon />
+                  Approve
+                </DropdownMenuItem>
+              </RoleGate>
               <DropdownMenuItem onClick={() => onPrint(result)}>
                 <PrinterIcon />
                 Print

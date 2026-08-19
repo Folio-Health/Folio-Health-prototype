@@ -17,17 +17,24 @@ function AppSidebar() {
   const pathname = usePathname()
   const collapsed = useUiStore((s) => s.sidebarCollapsed)
   const toggleSidebar = useUiStore((s) => s.toggleSidebar)
+  const previewRole = useUiStore((s) => s.previewRole)
   const { data: user } = useCurrentUser()
   const navSections = useScopedNav()
   // Who is actually signed in, per Medplum — not a mock staff record picked by
-  // whatever role happens to be selected locally. The subtitle is the user's
-  // effective role, so the plane they are on is visible at a glance.
+  // whatever role happens to be selected locally. The subtitle reflects
+  // "preview as role" when active (matching the nav and dashboard, which do
+  // the same), so what's shown here always matches what's actually rendered.
+  // "Preview" is a separate badge rather than appended text — the longest
+  // role label ("Medical Records Officer") already fills the sidebar width,
+  // and suffixing it would just get truncated away right when it matters most.
   const currentUser = user
     ? {
         name: user.name,
-        role: user.roles.length
-          ? user.roles.map((r) => ROLE_LABELS[r]).join(" · ")
-          : (user.facilityName ?? user.project ?? "Staff"),
+        role: previewRole
+          ? ROLE_LABELS[previewRole]
+          : user.roles.length
+            ? user.roles.map((r) => ROLE_LABELS[r]).join(" · ")
+            : (user.facilityName ?? user.project ?? "Staff"),
       }
     : null
 
@@ -129,8 +136,13 @@ function AppSidebar() {
               <span className="truncate text-sm font-medium text-sidebar-foreground">
                 {currentUser.name}
               </span>
-              <span className="truncate text-xs text-muted-foreground">
-                {currentUser.role}
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate text-xs text-muted-foreground">{currentUser.role}</span>
+                {previewRole && (
+                  <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">
+                    Preview
+                  </span>
+                )}
               </span>
             </div>
           )}

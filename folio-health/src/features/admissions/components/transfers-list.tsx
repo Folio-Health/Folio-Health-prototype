@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import { ArrowRightLeftIcon, HourglassIcon, CheckCircle2Icon, CheckCheckIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { Button } from "@/components/ui/button"
@@ -124,10 +125,12 @@ function TransfersList() {
           { label: "Transfers" },
         ]}
         actions={
-          <Button onClick={() => setNewOpen(true)}>
-            <ArrowRightLeftIcon />
-            New Transfer
-          </Button>
+          <RoleGate roles={["doctor", "nurse"]}>
+            <Button onClick={() => setNewOpen(true)}>
+              <ArrowRightLeftIcon />
+              New Transfer
+            </Button>
+          </RoleGate>
         }
       />
 
@@ -217,7 +220,9 @@ function TransfersList() {
             <Button variant="outline" onClick={() => setNewOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateTransfer}>Request Transfer</Button>
+            <RoleGate roles={["doctor", "nurse"]}>
+              <Button onClick={handleCreateTransfer}>Request Transfer</Button>
+            </RoleGate>
           </DialogFooter>
         </DialogContent>
       </Dialog>

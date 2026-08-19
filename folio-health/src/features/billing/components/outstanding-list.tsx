@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import { SearchIcon, TriangleAlertIcon, ClockIcon, WalletIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { Button } from "@/components/ui/button"
@@ -141,7 +142,9 @@ function OutstandingList() {
                 <Button variant="outline" onClick={() => setPaying(null)}>
                   Cancel
                 </Button>
-                <Button onClick={submitPayment}>Confirm Payment</Button>
+                <RoleGate permission="BILLING_RECEIVE_PAYMENT">
+                  <Button onClick={submitPayment}>Confirm Payment</Button>
+                </RoleGate>
               </DialogFooter>
             </>
           )}

@@ -4,6 +4,7 @@ import Link from "next/link"
 import type { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontalIcon, ClipboardPlusIcon, ActivityIcon, EyeIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
@@ -75,7 +76,7 @@ function getAssignedPatientsColumns({
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+            render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
           >
             <MoreHorizontalIcon className="size-4" />
           </DropdownMenuTrigger>
@@ -88,10 +89,12 @@ function getAssignedPatientsColumns({
               <ClipboardPlusIcon />
               View Care Plan
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onRecordVitals(row.original)}>
-              <ActivityIcon />
-              Record Vitals
-            </DropdownMenuItem>
+            <RoleGate roles={["nurse", "doctor"]}>
+              <DropdownMenuItem onClick={() => onRecordVitals(row.original)}>
+                <ActivityIcon />
+                Record Vitals
+              </DropdownMenuItem>
+            </RoleGate>
           </DropdownMenuContent>
         </DropdownMenu>
       ),

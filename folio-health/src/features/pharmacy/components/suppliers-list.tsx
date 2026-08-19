@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { StatusBadge } from "@/components/common/status-badge"
+import { RoleGate } from "@/components/common/role-gate"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -84,10 +85,12 @@ function SuppliersList() {
           { label: "Suppliers" },
         ]}
         actions={
-          <Button onClick={() => setAdding(true)}>
-            <PlusIcon />
-            Add Supplier
-          </Button>
+          <RoleGate roles={["pharmacist", "facility-admin"]}>
+            <Button onClick={() => setAdding(true)}>
+              <PlusIcon />
+              Add Supplier
+            </Button>
+          </RoleGate>
         }
       />
 
@@ -202,7 +205,9 @@ function SuppliersList() {
             <Button variant="outline" onClick={() => setAdding(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddSupplier}>Add Supplier</Button>
+            <RoleGate roles={["pharmacist", "facility-admin"]}>
+              <Button onClick={handleAddSupplier}>Add Supplier</Button>
+            </RoleGate>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
+import { RoleGate } from "@/components/common/role-gate"
 import { getTodaysAppointments } from "@/lib/mock/appointments"
 import { getPatientById } from "@/lib/mock/patients"
 import { getStaffById } from "@/lib/mock/staff"
@@ -116,18 +117,20 @@ function CheckInList() {
         const isCheckedIn = !["Scheduled"].includes(row.original.status)
         return (
           <div className="flex justify-end">
-            <Button
-              size="sm"
-              variant={isCheckedIn ? "outline" : "default"}
-              disabled={isCheckedIn}
-              onClick={(e) => {
-                e.stopPropagation()
-                checkIn(row.original)
-              }}
-            >
-              <ClipboardCheckIcon />
-              {isCheckedIn ? "Checked In" : "Check In"}
-            </Button>
+            <RoleGate roles={["front-desk", "facility-admin"]}>
+              <Button
+                size="sm"
+                variant={isCheckedIn ? "outline" : "default"}
+                disabled={isCheckedIn}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  checkIn(row.original)
+                }}
+              >
+                <ClipboardCheckIcon />
+                {isCheckedIn ? "Checked In" : "Check In"}
+              </Button>
+            </RoleGate>
           </div>
         )
       },

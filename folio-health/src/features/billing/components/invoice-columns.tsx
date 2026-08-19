@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { MoreHorizontalIcon, EyeIcon, WalletIcon, PrinterIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
@@ -87,7 +88,7 @@ function getInvoiceColumns({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
             >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
@@ -96,10 +97,12 @@ function getInvoiceColumns({
                 <EyeIcon />
                 View
               </DropdownMenuItem>
-              <DropdownMenuItem disabled={invoice.balance <= 0} onClick={() => onRecordPayment(invoice)}>
-                <WalletIcon />
-                Record Payment
-              </DropdownMenuItem>
+              <RoleGate permission="BILLING_RECEIVE_PAYMENT">
+                <DropdownMenuItem disabled={invoice.balance <= 0} onClick={() => onRecordPayment(invoice)}>
+                  <WalletIcon />
+                  Record Payment
+                </DropdownMenuItem>
+              </RoleGate>
               <DropdownMenuItem onClick={() => onPrint(invoice)}>
                 <PrinterIcon />
                 Print

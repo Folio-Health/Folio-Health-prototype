@@ -16,15 +16,13 @@ import {
   type AssistantMessage,
 } from "@/lib/mock/assistant"
 import { id as makeId } from "@/lib/mock/seed"
-import { useUiStore } from "@/stores/ui-store"
-import { getStaffByRole } from "@/lib/mock/staff"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
 
 function AssistantWorkspace() {
   const [conversations, setConversations] = useState<AssistantConversation[]>(INITIAL_CONVERSATIONS)
   const [activeId, setActiveId] = useState<string | null>(INITIAL_CONVERSATIONS[0]?.id ?? null)
   const [isThinking, setIsThinking] = useState(false)
-  const activeRole = useUiStore((s) => s.activeRole)
-  const currentUser = getStaffByRole(activeRole)[0]
+  const { data: currentUser } = useCurrentUser()
 
   const active = useMemo(
     () => conversations.find((c) => c.id === activeId) ?? null,

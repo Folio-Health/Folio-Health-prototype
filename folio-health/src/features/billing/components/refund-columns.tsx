@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { MoreHorizontalIcon, CheckCircle2Icon, XCircleIcon, EyeIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
@@ -81,7 +82,7 @@ function getRefundColumns({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
             >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
@@ -90,14 +91,16 @@ function getRefundColumns({
                 <EyeIcon />
                 View
               </DropdownMenuItem>
-              <DropdownMenuItem disabled={!isPending} onClick={() => onProcess(refund)}>
-                <CheckCircle2Icon />
-                Process Refund
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={!isPending} variant="destructive" onClick={() => onReject(refund)}>
-                <XCircleIcon />
-                Reject
-              </DropdownMenuItem>
+              <RoleGate permission="BILLING_REFUND">
+                <DropdownMenuItem disabled={!isPending} onClick={() => onProcess(refund)}>
+                  <CheckCircle2Icon />
+                  Process Refund
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={!isPending} variant="destructive" onClick={() => onReject(refund)}>
+                  <XCircleIcon />
+                  Reject
+                </DropdownMenuItem>
+              </RoleGate>
             </DropdownMenuContent>
           </DropdownMenu>
         )

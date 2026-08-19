@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { MoreHorizontalIcon, EyeIcon, DoorOpenIcon, ArrowRightLeftIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
@@ -88,7 +89,7 @@ function admissionsColumns(onDischarge: (admission: Admission) => void): ColumnD
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
             >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
@@ -97,13 +98,15 @@ function admissionsColumns(onDischarge: (admission: Admission) => void): ColumnD
                 <EyeIcon />
                 View Patient
               </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={admission.status !== "Admitted"}
-                onClick={() => onDischarge(admission)}
-              >
-                <DoorOpenIcon />
-                Discharge
-              </DropdownMenuItem>
+              <RoleGate roles={["doctor", "nurse"]}>
+                <DropdownMenuItem
+                  disabled={admission.status !== "Admitted"}
+                  onClick={() => onDischarge(admission)}
+                >
+                  <DoorOpenIcon />
+                  Discharge
+                </DropdownMenuItem>
+              </RoleGate>
               <DropdownMenuItem render={<Link href="/admissions/transfers" />}>
                 <ArrowRightLeftIcon />
                 Transfer

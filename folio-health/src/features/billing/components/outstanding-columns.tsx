@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { MoreHorizontalIcon, BellIcon, WalletIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
@@ -82,19 +83,23 @@ function getOutstandingColumns({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
             >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onSendReminder(bill)}>
-                <BellIcon />
-                Send Reminder
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onRecordPayment(bill)}>
-                <WalletIcon />
-                Record Payment
-              </DropdownMenuItem>
+              <RoleGate roles={["billing-cashier", "facility-admin"]}>
+                <DropdownMenuItem onClick={() => onSendReminder(bill)}>
+                  <BellIcon />
+                  Send Reminder
+                </DropdownMenuItem>
+              </RoleGate>
+              <RoleGate permission="BILLING_RECEIVE_PAYMENT">
+                <DropdownMenuItem onClick={() => onRecordPayment(bill)}>
+                  <WalletIcon />
+                  Record Payment
+                </DropdownMenuItem>
+              </RoleGate>
             </DropdownMenuContent>
           </DropdownMenu>
         )

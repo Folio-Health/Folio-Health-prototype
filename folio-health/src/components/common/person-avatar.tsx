@@ -26,10 +26,15 @@ function PersonAvatar({
   className?: string
   color?: string
 }) {
+  const letters = initials(name)
   return (
     <Avatar size={size} className={cn(className)}>
-      <AvatarImage src={avatarUrl(seed ?? name, color)} alt={name} />
-      <AvatarFallback>{initials(name)}</AvatarFallback>
+      {/* Only the already-local initials are sent to the avatar service, never
+          the real name or `seed` (often a patient/staff id) — the "initials"
+          style just draws whatever text it's given, so this keeps the exact
+          same visual without a real person's name leaving the origin. */}
+      <AvatarImage src={avatarUrl(letters, color)} alt={name} />
+      <AvatarFallback>{letters}</AvatarFallback>
     </Avatar>
   )
 }

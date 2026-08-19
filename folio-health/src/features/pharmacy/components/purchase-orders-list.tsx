@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/common/page-header"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { StatusBadge } from "@/components/common/status-badge"
+import { RoleGate } from "@/components/common/role-gate"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
@@ -116,10 +117,12 @@ function PurchaseOrdersList() {
           { label: "Purchase Orders" },
         ]}
         actions={
-          <Button onClick={() => setCreating(true)}>
-            <PlusIcon />
-            New Purchase Order
-          </Button>
+          <RoleGate roles={["pharmacist", "facility-admin"]}>
+            <Button onClick={() => setCreating(true)}>
+              <PlusIcon />
+              New Purchase Order
+            </Button>
+          </RoleGate>
         }
       />
 
@@ -192,9 +195,11 @@ function PurchaseOrdersList() {
               </div>
               <DialogFooter showCloseButton>
                 {NEXT_STATUS[viewing.status] && (
-                  <Button onClick={() => handleAdvance(viewing)}>
-                    Mark as {NEXT_STATUS[viewing.status]}
-                  </Button>
+                  <RoleGate roles={["pharmacist", "facility-admin"]}>
+                    <Button onClick={() => handleAdvance(viewing)}>
+                      Mark as {NEXT_STATUS[viewing.status]}
+                    </Button>
+                  </RoleGate>
                 )}
               </DialogFooter>
             </>
@@ -230,7 +235,9 @@ function PurchaseOrdersList() {
             <Button variant="outline" onClick={() => setCreating(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreate}>Create Order</Button>
+            <RoleGate roles={["pharmacist", "facility-admin"]}>
+              <Button onClick={handleCreate}>Create Order</Button>
+            </RoleGate>
           </DialogFooter>
         </DialogContent>
       </Dialog>

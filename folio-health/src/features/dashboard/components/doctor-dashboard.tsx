@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import type { Route } from "next"
 import {
@@ -17,27 +19,35 @@ import { EmptyState } from "@/components/common/empty-state"
 import { getDoctorKpis, getRandomDoctor } from "@/features/dashboard/lib/dashboard-data"
 import { getAppointmentsForDoctor } from "@/lib/mock/appointments"
 import { getPatientById } from "@/lib/mock/patients"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
 
 function DoctorDashboard() {
-  const doctor = getRandomDoctor()
-  const kpis = getDoctorKpis(doctor.id)
+  const { data: user } = useCurrentUser()
+  // The schedule/KPI data below is still mock (no real Encounter/Appointment
+  // FHIR data wired up yet), so it's keyed off a stand-in mock doctor id —
+  // but the greeting itself must show the actual signed-in person, not a
+  // random mock name next to their real identity in the sidebar.
+  const mockDoctor = getRandomDoctor()
+  const kpis = getDoctorKpis(mockDoctor.id)
   const today = new Date().toISOString().slice(0, 10)
-  const schedule = getAppointmentsForDoctor(doctor.id)
+  const schedule = getAppointmentsForDoctor(mockDoctor.id)
     .filter((a) => a.date === today)
     .slice(0, 6)
+
+  const displayName = user?.name ?? mockDoctor.name
 
   return (
     <div className="flex flex-col gap-6">
       <Card className="border-primary/20 bg-primary/4">
         <CardContent className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <PersonAvatar name={doctor.name} size="lg" />
+            <PersonAvatar name={displayName} size="lg" />
             <div className="flex flex-col">
               <p className="font-heading text-lg font-semibold text-foreground">
-                Good morning, {doctor.name.replace("Dr. ", "Dr. ")}
+                Good morning, {displayName}
               </p>
               <p className="text-sm text-muted-foreground">
-                {doctor.title} &middot; {doctor.department}
+                {mockDoctor.title} &middot; {mockDoctor.department}
               </p>
             </div>
           </div>

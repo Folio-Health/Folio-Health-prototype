@@ -6,6 +6,7 @@ import { MoreHorizontalIcon, EyeIcon, PillIcon, PrinterIcon } from "lucide-react
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
+import { RoleGate } from "@/components/common/role-gate"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -95,7 +96,7 @@ function getPrescriptionColumns({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
             >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
@@ -104,10 +105,12 @@ function getPrescriptionColumns({
                 <EyeIcon />
                 View
               </DropdownMenuItem>
-              <DropdownMenuItem disabled={!canDispense} onClick={() => onDispense(rx)}>
-                <PillIcon />
-                Dispense
-              </DropdownMenuItem>
+              <RoleGate permission="PHARMACY_DISPENSE">
+                <DropdownMenuItem disabled={!canDispense} onClick={() => onDispense(rx)}>
+                  <PillIcon />
+                  Dispense
+                </DropdownMenuItem>
+              </RoleGate>
               <DropdownMenuItem onClick={() => onPrint(rx)}>
                 <PrinterIcon />
                 Print

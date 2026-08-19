@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { RoleGate } from "@/components/common/role-gate"
 
 const walkInSchema = z.object({
   name: z.string().min(1, "Patient name is required"),
@@ -152,7 +153,9 @@ function WalkInRegistration() {
                 <Button type="button" variant="outline" onClick={() => form.reset()}>
                   Clear
                 </Button>
-                <Button type="submit">Register &amp; Add to Queue</Button>
+                <RoleGate roles={["front-desk", "facility-admin"]}>
+                  <Button type="submit">Register &amp; Add to Queue</Button>
+                </RoleGate>
               </div>
             </form>
           </Form>

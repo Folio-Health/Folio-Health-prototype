@@ -16,8 +16,11 @@ import {
   PillIcon,
   ReceiptIcon,
   Loader2Icon,
+  SirenIcon,
 } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
+import { RoleGate } from "@/components/common/role-gate"
+import { BreakGlassDialog } from "./break-glass-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -43,6 +46,14 @@ import {
   useUpdatePatient,
 } from "../hooks/use-patient-clinical"
 import type { PatientSummary } from "@/lib/fhir/patient"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { useUiStore } from "@/stores/ui-store"
+import {
+  getVisiblePatientTabs,
+  canEditDemographics,
+  getVisibleIdentityFields,
+  type PatientTabKey,
+} from "../lib/patient-tabs-access"
 
 function InfoRow({
   icon: Icon,
@@ -138,9 +149,30 @@ function PatientProfile({ patientId }: { patientId: string }) {
 
 function PatientProfileContent({ patient }: { patient: PatientSummary }) {
   const [editOpen, setEditOpen] = useState(false)
+  const [breakGlassOpen, setBreakGlassOpen] = useState(false)
   const [editName, setEditName] = useState(patient.name)
   const [editPhone, setEditPhone] = useState(patient.phone)
   const [editEmail, setEditEmail] = useState(patient.email)
+
+  const { data: currentUser } = useCurrentUser()
+  const previewRole = useUiStore((s) => s.previewRole)
+  // Respects "preview as role" the same way nav/dashboard/RoleGate do, so
+  // this page matches what's shown everywhere else while previewing.
+  const roles = previewRole ? [previewRole] : (currentUser?.roles ?? [])
+  const visibleTabs = getVisiblePatientTabs(roles)
+  const isTabVisible = (tab: PatientTabKey) => visibleTabs.includes(tab)
+  const canEdit = canEditDemographics(roles)
+  const visibleFields = getVisibleIdentityFields(roles)
+
+  // Controlled, not just a defaultValue: when previewing a different role
+  // changes which tabs exist, an uncontrolled Tabs keeps its old selection
+  // (Base UI warns about this, and the selected tab can point at content
+  // that's no longer there). Reset to the first still-visible tab instead.
+  const [activeTab, setActiveTab] = useState<PatientTabKey>(visibleTabs[0] ?? "overview")
+  useEffect(() => {
+    if (visibleTabs.length > 0 && !visibleTabs.includes(activeTab)) setActiveTab(visibleTabs[0])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleTabs])
 
   const allergies = usePatientAllergies(patient.id)
   const conditions = usePatientConditions(patient.id)
@@ -169,14 +201,30 @@ function PatientProfileContent({ patient }: { patient: PatientSummary }) {
     <div>
       <PageHeader
         title={patient.name}
-        description={`MRN ${patient.mrn}`}
+        description={/^mrn/i.test(patient.mrn) ? patient.mrn : `MRN ${patient.mrn}`}
         breadcrumbs={[{ label: "Patients", href: "/patients" }, { label: patient.name }]}
         actions={
-          <Button variant="outline" onClick={() => setEditOpen(true)}>
-            <PencilIcon />
-            Edit
-          </Button>
+          <div className="flex items-center gap-2">
+            <RoleGate roles={["doctor", "nurse"]}>
+              <Button variant="outline" onClick={() => setBreakGlassOpen(true)}>
+                <SirenIcon />
+                Emergency Access
+              </Button>
+            </RoleGate>
+            {canEdit && (
+              <Button variant="outline" onClick={() => setEditOpen(true)}>
+                <PencilIcon />
+                Edit
+              </Button>
+            )}
+          </div>
         }
+      />
+
+      <BreakGlassDialog
+        patientName={patient.name}
+        open={breakGlassOpen}
+        onOpenChange={setBreakGlassOpen}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
@@ -192,31 +240,52 @@ function PatientProfileContent({ patient }: { patient: PatientSummary }) {
             </div>
 
             <div className="flex flex-col gap-3 border-t border-border pt-4">
-              <InfoRow
-                icon={UserRoundIcon}
-                label="Age / Gender"
-                value={`${patient.age ?? "Unknown"}${patient.age !== undefined ? " yrs" : ""} · ${patient.gender}`}
-              />
-              <InfoRow icon={CalendarIcon} label="Date of birth" value={patient.dob ?? ""} />
-              <InfoRow icon={PhoneIcon} label="Phone" value={patient.phone} />
-              <InfoRow icon={MailIcon} label="Email" value={patient.email} />
-              <InfoRow icon={MapPinIcon} label="Address" value={patient.address} />
+              {visibleFields.has("ageGender") && (
+                <InfoRow
+                  icon={UserRoundIcon}
+                  label="Age / Gender"
+                  value={`${patient.age ?? "Unknown"}${patient.age !== undefined ? " yrs" : ""} · ${patient.gender}`}
+                />
+              )}
+              {visibleFields.has("dob") && (
+                <InfoRow icon={CalendarIcon} label="Date of birth" value={patient.dob ?? ""} />
+              )}
+              {visibleFields.has("phone") && <InfoRow icon={PhoneIcon} label="Phone" value={patient.phone} />}
+              {visibleFields.has("email") && <InfoRow icon={MailIcon} label="Email" value={patient.email} />}
+              {visibleFields.has("address") && (
+                <InfoRow icon={MapPinIcon} label="Address" value={patient.address} />
+              )}
+              {visibleFields.size === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  No additional identity details for your role.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="overview">
+        {visibleTabs.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <EmptyState
+                title="No additional sections for your role"
+                description="Your role doesn't include chart access beyond this patient's identity details."
+              />
+            </CardContent>
+          </Card>
+        ) : (
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PatientTabKey)}>
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="history">Medical History</TabsTrigger>
-            <TabsTrigger value="appointments">Appointments</TabsTrigger>
-            <TabsTrigger value="lab">Lab</TabsTrigger>
-            <TabsTrigger value="imaging">Imaging</TabsTrigger>
-            <TabsTrigger value="pharmacy">Pharmacy</TabsTrigger>
-            <TabsTrigger value="billing">Billing</TabsTrigger>
+            {isTabVisible("overview") && <TabsTrigger value="overview">Overview</TabsTrigger>}
+            {isTabVisible("history") && <TabsTrigger value="history">Medical History</TabsTrigger>}
+            {isTabVisible("appointments") && <TabsTrigger value="appointments">Appointments</TabsTrigger>}
+            {isTabVisible("lab") && <TabsTrigger value="lab">Lab</TabsTrigger>}
+            {isTabVisible("imaging") && <TabsTrigger value="imaging">Imaging</TabsTrigger>}
+            {isTabVisible("pharmacy") && <TabsTrigger value="pharmacy">Pharmacy</TabsTrigger>}
+            {isTabVisible("billing") && <TabsTrigger value="billing">Billing</TabsTrigger>}
           </TabsList>
 
-          <TabsContent value="overview">
+          {isTabVisible("overview") && <TabsContent value="overview">
             <Card>
               <CardHeader>
                 <CardTitle>Allergies</CardTitle>
@@ -248,9 +317,9 @@ function PatientProfileContent({ patient }: { patient: PatientSummary }) {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent>}
 
-          <TabsContent value="history">
+          {isTabVisible("history") && <TabsContent value="history">
             <Card>
               <CardHeader>
                 <CardTitle>Conditions</CardTitle>
@@ -284,9 +353,9 @@ function PatientProfileContent({ patient }: { patient: PatientSummary }) {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent>}
 
-          <TabsContent value="appointments">
+          {isTabVisible("appointments") && <TabsContent value="appointments">
             <Card>
               <CardHeader>
                 <CardTitle>Appointments</CardTitle>
@@ -325,41 +394,42 @@ function PatientProfileContent({ patient }: { patient: PatientSummary }) {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent>}
 
-          <TabsContent value="lab">
+          {isTabVisible("lab") && <TabsContent value="lab">
             <ModuleLinkTab
               icon={FlaskConicalIcon}
               title="Lab results"
               description="Diagnostic reports are managed in the Laboratory module."
               href="/laboratory"
             />
-          </TabsContent>
-          <TabsContent value="imaging">
+          </TabsContent>}
+          {isTabVisible("imaging") && <TabsContent value="imaging">
             <ModuleLinkTab
               icon={ScanIcon}
               title="Imaging studies"
               description="Imaging studies are managed in the Radiology module."
               href="/radiology"
             />
-          </TabsContent>
-          <TabsContent value="pharmacy">
+          </TabsContent>}
+          {isTabVisible("pharmacy") && <TabsContent value="pharmacy">
             <ModuleLinkTab
               icon={PillIcon}
               title="Prescriptions"
               description="Medication requests are managed in the Pharmacy module."
               href="/pharmacy"
             />
-          </TabsContent>
-          <TabsContent value="billing">
+          </TabsContent>}
+          {isTabVisible("billing") && <TabsContent value="billing">
             <ModuleLinkTab
               icon={ReceiptIcon}
               title="Invoices"
               description="Invoices and claims are managed in the Billing module."
               href="/billing"
             />
-          </TabsContent>
+          </TabsContent>}
         </Tabs>
+        )}
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

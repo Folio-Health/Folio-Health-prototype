@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { PageHeader } from "@/components/common/page-header"
 import { useUiStore } from "@/stores/ui-store"
 import { useCurrentUser } from "@/lib/fhir/use-current-user"
-import { ROLE_LABELS } from "@/lib/auth/roles"
+import { ROLE_LABELS, type RoleId } from "@/lib/auth/roles"
 import { ListSkeleton } from "@/components/common/loading-skeletons"
 import { AdminDashboard } from "./admin-dashboard"
 import { PlatformDashboard } from "./platform-dashboard"
@@ -12,26 +12,28 @@ import { DoctorDashboard } from "./doctor-dashboard"
 import { ReceptionistDashboard } from "./receptionist-dashboard"
 import { NurseDashboard } from "./nurse-dashboard"
 import { LabScientistDashboard } from "./lab-scientist-dashboard"
-import { RadiologistDashboard } from "./radiologist-dashboard"
 import { PharmacistDashboard } from "./pharmacist-dashboard"
 import { AccountantDashboard } from "./accountant-dashboard"
-import { HospitalManagementDashboard } from "./hospital-management-dashboard"
-import type { ClinicalRole } from "@/types/core"
+import { HimOfficerDashboard } from "./him-officer-dashboard"
 
-const ROLE_DASHBOARDS: Record<ClinicalRole, React.ComponentType> = {
-  Administrator: AdminDashboard,
-  Doctor: DoctorDashboard,
-  Receptionist: ReceptionistDashboard,
-  Nurse: NurseDashboard,
-  "Lab Scientist": LabScientistDashboard,
-  Radiologist: RadiologistDashboard,
-  Pharmacist: PharmacistDashboard,
-  Accountant: AccountantDashboard,
-  "Hospital Management": HospitalManagementDashboard,
+/**
+ * Dashboard per FACILITY role (EMR V1 RBAC spec §16). `facility-admin` falls
+ * back to AdminDashboard — the two roles largely overlap (administrative
+ * oversight of one facility vs. the whole system).
+ */
+const ROLE_DASHBOARDS: Record<Exclude<RoleId, "platform-admin">, React.ComponentType> = {
+  "facility-admin": AdminDashboard,
+  doctor: DoctorDashboard,
+  "front-desk": ReceptionistDashboard,
+  nurse: NurseDashboard,
+  "lab-scientist": LabScientistDashboard,
+  pharmacist: PharmacistDashboard,
+  "billing-cashier": AccountantDashboard,
+  "him-officer": HimOfficerDashboard,
 }
 
 function DashboardView() {
-  const activeRole = useUiStore((s) => s.activeRole)
+  const previewRole = useUiStore((s) => s.previewRole)
   const { data: user, isLoading } = useCurrentUser()
 
   // Formatting "today" during render makes the server's HTML disagree with the
@@ -57,17 +59,24 @@ function DashboardView() {
     )
   }
 
-  // The operator plane gets the platform overview — never a clinical dashboard,
-  // and never the local role switcher, which is a demo affordance with no
-  // bearing on what the server will actually authorise.
+  // The operator plane gets the platform overview — never a clinical dashboard.
   const isPlatform = user?.platformOnly ?? false
+
+  // Real role first; "preview as role" only overrides which dashboard renders,
+  // never what data loads underneath it. A user can hold more than one role —
+  // pick the first for dashboard purposes, since only one view can render.
+  const realRole = user?.roles.find((r): r is Exclude<RoleId, "platform-admin"> => r !== "platform-admin")
+  const effectiveRole = previewRole ?? realRole
+
   const DashboardComponent = isPlatform
     ? PlatformDashboard
-    : (ROLE_DASHBOARDS[activeRole] ?? AdminDashboard)
+    : (ROLE_DASHBOARDS[effectiveRole ?? "facility-admin"] ?? AdminDashboard)
 
   const roleLabel = isPlatform
     ? ROLE_LABELS["platform-admin"]
-    : (user?.roles.map((r) => ROLE_LABELS[r]).join(" · ") || activeRole)
+    : previewRole
+      ? ROLE_LABELS[previewRole]
+      : (user?.roles.map((r) => ROLE_LABELS[r]).join(" · ") ?? "")
 
   const scope = isPlatform ? "Platform" : (user?.facilityName ?? roleLabel)
 

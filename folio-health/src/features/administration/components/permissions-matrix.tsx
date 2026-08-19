@@ -1,116 +1,30 @@
 "use client"
 
-import { useState } from "react"
+import { CheckIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AdministrationModuleTabs } from "./administration-module-tabs"
-import { CLINICAL_ROLES } from "@/types/core"
-import type { ClinicalRole } from "@/types/core"
+import { FACILITY_ASSIGNABLE_ROLES, ROLE_LABELS, type RoleId } from "@/lib/auth/roles"
+import { ALL_PERMISSIONS, ROLE_PERMISSIONS, formatPermissionLabel } from "@/lib/auth/permissions"
 
-interface PermissionCategory {
-  category: string
-  actions: string[]
-}
+const DISPLAY_ROLES: Exclude<RoleId, "platform-admin">[] = ["facility-admin", ...FACILITY_ASSIGNABLE_ROLES]
 
-const PERMISSION_CATEGORIES: PermissionCategory[] = [
-  { category: "Patients", actions: ["View", "Create", "Edit", "Delete"] },
-  { category: "Billing", actions: ["View", "Create", "Edit", "Delete"] },
-  { category: "Reports", actions: ["View", "Export"] },
-  { category: "Settings", actions: ["View", "Edit"] },
-]
-
-const ROLE_ACCESS: Record<ClinicalRole, Record<string, string[]>> = {
-  Administrator: {
-    Patients: ["View", "Create", "Edit", "Delete"],
-    Billing: ["View", "Create", "Edit", "Delete"],
-    Reports: ["View", "Export"],
-    Settings: ["View", "Edit"],
-  },
-  "Hospital Management": {
-    Patients: ["View"],
-    Billing: ["View", "Create", "Edit"],
-    Reports: ["View", "Export"],
-    Settings: ["View"],
-  },
-  Doctor: {
-    Patients: ["View", "Create", "Edit", "Delete"],
-    Billing: ["View"],
-    Reports: ["View"],
-    Settings: [],
-  },
-  Nurse: {
-    Patients: ["View", "Edit"],
-    Billing: [],
-    Reports: ["View"],
-    Settings: [],
-  },
-  "Lab Scientist": {
-    Patients: ["View"],
-    Billing: [],
-    Reports: ["View"],
-    Settings: [],
-  },
-  Radiologist: {
-    Patients: ["View"],
-    Billing: [],
-    Reports: ["View"],
-    Settings: [],
-  },
-  Pharmacist: {
-    Patients: ["View"],
-    Billing: ["View"],
-    Reports: ["View"],
-    Settings: [],
-  },
-  Receptionist: {
-    Patients: ["View", "Create", "Edit"],
-    Billing: ["View", "Create"],
-    Reports: [],
-    Settings: [],
-  },
-  Accountant: {
-    Patients: ["View"],
-    Billing: ["View", "Create", "Edit", "Delete"],
-    Reports: ["View", "Export"],
-    Settings: [],
-  },
-}
-
-function permKey(category: string, action: string) {
-  return `${category}:${action}`
-}
-
-function buildInitialState(): Record<ClinicalRole, Record<string, boolean>> {
-  const state = {} as Record<ClinicalRole, Record<string, boolean>>
-  for (const role of CLINICAL_ROLES) {
-    const grants: Record<string, boolean> = {}
-    for (const { category, actions } of PERMISSION_CATEGORIES) {
-      for (const action of actions) {
-        grants[permKey(category, action)] = ROLE_ACCESS[role][category]?.includes(action) ?? false
-      }
-    }
-    state[role] = grants
-  }
-  return state
-}
-
+/**
+ * Read-only reflection of `src/lib/auth/permissions.ts` — what's actually
+ * compiled into the app, not an editable settings page. Permissions are
+ * defined in code, not a database, so there is nothing here to persist; the
+ * previous version of this page had toggles that looked editable but did
+ * nothing, which is worse than no controls at all. Changing a grant means
+ * changing that file (and the matching server-side AccessPolicy) and
+ * shipping a release, not clicking a switch.
+ */
 function PermissionsMatrix() {
-  const [matrix, setMatrix] = useState(buildInitialState)
-
-  function toggle(role: ClinicalRole, key: string) {
-    setMatrix((prev) => ({
-      ...prev,
-      [role]: { ...prev[role], [key]: !prev[role][key] },
-    }))
-  }
-
   return (
     <div>
       <PageHeader
         title="Permission Matrix"
-        description="Illustrative access control per role, toggles are local only and don't persist"
+        description="What each role is granted in this build — defined in code, not editable here"
         breadcrumbs={[{ label: "System" }, { label: "Administration" }, { label: "Permissions" }]}
       />
 
@@ -119,48 +33,48 @@ function PermissionsMatrix() {
       <Card>
         <CardHeader>
           <CardTitle>Permissions by Role</CardTitle>
-          <CardDescription>Toggle a switch to grant or revoke a permission for a role.</CardDescription>
+          <CardDescription>
+            A checkmark means the role holds that permission in the current release.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-lg border border-border">
-            <Table>
+            {/* min-w forces genuine overflow so the wrapper's scrollbar
+                engages — table-layout:auto otherwise shrinks columns below
+                their min-w-* hint to fit the viewport instead of scrolling,
+                silently hiding the last 1-2 role columns entirely. */}
+            <Table className="min-w-[1040px]">
               <TableHeader>
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="h-11 min-w-48 px-4">Permission</TableHead>
-                  {CLINICAL_ROLES.map((role) => (
+                  {/* Sticky so the permission name stays visible while
+                      scrolling to reach the later role columns — otherwise a
+                      checkmark far to the right is unreadable on its own. */}
+                  <TableHead className="sticky left-0 z-10 h-11 min-w-48 border-r border-border bg-muted/40 px-4 shadow-[2px_0_4px_-2px_rgb(0_0_0/0.1)]">
+                    Permission
+                  </TableHead>
+                  {DISPLAY_ROLES.map((role) => (
                     <TableHead key={role} className="h-11 min-w-28 px-3 text-center whitespace-nowrap">
-                      {role}
+                      {ROLE_LABELS[role]}
                     </TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {PERMISSION_CATEGORIES.map(({ category, actions }) =>
-                  actions.map((action, actionIdx) => {
-                    const key = permKey(category, action)
-                    return (
-                      <TableRow key={key}>
-                        <TableCell className="px-4 py-2.5">
-                          {actionIdx === 0 && (
-                            <span className="mr-2 text-xs font-semibold tracking-wide text-foreground uppercase">
-                              {category}
-                            </span>
-                          )}
-                          <span className="text-sm text-muted-foreground">{action}</span>
+                {ALL_PERMISSIONS.map((permission) => (
+                  <TableRow key={permission}>
+                    <TableCell className="sticky left-0 z-10 border-r border-border bg-card px-4 py-2.5 text-sm text-muted-foreground shadow-[2px_0_4px_-2px_rgb(0_0_0/0.1)]">
+                      {formatPermissionLabel(permission)}
+                    </TableCell>
+                    {DISPLAY_ROLES.map((role) => {
+                      const granted = ROLE_PERMISSIONS[role].includes(permission)
+                      return (
+                        <TableCell key={role} className="px-3 py-2.5 text-center">
+                          {granted && <CheckIcon className="mx-auto size-4 text-primary" />}
                         </TableCell>
-                        {CLINICAL_ROLES.map((role) => (
-                          <TableCell key={role} className="px-3 py-2.5 text-center">
-                            <Switch
-                              size="sm"
-                              checked={matrix[role][key]}
-                              onCheckedChange={() => toggle(role, key)}
-                            />
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    )
-                  })
-                )}
+                      )
+                    })}
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>

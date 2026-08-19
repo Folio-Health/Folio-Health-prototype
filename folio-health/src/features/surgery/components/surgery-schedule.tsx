@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import { PlusIcon, SearchIcon, CalendarClockIcon, LoaderIcon, CheckCheckIcon, XCircleIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { Button } from "@/components/ui/button"
@@ -287,7 +288,9 @@ function SurgerySchedule() {
             <Button variant="outline" onClick={() => setNewOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleScheduleSurgery}>Schedule Surgery</Button>
+            <RoleGate roles={["doctor"]}>
+              <Button onClick={handleScheduleSurgery}>Schedule Surgery</Button>
+            </RoleGate>
           </DialogFooter>
         </DialogContent>
       </Dialog>

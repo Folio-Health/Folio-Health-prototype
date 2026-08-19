@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { EmptyState } from "@/components/common/empty-state"
+import { RoleGate } from "@/components/common/role-gate"
 import { cn } from "@/lib/utils"
 import { APPOINTMENTS } from "@/lib/mock/appointments"
 import { getPatientById } from "@/lib/mock/patients"
@@ -270,10 +271,14 @@ function ConsultationWorkspace({ appointmentId }: { appointmentId: string }) {
       </div>
 
       <div className="sticky bottom-0 z-10 flex flex-col-reverse gap-2 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:justify-end">
-        <Button variant="outline" onClick={handleSaveDraft}>
-          Save Draft
-        </Button>
-        <Button onClick={handleFinalize}>Finalize Visit</Button>
+        <RoleGate roles={["doctor"]}>
+          <Button variant="outline" onClick={handleSaveDraft}>
+            Save Draft
+          </Button>
+        </RoleGate>
+        <RoleGate roles={["doctor"]}>
+          <Button onClick={handleFinalize}>Finalize Visit</Button>
+        </RoleGate>
       </div>
     </div>
   )

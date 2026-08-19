@@ -134,7 +134,8 @@ export default function SetPasswordPage() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        {/* method="post" is a pre-hydration safety net — see login/page.tsx. */}
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           {formError && (
             <div
               role="alert"

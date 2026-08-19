@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { SearchIcon, ClockIcon, CheckCircle2Icon, XCircleIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { StatusBadge } from "@/components/common/status-badge"
@@ -129,7 +130,7 @@ function RefundsList() {
               </div>
               <DialogFooter showCloseButton>
                 {(statuses[viewing.id] ?? viewing.status) === "Pending" && (
-                  <>
+                  <RoleGate permission="BILLING_REFUND">
                     <Button variant="outline" onClick={() => updateStatus(viewing, "Rejected")}>
                       <XCircleIcon />
                       Reject
@@ -138,7 +139,7 @@ function RefundsList() {
                       <CheckCircle2Icon />
                       Process Refund
                     </Button>
-                  </>
+                  </RoleGate>
                 )}
               </DialogFooter>
             </>

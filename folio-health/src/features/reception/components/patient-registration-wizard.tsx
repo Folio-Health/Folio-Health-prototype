@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { RegistrationStepper } from "./registration-stepper"
+import { RoleGate } from "@/components/common/role-gate"
 import { unsplash, MEDICAL_IMAGES } from "@/lib/images"
 import type { BloodGroup } from "@/types/core"
 
@@ -608,10 +609,12 @@ function PatientRegistrationWizard() {
                       <ArrowRightIcon />
                     </Button>
                   ) : (
-                    <Button type="submit">
-                      <CheckIcon />
-                      Complete Registration
-                    </Button>
+                    <RoleGate roles={["front-desk", "facility-admin"]}>
+                      <Button type="submit">
+                        <CheckIcon />
+                        Complete Registration
+                      </Button>
+                    </RoleGate>
                   )}
                 </div>
               </form>

@@ -246,7 +246,8 @@ function ProfileSettings() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <Form {...passwordForm}>
-                <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)}>
+                {/* method="post" is a pre-hydration safety net — see (auth)/login/page.tsx. */}
+                <form method="post" onSubmit={passwordForm.handleSubmit(onSubmitPassword)}>
                   <CardContent className="flex flex-col gap-4 border-t border-border pt-4">
                     <FormField
                       control={passwordForm.control}

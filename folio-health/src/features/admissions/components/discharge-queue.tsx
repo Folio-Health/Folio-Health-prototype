@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
+import { RoleGate } from "@/components/common/role-gate"
 import { getPatientById } from "@/lib/mock/patients"
 import { getPendingDischarges } from "@/lib/mock/admissions"
 import type { Admission } from "@/lib/mock/admissions"
@@ -72,19 +73,21 @@ function DischargeQueue() {
         emptyDescription="Patients marked ready for discharge by their care team will appear here."
       />
 
-      <ConfirmDialog
-        open={pending !== null}
-        onOpenChange={(open) => !open && setPending(null)}
-        title="Complete discharge?"
-        description={
-          pending
-            ? `This will finalize the discharge for ${getPatientById(pending.patientId)?.name ?? "this patient"} and release their bed.`
-            : ""
-        }
-        confirmLabel="Complete Discharge"
-        destructive={false}
-        onConfirm={confirmComplete}
-      />
+      <RoleGate roles={["doctor", "nurse"]}>
+        <ConfirmDialog
+          open={pending !== null}
+          onOpenChange={(open) => !open && setPending(null)}
+          title="Complete discharge?"
+          description={
+            pending
+              ? `This will finalize the discharge for ${getPatientById(pending.patientId)?.name ?? "this patient"} and release their bed.`
+              : ""
+          }
+          confirmLabel="Complete Discharge"
+          destructive={false}
+          onConfirm={confirmComplete}
+        />
+      </RoleGate>
     </div>
   )
 }

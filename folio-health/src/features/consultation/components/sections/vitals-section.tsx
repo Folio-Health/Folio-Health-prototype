@@ -6,6 +6,7 @@ import { PlusIcon } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/common/empty-state"
+import { RoleGate } from "@/components/common/role-gate"
 import { VitalsEntryForm, type VitalsFormValues } from "@/features/vitals/components/vitals-entry-form"
 import type { Patient } from "@/types/core"
 import type { VitalReading } from "@/types/core"
@@ -86,10 +87,12 @@ function VitalsSection({
           </CardContent>
         </Card>
       ) : (
-        <Button variant="outline" className="self-start" onClick={() => setShowForm(true)}>
-          <PlusIcon />
-          Record New Vitals
-        </Button>
+        <RoleGate roles={["doctor", "nurse"]}>
+          <Button variant="outline" className="self-start" onClick={() => setShowForm(true)}>
+            <PlusIcon />
+            Record New Vitals
+          </Button>
+        </RoleGate>
       )}
     </div>
   )

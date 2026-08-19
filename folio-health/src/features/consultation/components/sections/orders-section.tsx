@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select"
 import { StatusBadge } from "@/components/common/status-badge"
 import { EmptyState } from "@/components/common/empty-state"
+import { RoleGate } from "@/components/common/role-gate"
 import type { OrderItem, OrderPriority, OrderType } from "@/features/consultation/types"
 
 function OrdersSection({
@@ -82,10 +83,12 @@ function OrdersSection({
               }}
             />
           </div>
-          <Button type="button" onClick={handleAdd}>
-            <PlusIcon />
-            Add Order
-          </Button>
+          <RoleGate permission="ORDER">
+            <Button type="button" onClick={handleAdd}>
+              <PlusIcon />
+              Add Order
+            </Button>
+          </RoleGate>
         </div>
 
         {orders.length === 0 ? (

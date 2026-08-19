@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { MoreHorizontalIcon, EyeIcon, SendIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
+import { RoleGate } from "@/components/common/role-gate"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
@@ -83,7 +84,7 @@ function getClaimColumns({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} />}
+              render={<Button variant="ghost" size="icon-sm" onClick={(e) => e.stopPropagation()} aria-label="Open actions menu" />}
             >
               <MoreHorizontalIcon className="size-4" />
             </DropdownMenuTrigger>
@@ -92,10 +93,12 @@ function getClaimColumns({
                 <EyeIcon />
                 View
               </DropdownMenuItem>
-              <DropdownMenuItem disabled={!canFollowUp} onClick={() => onFollowUp(claim)}>
-                <SendIcon />
-                Follow Up with Insurer
-              </DropdownMenuItem>
+              <RoleGate permission="BILLING_CLAIM">
+                <DropdownMenuItem disabled={!canFollowUp} onClick={() => onFollowUp(claim)}>
+                  <SendIcon />
+                  Follow Up with Insurer
+                </DropdownMenuItem>
+              </RoleGate>
             </DropdownMenuContent>
           </DropdownMenu>
         )

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { EmptyState } from "@/components/common/empty-state"
+import { RoleGate } from "@/components/common/role-gate"
 import type { MedicationItem } from "@/features/consultation/types"
 
 function MedicationListSection({
@@ -60,10 +61,12 @@ function MedicationListSection({
             <Label>Duration</Label>
             <Input placeholder="e.g. 7 days" value={duration} onChange={(e) => setDuration(e.target.value)} />
           </div>
-          <Button type="button" onClick={handleAdd} className="sm:col-span-2 lg:col-span-4 lg:w-fit">
-            <PlusIcon />
-            Add
-          </Button>
+          <RoleGate permission="PRESCRIBE">
+            <Button type="button" onClick={handleAdd} className="sm:col-span-2 lg:col-span-4 lg:w-fit">
+              <PlusIcon />
+              Add
+            </Button>
+          </RoleGate>
         </div>
 
         {medications.length === 0 ? (

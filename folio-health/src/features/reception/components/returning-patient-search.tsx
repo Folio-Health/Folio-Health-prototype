@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
+import { RoleGate } from "@/components/common/role-gate"
 import { searchPatients } from "@/lib/mock/patients"
 import type { Patient } from "@/types/core"
 
@@ -84,16 +85,18 @@ function ReturningPatientSearch() {
             <EyeIcon />
             Profile
           </Button>
-          <Button
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              startVisit(row.original)
-            }}
-          >
-            <PlayIcon />
-            Start Visit
-          </Button>
+          <RoleGate roles={["front-desk", "facility-admin"]}>
+            <Button
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                startVisit(row.original)
+              }}
+            >
+              <PlayIcon />
+              Start Visit
+            </Button>
+          </RoleGate>
         </div>
       ),
     },
