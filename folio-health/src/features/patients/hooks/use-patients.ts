@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import type { Patient as FhirPatient } from "@medplum/fhirtypes"
 import { searchResources, readResource } from "@/lib/fhir/client"
 import { toPatientSummary, type PatientSummary } from "@/lib/fhir/patient"
+import { NIN_LENGTH, NIN_SYSTEM } from "@/lib/identifiers"
 
 export interface PatientFilters {
   /** Free text matched against name, identifier, and phone by the server. */
@@ -67,6 +68,42 @@ export function usePatient(id: string | undefined) {
     queryFn: async (): Promise<PatientSummary> => {
       const patient = await readResource<FhirPatient>("Patient", id as string)
       return toPatientSummary(patient)
+    },
+  })
+}
+
+
+/**
+ * Front-desk patient lookup, the way a desk actually asks for it: by name,
+ * phone number, or NIN — one box.
+ *
+ *  - 11 digits  → exact NIN identifier match (the strongest signal there is)
+ *  - 7+ digits  → phone search
+ *  - otherwise  → name fragment (`name:contains`)
+ *
+ * Results stay scoped to the caller's facility by their own AccessPolicy.
+ */
+export function usePatientLookup(term: string, enabled = true) {
+  const query = term.trim()
+  const digits = query.replace(/\D/g, "")
+  const isNin = digits.length === NIN_LENGTH && /^\d+$/.test(query.replace(/\s/g, ""))
+  const isPhone = !isNin && digits.length >= 7 && digits.length === query.replace(/[\s\-+]/g, "").length
+
+  return useQuery({
+    queryKey: ["patient-lookup", query],
+    enabled: enabled && query.length >= 2,
+    queryFn: async (): Promise<PatientSummary[]> => {
+      const params = isNin
+        ? { identifier: `${NIN_SYSTEM}|${digits}` }
+        : isPhone
+          ? { phone: digits }
+          : { "name:contains": query }
+      const { resources } = await searchResources<FhirPatient>("Patient", {
+        ...params,
+        _count: 8,
+        _sort: "-_lastUpdated",
+      })
+      return resources.map(toPatientSummary)
     },
   })
 }

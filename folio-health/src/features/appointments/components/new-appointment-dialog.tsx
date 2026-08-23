@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PersonAvatar } from "@/components/common/person-avatar"
-import { usePatients } from "@/features/patients/hooks/use-patients"
+import { usePatientLookup } from "@/features/patients/hooks/use-patients"
 import { useBookAppointment, useBookablePractitioners } from "../hooks/use-appointments"
 
 const DURATIONS = [
@@ -60,17 +60,14 @@ function NewAppointmentDialog({
 
   const isReschedule = Boolean(rescheduleOf)
   const search = patientSearch.trim()
-  const { data: patientResults, isFetching: searching } = usePatients(
-    { search },
-    open && !isReschedule && search.length >= 2
+  const { data: patientResults, isFetching: searching } = usePatientLookup(
+    search,
+    open && !isReschedule
   )
   const { data: practitioners, isPending: loadingPractitioners } = useBookablePractitioners()
   const book = useBookAppointment()
 
-  const candidates = useMemo(
-    () => (patientResults?.patients ?? []).slice(0, 6),
-    [patientResults]
-  )
+  const candidates = useMemo(() => (patientResults ?? []).slice(0, 6), [patientResults])
   const selectedPractitioner = practitioners?.find((p) => p.id === practitionerId)
 
   function reset() {
@@ -175,7 +172,7 @@ function NewAppointmentDialog({
                       <Input
                         id="apt-patient"
                         className="pl-8"
-                        placeholder="Search registered patients by name…"
+                        placeholder="Name, phone number, or NIN…"
                         value={patientSearch}
                         onChange={(e) => setPatientSearch(e.target.value)}
                       />
@@ -186,7 +183,7 @@ function NewAppointmentDialog({
                           <p className="px-3 py-2 text-sm text-muted-foreground">Searching…</p>
                         ) : candidates.length === 0 ? (
                           <p className="px-3 py-2 text-sm text-muted-foreground">
-                            No registered patient matches. Register them at Reception first.
+                            No registered patient matches that name, phone, or NIN. Register them at Reception first.
                           </p>
                         ) : (
                           candidates.map((p) => (
@@ -203,7 +200,7 @@ function NewAppointmentDialog({
                               <PersonAvatar name={p.name} size="sm" />
                               <span className="font-medium">{p.name}</span>
                               <span className="ml-auto text-xs text-muted-foreground">
-                                {p.dob ?? ""}
+                                {[p.phone, p.dob].filter(Boolean).join(" · ")}
                               </span>
                             </button>
                           ))
