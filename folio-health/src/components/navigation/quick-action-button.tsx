@@ -24,7 +24,7 @@ import { useCurrentUser } from "@/lib/fhir/use-current-user"
 
 const ACTIONS = [
   { label: "New Patient", href: "/reception/register", icon: UserPlusIcon },
-  { label: "New Appointment", href: "/appointments/new", icon: CalendarPlusIcon },
+  { label: "New Appointment", href: "/appointments", icon: CalendarPlusIcon },
   { label: "New Prescription", href: "/pharmacy", icon: PillIcon },
   { label: "New Lab Order", href: "/laboratory", icon: FlaskConicalIcon },
   { label: "New Invoice", href: "/billing", icon: ReceiptIcon },
