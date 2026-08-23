@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
+import { phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
 import { format } from "date-fns"
 import {
   PencilIcon,
@@ -447,7 +448,7 @@ function PatientProfileContent({ patient }: { patient: PatientSummary }) {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="edit-phone">Phone</Label>
-              <Input id="edit-phone" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+              <Input id="edit-phone" {...phoneInputProps} value={editPhone} onChange={(e) => setEditPhone(sanitizePhoneInput(e.target.value))} />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="edit-email">Email</Label>

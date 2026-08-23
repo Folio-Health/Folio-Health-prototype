@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
+import { phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
 import { PlusIcon, SearchIcon, TruckIcon, MailIcon, PhoneIcon, UserIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
 import { DataTable } from "@/components/tables/data-table"
@@ -186,7 +187,8 @@ function SuppliersList() {
               <Input
                 id="supplier-phone"
                 value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, phone: sanitizePhoneInput(e.target.value) }))}
+                {...phoneInputProps}
                 placeholder="+234..."
               />
             </div>

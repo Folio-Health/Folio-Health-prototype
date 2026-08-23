@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
 import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { phoneSchema, phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
 import { SaveIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -27,7 +28,7 @@ const hospitalSettingsSchema = z.object({
   name: z.string().min(1, "Hospital name is required"),
   tagline: z.string().max(140, "Keep the tagline under 140 characters").optional().or(z.literal("")),
   address: z.string().min(1, "Address is required"),
-  phone: z.string().min(1, "Phone number is required"),
+  phone: phoneSchema,
   email: z.string().min(1, "Email is required").email("Enter a valid email address"),
   website: z.string().optional().or(z.literal("")),
   operatingHours: z.string().min(1, "Operating hours are required"),
@@ -153,7 +154,11 @@ function HospitalSettingsForm() {
                           <InputGroupAddon>
                             <PhoneIcon className="size-4" />
                           </InputGroupAddon>
-                          <InputGroupInput placeholder="+234 800 000 0000" {...field} />
+                          <InputGroupInput
+                            {...phoneInputProps}
+                            {...field}
+                            onChange={(e) => field.onChange(sanitizePhoneInput(e.target.value))}
+                          />
                         </InputGroup>
                       </FormControl>
                       <FormMessage />

@@ -1,10 +1,15 @@
 "use client"
 
+import { useState } from "react"
+
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
+import type { Patient as FhirPatient } from "@medplum/fhirtypes"
+import { registerPatient } from "../lib/register-patient"
+import { phoneSchema, phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
 import { ZapIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
 import { Button } from "@/components/ui/button"
@@ -30,7 +35,7 @@ import { RoleGate } from "@/components/common/role-gate"
 
 const walkInSchema = z.object({
   name: z.string().min(1, "Patient name is required"),
-  phone: z.string().min(7, "Enter a valid phone number"),
+  phone: phoneSchema,
   gender: z.enum(["Male", "Female", "Other"]),
   dob: z.string().min(1, "Date of birth is required"),
   reason: z.string().min(1, "Reason for visit is required"),
@@ -46,12 +51,40 @@ function WalkInRegistration() {
     defaultValues: { name: "", phone: "", gender: "Male", dob: "", reason: "" },
   })
 
-  function onSubmit(values: WalkInValues) {
-    void values
-    toast.success("Walk in patient registered", {
-      description: "The patient has been added to today's queue.",
-    })
-    router.push("/patients/PAT-0001")
+  const [submitting, setSubmitting] = useState(false)
+
+  /**
+   * Creates the REAL FHIR Patient (this used to fake a toast and redirect to a
+   * hardcoded id). There is no queue data model yet, so no queue claim is
+   * made; the reason for visit is kept as a note on the record.
+   */
+  async function onSubmit(values: WalkInValues) {
+    setSubmitting(true)
+    const parts = values.name.trim().split(/\s+/)
+    const family = parts.length > 1 ? (parts.pop() as string) : ""
+    try {
+      const created = await registerPatient({
+        resourceType: "Patient",
+        active: true,
+        name: [{ given: parts, ...(family ? { family } : {}), text: values.name.trim() }],
+        gender: values.gender.toLowerCase() as FhirPatient["gender"],
+        birthDate: values.dob,
+        telecom: [{ system: "phone", value: values.phone }],
+        extension: [
+          { url: "https://folio.health/fhir/StructureDefinition/visit-reason", valueString: values.reason },
+        ],
+      })
+      toast.success("Walk-in patient registered", {
+        description: "Their record is ready — opening it now.",
+      })
+      router.push(`/patients/${created.id}`)
+    } catch (error) {
+      toast.error("Could not register the patient", {
+        description: error instanceof Error ? error.message : "Check your connection and try again.",
+      })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -94,7 +127,11 @@ function WalkInRegistration() {
                     <FormItem>
                       <FormLabel>Phone number</FormLabel>
                       <FormControl>
-                        <Input placeholder="+234 803 456 7890" {...field} />
+                        <Input
+                          {...phoneInputProps}
+                          {...field}
+                          onChange={(e) => field.onChange(sanitizePhoneInput(e.target.value))}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -154,7 +191,9 @@ function WalkInRegistration() {
                   Clear
                 </Button>
                 <RoleGate roles={["front-desk", "facility-admin"]}>
-                  <Button type="submit">Register &amp; Add to Queue</Button>
+                  <Button type="submit" disabled={submitting}>
+                    {submitting ? "Registering…" : "Register Patient"}
+                  </Button>
                 </RoleGate>
               </div>
             </form>

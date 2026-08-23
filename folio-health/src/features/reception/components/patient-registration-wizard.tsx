@@ -7,6 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
+import type { Patient as FhirPatient } from "@medplum/fhirtypes"
+import { registerPatient } from "../lib/register-patient"
+import { phoneSchema, phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -56,7 +59,7 @@ const registrationSchema = z
     maritalStatus: z.enum(["Single", "Married", "Divorced", "Widowed"]),
     occupation: z.string().min(1, "Occupation is required"),
 
-    phone: z.string().min(7, "Enter a valid phone number"),
+    phone: phoneSchema,
     email: z.string().min(1, "Email is required").email("Enter a valid email address"),
     addressLine1: z.string().min(1, "Address is required"),
     city: z.string().min(1, "City is required"),
@@ -66,7 +69,7 @@ const registrationSchema = z
 
     emergencyName: z.string().min(1, "Contact name is required"),
     emergencyRelationship: z.string().min(1, "Relationship is required"),
-    emergencyPhone: z.string().min(7, "Enter a valid phone number"),
+    emergencyPhone: phoneSchema,
 
     selfPay: z.boolean(),
     insuranceProvider: z.string().optional(),
@@ -147,12 +150,64 @@ function PatientRegistrationWizard() {
     setStep((s) => Math.max(s - 1, 0))
   }
 
-  function onSubmit(values: RegistrationValues) {
-    void values
-    toast.success("Patient registered successfully", {
-      description: "A new medical record number has been generated.",
-    })
-    router.push("/patients/PAT-0001")
+  const [submitting, setSubmitting] = useState(false)
+
+  /**
+   * Creates the REAL FHIR Patient and lands on its actual record. This used to
+   * show a success toast, discard the form, and redirect to a hardcoded
+   * "PAT-0001" — a fabricated flow that registered nobody.
+   *
+   * Insurance details are collected but not yet persisted (no Coverage
+   * resource is modelled server-side yet); the toast says what was saved.
+   */
+  async function onSubmit(values: RegistrationValues) {
+    setSubmitting(true)
+    try {
+      const created = await registerPatient({
+        resourceType: "Patient",
+        active: true,
+        name: [{ given: [values.firstName], family: values.lastName }],
+        gender: values.gender.toLowerCase() as FhirPatient["gender"],
+        birthDate: values.dob,
+        maritalStatus: { text: values.maritalStatus },
+        telecom: [
+          { system: "phone", value: values.phone },
+          { system: "email", value: values.email },
+        ],
+        address: [
+          {
+            line: [values.addressLine1],
+            city: values.city,
+            state: values.state,
+            postalCode: values.postalCode,
+            country: values.country,
+          },
+        ],
+        contact: [
+          {
+            name: { text: values.emergencyName },
+            relationship: [{ text: values.emergencyRelationship }],
+            telecom: [{ system: "phone", value: values.emergencyPhone }],
+          },
+        ],
+        extension: [
+          { url: "https://folio.health/fhir/StructureDefinition/blood-group", valueString: values.bloodGroup },
+          { url: "https://folio.health/fhir/StructureDefinition/occupation", valueString: values.occupation },
+        ],
+      })
+      toast.success("Patient registered", {
+        description: values.selfPay
+          ? "Demographics and contacts saved to their record."
+          : "Demographics and contacts saved. Insurance details are not stored yet — coverage isn't modelled server-side.",
+      })
+      router.push(`/patients/${created.id}`)
+    } catch (error) {
+      toast.error("Could not register the patient", {
+        description: error instanceof Error ? error.message : "Check your connection and try again.",
+      })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const values = form.getValues()
@@ -318,7 +373,11 @@ function PatientRegistrationWizard() {
                         <FormItem>
                           <FormLabel>Phone number</FormLabel>
                           <FormControl>
-                            <Input placeholder="+234 801 234 5678" {...field} />
+                            <Input
+                              {...phoneInputProps}
+                              {...field}
+                              onChange={(e) => field.onChange(sanitizePhoneInput(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -451,7 +510,11 @@ function PatientRegistrationWizard() {
                         <FormItem>
                           <FormLabel>Phone number</FormLabel>
                           <FormControl>
-                            <Input placeholder="+234 802 345 6789" {...field} />
+                            <Input
+                              {...phoneInputProps}
+                              {...field}
+                              onChange={(e) => field.onChange(sanitizePhoneInput(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -610,9 +673,9 @@ function PatientRegistrationWizard() {
                     </Button>
                   ) : (
                     <RoleGate roles={["front-desk", "facility-admin"]}>
-                      <Button type="submit">
+                      <Button type="submit" disabled={submitting}>
                         <CheckIcon />
-                        Complete Registration
+                        {submitting ? "Registering…" : "Complete Registration"}
                       </Button>
                     </RoleGate>
                   )}

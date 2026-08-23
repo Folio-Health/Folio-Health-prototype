@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
+import { phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
 import { Loader2Icon, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -137,7 +138,8 @@ function AddFacilityDialog() {
                 <Input
                   id="facility-phone"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))}
+                  {...phoneInputProps}
                   placeholder="Optional"
                 />
               </div>
