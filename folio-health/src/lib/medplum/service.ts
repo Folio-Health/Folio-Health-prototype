@@ -39,7 +39,7 @@ interface TokenResponse {
 let cachedToken: { value: string; expiresAt: number } | null = null
 
 /** Mint (or reuse) a client_credentials access token. */
-async function getServiceToken(): Promise<
+export async function getServiceToken(): Promise<
   { ok: true; token: string } | { ok: false; reason: string }
 > {
   const credentials = medplumServiceCredentials()

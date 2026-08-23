@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import { isDemoMode } from "@/lib/demo/mode"
+import { demoUserIdFromToken, isDemoMode } from "@/lib/demo/mode"
+import { demoClearTempCredential } from "@/lib/demo/store"
 import { medplumUrl } from "@/lib/medplum/config"
 import { clearTempCredentialFlag } from "@/lib/medplum/service"
 import { clearTokens, getAccessToken, refreshAccessToken } from "@/lib/medplum/session"
@@ -92,10 +93,16 @@ export async function POST(request: Request) {
   if (!token) token = await refreshAccessToken()
   if (!token) return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
 
-  // Demo mode: there is no real credential to change. Report success without
-  // touching anything so the settings flow can be exercised end to end.
+  // Demo mode: there is no real credential to change, but the first-login flag
+  // is real store state — clear it (and the cookie) so a provisioned account's
+  // forced set-password step completes exactly as it does in production.
   if (isDemoMode()) {
-    return NextResponse.json({ ok: true, reauthenticationRequired: false, flagCleared: true })
+    const userId = demoUserIdFromToken(token)
+    if (!userId) return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
+    demoClearTempCredential(userId)
+    const json = NextResponse.json({ ok: true, reauthenticationRequired: false, flagCleared: true })
+    json.cookies.delete(MUST_CHANGE_PASSWORD_COOKIE)
+    return json
   }
 
   // BEFORE the change — this token stops working the moment Medplum accepts it.

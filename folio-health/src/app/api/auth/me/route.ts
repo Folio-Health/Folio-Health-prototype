@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
+import { primaryFacilityFromAuthMe } from "@/lib/auth/facility-binding"
 import { FOLIO_ROLE_SYSTEM, TEMP_CREDENTIAL_EXTENSION_URL } from "@/lib/auth/roles"
-import { demoPersonaFromToken, isDemoMode } from "@/lib/demo/mode"
+import { demoUserIdFromToken, isDemoMode } from "@/lib/demo/mode"
 import { demoCurrentUser } from "@/lib/demo/store"
 import { medplumUrl } from "@/lib/medplum/config"
 import { getAccessToken, refreshSession } from "@/lib/medplum/session"
@@ -27,10 +28,10 @@ function unreachable() {
 }
 
 export async function GET() {
-  // Demo mode: the persona is encoded in the session cookie; no Medplum call.
+  // Demo mode: the account is encoded in the session cookie; no Medplum call.
   if (isDemoMode()) {
-    const persona = demoPersonaFromToken(await getAccessToken())
-    if (!persona) {
+    const userId = demoUserIdFromToken(await getAccessToken())
+    if (!userId) {
       // A leftover REAL session (cookies from before the mode switch) is not a
       // demo session. Delete it so the proxy stops treating the browser as
       // signed in — otherwise /login is unreachable and the user is stuck in a
@@ -42,7 +43,7 @@ export async function GET() {
       response.cookies.delete(MUST_CHANGE_PASSWORD_COOKIE)
       return response
     }
-    return NextResponse.json(demoCurrentUser(persona), {
+    return NextResponse.json(demoCurrentUser(userId), {
       headers: { "Cache-Control": "no-store" },
     })
   }
@@ -72,7 +73,8 @@ export async function GET() {
       if (refreshed.status === "expired") {
         return NextResponse.json({ error: "Session expired." }, { status: 401 })
       }
-      response = await fetchMe(refreshed.accessToken)
+      token = refreshed.accessToken
+      response = await fetchMe(token)
     }
 
     if (!response.ok) {
@@ -98,14 +100,10 @@ export async function GET() {
     // the only thing that grants the platform plane.
     const isProjectAdmin = Boolean(body?.membership?.admin)
 
-    // The facility the membership binds this user to, passed into the
-    // AccessPolicy's %organization variable.
-    const facilityParam = (body?.membership?.access ?? [])
-      .flatMap((entry: { parameter?: { name?: string; valueReference?: { reference?: string; display?: string } }[] }) =>
-        entry.parameter ?? []
-      )
-      .find((p: { name?: string }) => p?.name === "organization")
-    const facility = facilityParam?.valueReference ?? null
+    // The facility the membership binds this user to (the AccessPolicy's
+    // %organization). Medplum's auth/me trims `membership.access` away, so this
+    // is read from the compiled `accessPolicy` — see lib/auth/facility-binding.
+    const facility = primaryFacilityFromAuthMe(body)
 
     // Untrusted: ordinary FHIR data the user could PATCH. Reconciled client-side
     // against `admin` and `facility` before it means anything.
@@ -129,6 +127,22 @@ export async function GET() {
         e.url === TEMP_CREDENTIAL_EXTENSION_URL && e.valueBoolean === true
     )
 
+    // The compiled policy carries the facility's id but not its name; read the
+    // Organization (directory data every policy can see) for the display name.
+    // Best-effort: a failure here must not turn into a sign-out.
+    let facilityName: string | null = facility?.display ?? profileFacility?.display ?? null
+    if (facility && !facilityName) {
+      try {
+        const org = await fetch(medplumUrl(`fhir/R4/${facility.reference}`), {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        })
+        if (org.ok) facilityName = (await org.json())?.name ?? null
+      } catch (error) {
+        console.warn("[auth/me] could not read facility name", error)
+      }
+    }
+
     return NextResponse.json(
       {
         id: profile.id ?? null,
@@ -141,7 +155,7 @@ export async function GET() {
         // parameterises); the Practitioner's own facility stamp is the fallback.
         facilityId:
           (facility?.reference ?? profileFacility?.reference)?.split("/")[1] ?? null,
-        facilityName: facility?.display ?? profileFacility?.display ?? null,
+        facilityName,
         roleTags,
         mustChangePassword,
       },

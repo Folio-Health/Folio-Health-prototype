@@ -2,7 +2,9 @@ import "server-only"
 
 import type { Practitioner } from "@medplum/fhirtypes"
 import { FOLIO_ROLE_SYSTEM, TEMP_CREDENTIAL_EXTENSION_URL } from "@/lib/auth/roles"
-import { demoPersonaFromToken, isDemoMode } from "@/lib/demo/mode"
+import { facilityBindingsFromAuthMe } from "@/lib/auth/facility-binding"
+import { demoUserIdFromToken, isDemoMode } from "@/lib/demo/mode"
+import { getServiceToken } from "@/lib/medplum/service"
 import { demoMedplumRequest } from "@/lib/demo/store"
 import { medplumUrl } from "./config"
 import { getAccessToken, refreshSession } from "./session"
@@ -41,19 +43,39 @@ async function tokenOrThrow(): Promise<string> {
   return refreshed.accessToken
 }
 
+/**
+ * Options for `medplumFetch`.
+ *
+ * `privileged`: perform the call as the app's service identity instead of the
+ * signed-in user. Medplum reserves a handful of operations for PROJECT admins —
+ * `admin/projects/:id/invite`, and reading or writing `ProjectMembership` and
+ * `AccessPolicy` — and a hospital administrator is deliberately NOT a project
+ * admin (that flag is what grants the platform plane). So the app performs its
+ * own authorisation (`requirePlatformAdmin` / `requireFacilityProvisioner`,
+ * which pin a facility admin to their own facility) and then carries the
+ * Medplum call out with the service account. Only ever pass this AFTER one of
+ * those checks has passed. Falls back to the user's own token when no service
+ * credentials are configured, which still works for the platform operator.
+ */
+export interface MedplumFetchOptions extends RequestInit {
+  privileged?: boolean
+}
+
 /** Authenticated call to any Medplum path, retrying once after a token refresh. */
 export async function medplumFetch<T>(
   path: string,
-  init: RequestInit = {}
+  init: MedplumFetchOptions = {}
 ): Promise<T> {
   // Demo mode: the whole admin plane runs against the in-memory store. The
-  // persona still gates it — `requirePlatformAdmin` sees `membership.admin`
-  // only for the operator persona, so plane separation stays observable.
+  // signed-in account still gates it — `requirePlatformAdmin` sees
+  // `membership.admin` only for the operator, and `requireFacilityProvisioner`
+  // reads the membership's facility binding — so plane separation and the
+  // "hospital admin provisions only their own facility" rule both hold.
   if (isDemoMode()) {
-    const persona = demoPersonaFromToken(await getAccessToken())
-    if (!persona) throw new AdminError("Not authenticated.", 401)
+    const userId = demoUserIdFromToken(await getAccessToken())
+    if (!userId) throw new AdminError("Not authenticated.", 401)
     const body = typeof init.body === "string" ? JSON.parse(init.body) : undefined
-    const result = demoMedplumRequest(init.method ?? "GET", path, body, persona)
+    const result = demoMedplumRequest(init.method ?? "GET", path, body, userId)
     if (result.status >= 400) {
       const detail = (result.body as { issue?: { details?: { text?: string } }[]; error?: string })
       throw new AdminError(
@@ -64,14 +86,29 @@ export async function medplumFetch<T>(
     return result.body as T
   }
 
-  let token = await tokenOrThrow()
+  const { privileged, ...requestInit } = init
+
+  let asService = false
+  let token: string
+  if (privileged) {
+    const service = await getServiceToken()
+    if (service.ok) {
+      asService = true
+      token = service.token
+    } else {
+      console.warn("[medplum-admin] service identity unavailable, using the caller's own session:", service.reason)
+      token = await tokenOrThrow()
+    }
+  } else {
+    token = await tokenOrThrow()
+  }
 
   const send = (accessToken: string) =>
     fetch(medplumUrl(path), {
-      ...init,
+      ...requestInit,
       headers: {
         "Content-Type": "application/json",
-        ...init.headers,
+        ...requestInit.headers,
         Authorization: `Bearer ${accessToken}`,
       },
       cache: "no-store",
@@ -80,7 +117,8 @@ export async function medplumFetch<T>(
   let response: Response
   try {
     response = await send(token)
-    if (response.status === 401) {
+    // A service token is never refreshed through the user's session.
+    if (response.status === 401 && !asService) {
       const refreshed = await refreshSession()
       if (refreshed.status === "unreachable") throw new AdminError(UNREACHABLE_MESSAGE, 503)
       if (refreshed.status === "expired") throw new AdminError("Session expired.", 401)
@@ -101,6 +139,16 @@ export async function medplumFetch<T>(
       detail = body?.issue?.[0]?.details?.text ?? body?.error_description ?? body?.error
     } catch {
       // Non-JSON error body.
+    }
+    if (asService && response.status === 403) {
+      // The service account exists but is not a project admin, so Medplum
+      // refused the admin-plane operation. Name the fix rather than returning a
+      // bare "Forbidden" the hospital admin can do nothing about.
+      throw new AdminError(
+        "The Folio service account is not allowed to manage accounts. A platform " +
+          "operator must mark its project membership as admin in Medplum.",
+        503
+      )
     }
     throw new AdminError(detail ?? `Request failed (${response.status})`, response.status)
   }
@@ -143,6 +191,9 @@ export async function requirePlatformAdmin(): Promise<{ projectId: string }> {
  *     act on any facility.
  *   - Otherwise the membership's own `%organization` binding, which is what the
  *     AccessPolicy is parameterised with. It must MATCH the requested facility.
+ *     Medplum's auth/me does not return `membership.access`, so the binding is
+ *     read from the server-compiled `accessPolicy` it does return — see
+ *     lib/auth/facility-binding.ts.
  *
  * The Practitioner role tag is deliberately NOT consulted: it is ordinary
  * mutable FHIR data, so a user who could PATCH their own Practitioner would
@@ -155,25 +206,14 @@ export async function requirePlatformAdmin(): Promise<{ projectId: string }> {
 export async function requireFacilityProvisioner(
   facilityId: string
 ): Promise<{ projectId: string; isPlatformAdmin: boolean }> {
-  const me = await medplumFetch<
-    AuthMe & {
-      membership?: {
-        admin?: boolean
-        access?: { parameter?: { name?: string; valueReference?: { reference?: string } }[] }[]
-      }
-    }
-  >("auth/me")
+  const me = await medplumFetch<AuthMe & { membership?: { admin?: boolean } }>("auth/me")
 
   const projectId = me.project?.id
   if (!projectId) throw new AdminError("Could not determine the project.", 500)
 
   if (me.membership?.admin) return { projectId, isPlatformAdmin: true }
 
-  const boundFacilities = (me.membership?.access ?? [])
-    .flatMap((entry) => entry.parameter ?? [])
-    .filter((p) => p.name === "organization")
-    .map((p) => p.valueReference?.reference)
-    .filter((ref): ref is string => Boolean(ref))
+  const boundFacilities = facilityBindingsFromAuthMe(me).map((b) => b.reference)
 
   if (!boundFacilities.includes(`Organization/${facilityId}`)) {
     throw new AdminError(
@@ -201,8 +241,11 @@ interface Bundle<T> {
 export async function findAccessPolicyByName(
   name: string
 ): Promise<{ id: string; name: string }> {
+  // AccessPolicy is readable only by project admins; callers have already
+  // passed the app's own provisioning check.
   const bundle = await medplumFetch<Bundle<{ id?: string; name?: string }>>(
-    `fhir/R4/AccessPolicy?name=${encodeURIComponent(name)}&_count=10`
+    `fhir/R4/AccessPolicy?name=${encodeURIComponent(name)}&_count=10`,
+    { privileged: true }
   )
   const match = (bundle.entry ?? [])
     .map((e) => e.resource)
@@ -254,7 +297,11 @@ export async function findMembershipsForFacility(
         access?: { parameter?: { name?: string; valueReference?: { reference?: string } }[] }[]
       }
     }[]
-  }>(`fhir/R4/ProjectMembership?_count=${MEMBERSHIP_PAGE_LIMIT}&_total=accurate`)
+  }>(`fhir/R4/ProjectMembership?_count=${MEMBERSHIP_PAGE_LIMIT}&_total=accurate`, {
+    // ProjectMembership is a project-admin resource; a hospital admin's own
+    // token cannot list it. Callers have passed requireFacilityProvisioner.
+    privileged: true,
+  })
 
   const all = (bundle.entry ?? []).map((e) => e.resource).filter(Boolean)
   const memberships = all
@@ -317,7 +364,8 @@ export async function enrichMembershipsWithPractitioners(
   let practitioners: Practitioner[] = []
   try {
     const bundle = await medplumFetch<Bundle<Practitioner>>(
-      `fhir/R4/Practitioner?_id=${encodeURIComponent(ids.join(","))}&_count=${ids.length}`
+      `fhir/R4/Practitioner?_id=${encodeURIComponent(ids.join(","))}&_count=${ids.length}`,
+      { privileged: true }
     )
     practitioners = (bundle.entry ?? [])
       .map((e) => e.resource)
@@ -352,12 +400,14 @@ export async function setMembershipActive(
   active: boolean
 ): Promise<boolean> {
   const current = await medplumFetch<Record<string, unknown> & { active?: boolean }>(
-    `fhir/R4/ProjectMembership/${encodeURIComponent(membershipId)}`
+    `fhir/R4/ProjectMembership/${encodeURIComponent(membershipId)}`,
+    { privileged: true }
   )
   if ((current.active !== false) === active) return false
   await medplumFetch(`fhir/R4/ProjectMembership/${encodeURIComponent(membershipId)}`, {
     method: "PUT",
     body: JSON.stringify({ ...current, active }),
+    privileged: true,
   })
   return true
 }

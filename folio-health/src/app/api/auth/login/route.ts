@@ -1,7 +1,8 @@
 import { createHash, randomBytes } from "node:crypto"
 import { NextResponse } from "next/server"
 import { TEMP_CREDENTIAL_EXTENSION_URL } from "@/lib/auth/roles"
-import { DEMO_TOKEN_PREFIX, demoPersonaForEmail, isDemoMode } from "@/lib/demo/mode"
+import { demoTokenForUser, isDemoMode } from "@/lib/demo/mode"
+import { demoSignIn } from "@/lib/demo/store"
 import { medplumClientId, medplumUrl } from "@/lib/medplum/config"
 import { storeTokens } from "@/lib/medplum/session"
 import { ACCESS_TOKEN_COOKIE, MUST_CHANGE_PASSWORD_COOKIE } from "@/lib/session"
@@ -79,20 +80,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 })
   }
 
-  // Demo mode: no Medplum. Any credentials sign in; the email picks the persona
-  // (see lib/demo/mode.ts). The demo token reuses the real session cookie so
-  // the edge proxy's presence check works unchanged.
+  // Demo mode: no Medplum. The password is not checked; the email resolves to
+  // an account in the in-memory store — a seeded persona or anyone provisioned
+  // through the app (see lib/demo/mode.ts). The demo token reuses the real
+  // session cookie so the edge proxy's presence check works unchanged, and the
+  // first-login flag is honoured exactly as in production.
   if (isDemoMode()) {
-    const persona = demoPersonaForEmail(email)
-    const json = NextResponse.json({ ok: true, mustChangePassword: false })
-    json.cookies.set(ACCESS_TOKEN_COOKIE, DEMO_TOKEN_PREFIX + persona, {
+    const signIn = demoSignIn(email)
+    if (signIn.status === "disabled") {
+      return NextResponse.json(
+        { error: "This account has been deactivated. Contact your administrator." },
+        { status: 403 }
+      )
+    }
+    const json = NextResponse.json({ ok: true, mustChangePassword: signIn.mustChangePassword })
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "lax" as const,
       path: "/",
       maxAge: 60 * 60 * 24 * 14,
-    })
-    json.cookies.delete(MUST_CHANGE_PASSWORD_COOKIE)
+    }
+    json.cookies.set(ACCESS_TOKEN_COOKIE, demoTokenForUser(signIn.practitionerId), cookieOptions)
+    if (signIn.mustChangePassword) {
+      json.cookies.set(MUST_CHANGE_PASSWORD_COOKIE, "1", cookieOptions)
+    } else {
+      json.cookies.delete(MUST_CHANGE_PASSWORD_COOKIE)
+    }
     return json
   }
 

@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import { NextResponse, type NextRequest } from "next/server"
-import { demoPersonaFromToken, isDemoMode } from "@/lib/demo/mode"
+import { demoUserIdFromToken, isDemoMode } from "@/lib/demo/mode"
 import { demoMedplumRequest } from "@/lib/demo/store"
 import { medplumUrl } from "@/lib/medplum/config"
 import { getAccessToken, refreshSession } from "@/lib/medplum/session"
@@ -57,7 +57,7 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
 
   // Demo mode: answer from the in-memory store — no Medplum server involved.
   if (isDemoMode()) {
-    if (!demoPersonaFromToken(await getAccessToken())) {
+    if (!demoUserIdFromToken(await getAccessToken())) {
       return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
     }
     const hasDemoBody = request.method !== "GET" && request.method !== "HEAD"

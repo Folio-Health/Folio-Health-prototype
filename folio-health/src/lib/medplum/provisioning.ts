@@ -63,9 +63,13 @@ export async function inviteFacilityUser(options: {
   const policy = await findAccessPolicyByName(ROLE_ACCESS_POLICY_NAMES[role])
 
   const tempPassword = generateTempPassword()
+  // Medplum's invite is a project-admin operation. The caller's route has
+  // already passed requirePlatformAdmin / requireFacilityProvisioner, so the
+  // call itself is carried out by the service identity (see medplumFetch).
   const invite = await medplumFetch<InviteResponse>(
     `admin/projects/${encodeURIComponent(projectId)}/invite`,
     {
+      privileged: true,
       method: "POST",
       body: JSON.stringify({
         resourceType: "Practitioner",
@@ -117,7 +121,9 @@ export async function stampPractitioner(options: {
   facility: Reference
 }): Promise<void> {
   const { practitionerId, role, facility } = options
-  const practitioner = await medplumFetch<Practitioner>(`fhir/R4/Practitioner/${practitionerId}`)
+  const practitioner = await medplumFetch<Practitioner>(`fhir/R4/Practitioner/${practitionerId}`, {
+    privileged: true,
+  })
 
   const identifier = [
     ...(practitioner.identifier ?? []).filter((i) => i.system !== FOLIO_ROLE_SYSTEM),
@@ -134,6 +140,7 @@ export async function stampPractitioner(options: {
   // actually scopes access is the membership's %organization parameter. Kept so
   // the two provisioning paths stay identical if the server ever accepts it.
   await medplumFetch<Practitioner>(`fhir/R4/Practitioner/${practitionerId}`, {
+    privileged: true,
     method: "PUT",
     body: JSON.stringify({
       ...practitioner,
