@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
 import type { Patient as FhirPatient } from "@medplum/fhirtypes"
+import { ageFromBirthDate } from "@/lib/fhir/patient"
 import { registerPatient } from "../lib/register-patient"
 import { phoneSchema, phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
 import {
@@ -618,6 +619,13 @@ function PatientRegistrationWizard() {
                       <SummaryRow label="Name" value={`${values.firstName} ${values.lastName}`.trim()} />
                       <SummaryRow label="Gender" value={values.gender} />
                       <SummaryRow label="Date of birth" value={values.dob} />
+                      <SummaryRow
+                        label="Age"
+                        value={(() => {
+                          const age = ageFromBirthDate(values.dob)
+                          return age !== undefined ? `${age} ${age === 1 ? "year" : "years"}` : ""
+                        })()}
+                      />
                       <SummaryRow label="Blood group" value={values.bloodGroup} />
                       <SummaryRow label="Marital status" value={values.maritalStatus} />
                       <SummaryRow label="Occupation" value={values.occupation} />
