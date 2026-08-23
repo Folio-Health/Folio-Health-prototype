@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
+import { useUiStore } from "@/stores/ui-store"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -38,6 +40,7 @@ export default function LoginPage() {
 
 function LoginForm() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [redirectTo, setRedirectTo] = useState("/dashboard")
@@ -92,6 +95,14 @@ function LoginForm() {
 
       // Tokens are now set as httpOnly cookies by the route handler.
       // `refresh()` makes the server re-evaluate the proxy with them.
+      //
+      // Wipe client state from any previous session first: the query cache
+      // still holds the last user's identity (useCurrentUser staleTime), and
+      // the persisted "preview as role" override belongs to whoever set it —
+      // without this, account B briefly renders account A's name, nav and
+      // plane after switching users.
+      useUiStore.getState().setPreviewRole(null)
+      queryClient.clear()
       router.replace(redirectTo)
       router.refresh()
     } catch {
