@@ -33,7 +33,7 @@ import { NursingModuleTabs } from "./nursing-module-tabs"
 import { SHIFT_NOTES, NURSING_ASSIGNMENTS, type ShiftNote, type Shift } from "@/lib/mock/nursing"
 import { getPatientById } from "@/lib/mock/patients"
 import { getStaffById, NURSES } from "@/lib/mock/staff"
-import { id as makeId, pick } from "@/lib/mock/seed"
+import { id as makeId } from "@/lib/mock/seed"
 
 const SHIFT_TONE: Record<Shift, "blue" | "amber" | "violet"> = {
   Morning: "blue",
@@ -64,7 +64,7 @@ function ShiftNotes() {
     const newNote: ShiftNote = {
       id: makeId("SFN-NEW", notes.length + 1),
       patientId,
-      nurseId: pick(NURSES).id,
+      nurseId: NURSES[0]?.id ?? "",
       shift,
       time: new Date().toISOString(),
       note: text.trim(),

@@ -33,13 +33,11 @@ import { getPurchaseOrderColumns } from "./purchase-order-columns"
 import {
   PURCHASE_ORDERS,
   SUPPLIERS,
-  DRUGS,
   getSupplierById,
   formatNaira,
   type PurchaseOrder,
   type PurchaseOrderStatus,
 } from "@/lib/mock/pharmacy"
-import { faker } from "@faker-js/faker"
 
 const NEXT_STATUS: Record<PurchaseOrderStatus, PurchaseOrderStatus | null> = {
   Draft: "Pending",
@@ -83,12 +81,9 @@ function PurchaseOrdersList() {
       toast.error("Select a supplier")
       return
     }
-    const items = faker.helpers.arrayElements(DRUGS, faker.number.int({ min: 2, max: 5 })).map((drug) => ({
-      drugId: drug.id,
-      drugName: drug.name,
-      quantity: faker.number.int({ min: 20, max: 150 }),
-      unitPrice: drug.price,
-    }))
+    // No invented line items: with no real drug catalog wired up yet, a new
+    // draft starts empty rather than being filled with random picks.
+    const items: PurchaseOrder["items"] = []
     const totalAmount = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
     const newPo: PurchaseOrder = {
       id: `PO-${String(orders.length + 1).padStart(4, "0")}`,

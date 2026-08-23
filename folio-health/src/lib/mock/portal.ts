@@ -1,5 +1,5 @@
+// Mock records removed: production shows real (empty) state. Types and vocabulary constants remain.
 import type { Patient } from "@/types/core"
-import { PATIENTS } from "./patients"
 import { getAppointmentsForPatient } from "./appointments"
 import { getVitalsForPatient, getLatestVitalsForPatient } from "./vitals"
 import { getStaffById } from "./staff"
@@ -8,34 +8,39 @@ import { INVOICES, type Invoice } from "./billing"
 import { PRESCRIPTIONS, type Prescription } from "./pharmacy"
 
 /**
- * The Patient Portal has no real authentication — it always renders as one
- * hardcoded "logged in" patient. Rather than hardcoding an id (which might
- * land on a patient with a thin mock footprint), we score every patient that
- * has vitals recorded and pick whichever has the richest spread of
- * appointments / lab results / invoices / prescriptions, so every portal page
- * has something realistic to show.
+ * The Patient Portal has no real authentication — it renders as one hardcoded
+ * "logged in" patient. With mock records removed there is no patient database,
+ * so this is an empty placeholder record: every portal page derives from it
+ * and therefore shows the true (empty) state.
  */
-function pickDemoPatient(): Patient {
-  const candidates = PATIENTS.slice(0, 60)
-  let best = candidates[0]
-  let bestScore = -1
-
-  for (const p of candidates) {
-    const score =
-      getAppointmentsForPatient(p.id).length * 2 +
-      LAB_RESULTS.filter((r) => r.patientId === p.id).length * 2 +
-      INVOICES.filter((i) => i.patientId === p.id).length +
-      PRESCRIPTIONS.filter((rx) => rx.patientId === p.id).length
-    if (score > bestScore) {
-      bestScore = score
-      best = p
-    }
-  }
-
-  return best
+export const PORTAL_PATIENT: Patient = {
+  id: "",
+  mrn: "",
+  name: "",
+  firstName: "",
+  lastName: "",
+  gender: "Other",
+  dob: "",
+  age: 0,
+  bloodGroup: "O+",
+  phone: "",
+  email: "",
+  address: { line1: "", city: "", state: "", postalCode: "", country: "" },
+  avatarSeed: "",
+  status: "Inactive",
+  registeredAt: "",
+  lastVisit: "",
+  primaryDoctorId: "",
+  department: "General Medicine",
+  allergies: [],
+  chronicConditions: [],
+  emergencyContact: { name: "", relationship: "", phone: "" },
+  insurance: { provider: "", policyNumber: "", plan: "", validTill: "" },
+  maritalStatus: "Single",
+  occupation: "",
+  height: 0,
+  weight: 0,
 }
-
-export const PORTAL_PATIENT: Patient = pickDemoPatient()
 
 export function getPortalDoctor() {
   return getStaffById(PORTAL_PATIENT.primaryDoctorId)
@@ -94,9 +99,7 @@ export function getPortalOutstandingBalance(): number {
 }
 
 // ---------------------------------------------------------------------------
-// Messages — a single ongoing thread between the demo patient and the
-// hospital's care team / front desk. No real backend, just a seeded
-// conversation the Messages page can append local, in-memory replies to.
+// Messages
 // ---------------------------------------------------------------------------
 
 export interface PortalMessage {
@@ -109,73 +112,14 @@ export interface PortalMessage {
   read: boolean
 }
 
-const doctor = getStaffById(PORTAL_PATIENT.primaryDoctorId)
-const careTeamName = doctor?.name ?? "Care Team"
-const careTeamRole = doctor ? doctor.title : "Care Coordinator"
-
-function daysAgoIso(days: number, hour = 9) {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  d.setHours(hour, 0, 0, 0)
-  return d.toISOString()
-}
-
-export const PORTAL_MESSAGES: PortalMessage[] = [
-  {
-    id: "PMSG-0001",
-    fromMe: false,
-    senderName: "Front Desk",
-    senderRole: "Patient Services",
-    body: `Hi ${PORTAL_PATIENT.firstName}, this is a reminder that your recent lab results are ready to view in the portal. Let us know if you have any questions.`,
-    sentAt: daysAgoIso(6, 10),
-    read: true,
-  },
-  {
-    id: "PMSG-0002",
-    fromMe: true,
-    senderName: "You",
-    senderRole: "Patient",
-    body: "Thank you! I'll take a look now. Should I be concerned about any of the flagged values?",
-    sentAt: daysAgoIso(6, 11),
-    read: true,
-  },
-  {
-    id: "PMSG-0003",
-    fromMe: false,
-    senderName: careTeamName,
-    senderRole: careTeamRole,
-    body: "I reviewed your chart, nothing urgent, just keep up with your current medication and we'll recheck at your next visit.",
-    sentAt: daysAgoIso(5, 15),
-    read: true,
-  },
-  {
-    id: "PMSG-0004",
-    fromMe: true,
-    senderName: "You",
-    senderRole: "Patient",
-    body: "That's a relief to hear. Also, could we move my upcoming appointment slightly later in the day if possible?",
-    sentAt: daysAgoIso(2, 9),
-    read: true,
-  },
-  {
-    id: "PMSG-0005",
-    fromMe: false,
-    senderName: "Front Desk",
-    senderRole: "Patient Services",
-    body: "We've noted your request and will follow up with available afternoon slots shortly. Thanks for your patience!",
-    sentAt: daysAgoIso(1, 16),
-    read: false,
-  },
-]
+export const PORTAL_MESSAGES: PortalMessage[] = []
 
 export function getPortalUnreadMessageCount(): number {
   return PORTAL_MESSAGES.filter((m) => !m.fromMe && !m.read).length
 }
 
 // ---------------------------------------------------------------------------
-// Downloads — documents the patient can pull from the portal. Derived from
-// the demo patient's real lab results / invoices, plus a couple of static
-// discharge-style documents.
+// Downloads
 // ---------------------------------------------------------------------------
 
 export type PortalDocumentCategory =
@@ -193,59 +137,10 @@ export interface PortalDocument {
   sizeKb: number
 }
 
-function buildPortalDocuments(): PortalDocument[] {
-  const docs: PortalDocument[] = [
-    {
-      id: "DOC-DISCHARGE-0001",
-      title: `Discharge Summary: ${getPortalPastAppointments()[0]?.reason ?? "Recent Visit"}`,
-      category: "Discharge Summary",
-      date: getPortalPastAppointments()[0]?.startTime ?? daysAgoIso(30),
-      fileType: "PDF",
-      sizeKb: 184,
-    },
-  ]
-
-  for (const result of getPortalLabResults().slice(0, 5)) {
-    docs.push({
-      id: `DOC-${result.id}`,
-      title: `${result.testName} Lab Report`,
-      category: "Lab Report",
-      date: result.resultAt ?? result.orderedAt,
-      fileType: "PDF",
-      sizeKb: 96,
-    })
-  }
-
-  for (const invoice of getPortalInvoices().slice(0, 5)) {
-    docs.push({
-      id: `DOC-${invoice.id}`,
-      title: `Invoice ${invoice.id}: ${invoice.department}`,
-      category: "Invoice",
-      date: invoice.date,
-      fileType: "PDF",
-      sizeKb: 62,
-    })
-  }
-
-  for (const rx of getPortalPrescriptions().slice(0, 3)) {
-    docs.push({
-      id: `DOC-${rx.id}`,
-      title: `Prescription ${rx.id}: ${rx.medications.map((m) => m.drugName).join(", ")}`,
-      category: "Prescription",
-      date: rx.date,
-      fileType: "PDF",
-      sizeKb: 48,
-    })
-  }
-
-  return docs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-}
-
-export const PORTAL_DOCUMENTS: PortalDocument[] = buildPortalDocuments()
+export const PORTAL_DOCUMENTS: PortalDocument[] = []
 
 // ---------------------------------------------------------------------------
-// Immunizations — not part of the core Patient type, so we seed a small
-// realistic history for the demo patient's Medical Records page.
+// Immunizations
 // ---------------------------------------------------------------------------
 
 export interface PortalImmunization {
@@ -254,9 +149,4 @@ export interface PortalImmunization {
   provider: string
 }
 
-export const PORTAL_IMMUNIZATIONS: PortalImmunization[] = [
-  { vaccine: "Tetanus Diphtheria (Td) Booster", dateGiven: daysAgoIso(400), provider: "Folio Health Medical Centre" },
-  { vaccine: "Influenza (Seasonal Flu)", dateGiven: daysAgoIso(200), provider: "Folio Health Medical Centre" },
-  { vaccine: "Hepatitis B", dateGiven: daysAgoIso(900), provider: "Folio Health Medical Centre" },
-  { vaccine: "COVID-19 Booster", dateGiven: daysAgoIso(150), provider: "Folio Health Medical Centre" },
-]
+export const PORTAL_IMMUNIZATIONS: PortalImmunization[] = []

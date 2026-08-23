@@ -1,11 +1,4 @@
-import { faker } from "@faker-js/faker"
-import { seedFaker, pick, pickWeighted, id } from "@/lib/mock/seed"
-import { PATIENTS } from "@/lib/mock/patients"
-import { DOCTORS } from "@/lib/mock/staff"
-import type { Patient } from "@/types/core"
-
-seedFaker(32)
-
+// Mock records removed: production shows real (empty) state. Types and vocabulary constants remain.
 export type TriageLevel = 1 | 2 | 3 | 4 | 5
 export type ERStatus = "Waiting" | "In Treatment" | "Admitted" | "Discharged"
 export type AmbulanceStatus = "Dispatched" | "En Route" | "Arrived" | "Available"
@@ -97,159 +90,27 @@ export function triageMeta(level: TriageLevel) {
   return TRIAGE_LEVELS.find((t) => t.level === level)!
 }
 
-const CHIEF_COMPLAINTS = [
-  "Chest pain",
-  "Shortness of breath",
-  "Severe abdominal pain",
-  "Laceration - hand",
-  "Motor vehicle collision injuries",
-  "Fall from height",
-  "High fever with confusion",
-  "Allergic reaction",
-  "Seizure",
-  "Head injury with loss of consciousness",
-  "Ankle sprain",
-  "Minor burn",
-  "Severe headache",
-  "Suspected stroke - facial droop",
-  "Gunshot wound",
-  "Stab wound",
-  "Overdose / poisoning",
-  "Asthma exacerbation",
-  "Fracture - forearm",
-  "Sore throat and cough",
-  "Chemical splash to eye",
-  "Palpitations",
-  "Dehydration",
-  "Back pain",
-]
-
-const TRAUMA_MECHANISMS = [
-  "Motor vehicle collision",
-  "Pedestrian struck by vehicle",
-  "Fall from height (>2m)",
-  "Assault - blunt trauma",
-  "Penetrating trauma - gunshot",
-  "Penetrating trauma - stab wound",
-  "Industrial machinery accident",
-  "Sports injury - collision",
-  "Motorcycle accident",
-  "Domestic fall",
-]
-
-const shuffledPatients: Patient[] = faker.helpers.shuffle([...PATIENTS])
-let cursor = 0
-function nextPatient(): Patient {
-  const p = shuffledPatients[cursor % shuffledPatients.length]
-  cursor++
-  return p
-}
-
-function vitalsForLevel(level: TriageLevel): ERVitals {
-  const severityFactor = (6 - level) / 5 // 1 => most deranged, 5 => near normal
-  return {
-    hr: Math.round(78 + severityFactor * faker.number.int({ min: 10, max: 55 }) * pick([1, -1, 1])),
-    bp: `${Math.round(118 - severityFactor * faker.number.int({ min: 0, max: 35 }))}/${Math.round(
-      76 - severityFactor * faker.number.int({ min: 0, max: 20 })
-    )}`,
-    spo2: Math.max(80, Math.round(99 - severityFactor * faker.number.int({ min: 0, max: 16 }))),
-    temp: Number((36.8 + severityFactor * faker.number.float({ min: -0.4, max: 1.8 })).toFixed(1)),
-    rr: Math.round(16 + severityFactor * faker.number.int({ min: 0, max: 14 })),
-  }
-}
-
-const ER_CASES: ERCase[] = Array.from({ length: 34 }).map((_, i) => {
-  const patient = nextPatient()
-  const triageLevel = pickWeighted([
-    { value: 1 as TriageLevel, weight: 2 },
-    { value: 2 as TriageLevel, weight: 5 },
-    { value: 3 as TriageLevel, weight: 10 },
-    { value: 4 as TriageLevel, weight: 9 },
-    { value: 5 as TriageLevel, weight: 6 },
-  ])
-  const isTrauma =
-    triageLevel <= 3 ? faker.number.float({ min: 0, max: 1 }) > 0.55 : faker.number.float({ min: 0, max: 1 }) > 0.85
-  const status = pickWeighted([
-    { value: "Waiting" as ERStatus, weight: triageLevel >= 4 ? 6 : 3 },
-    { value: "In Treatment" as ERStatus, weight: 6 },
-    { value: "Admitted" as ERStatus, weight: triageLevel <= 2 ? 4 : 2 },
-    { value: "Discharged" as ERStatus, weight: 3 },
-  ])
-  return {
-    id: id("ER", i + 1),
-    patientId: patient.id,
-    chiefComplaint: isTrauma ? pick(["Motor vehicle collision injuries", "Fall from height", "Laceration - hand", "Head injury with loss of consciousness"]) : pick(CHIEF_COMPLAINTS),
-    triageLevel,
-    arrivalTime: faker.date.recent({ days: 1 }).toISOString(),
-    assignedDoctorId: pick(DOCTORS).id,
-    status,
-    vitals: vitalsForLevel(triageLevel),
-    isTrauma,
-    mechanismOfInjury: isTrauma ? pick(TRAUMA_MECHANISMS) : undefined,
-    severity: isTrauma
-      ? pickWeighted([
-          { value: "Critical" as CaseSeverity, weight: triageLevel === 1 ? 4 : 1 },
-          { value: "Severe" as CaseSeverity, weight: triageLevel <= 2 ? 4 : 2 },
-          { value: "Moderate" as CaseSeverity, weight: 3 },
-          { value: "Minor" as CaseSeverity, weight: 2 },
-        ])
-      : undefined,
-  }
-})
-  // Sorted so the queue reads naturally: highest acuity + earliest arrival first.
-  .sort((a, b) => a.triageLevel - b.triageLevel || +new Date(a.arrivalTime) - +new Date(b.arrivalTime))
-
-const AMBULANCE_CREW_ROLES = ["Paramedic", "EMT", "Driver"]
-const DESTINATIONS = [
-  "Folio Health General Hospital - ER Bay 1",
-  "Folio Health General Hospital - ER Bay 2",
-  "Folio Health General Hospital - ER Bay 3",
-  "Folio Health General Hospital - Trauma Bay",
-]
-
-const AMBULANCE_DISPATCHES: AmbulanceDispatch[] = Array.from({ length: 8 }).map((_, i) => {
-  const status = pickWeighted([
-    { value: "Dispatched" as AmbulanceStatus, weight: 2 },
-    { value: "En Route" as AmbulanceStatus, weight: 3 },
-    { value: "Arrived" as AmbulanceStatus, weight: 2 },
-    { value: "Available" as AmbulanceStatus, weight: 3 },
-  ])
-  const crew = Array.from({ length: 2 }).map(
-    (_, ci) => `${faker.person.fullName()} (${AMBULANCE_CREW_ROLES[ci % AMBULANCE_CREW_ROLES.length]})`
-  )
-  const linkedCase = status !== "Available" ? pick(ER_CASES) : undefined
-  return {
-    id: id("AMB", i + 1),
-    ambulanceId: `AMB-${String(101 + i)}`,
-    status,
-    destination: status === "Available" ? "Standing by - Station 1" : pick(DESTINATIONS),
-    etaMinutes: status === "En Route" ? faker.number.int({ min: 3, max: 25 }) : status === "Dispatched" ? faker.number.int({ min: 8, max: 30 }) : 0,
-    crew,
-    patientId: linkedCase?.patientId,
-  }
-})
-
-export const ER_CASES_LIST = ER_CASES
-export const AMBULANCE_DISPATCHES_LIST = AMBULANCE_DISPATCHES
+export const ER_CASES_LIST: ERCase[] = []
+export const AMBULANCE_DISPATCHES_LIST: AmbulanceDispatch[] = []
 
 export function getERCaseById(caseId: string): ERCase | undefined {
-  return ER_CASES.find((c) => c.id === caseId)
+  return ER_CASES_LIST.find((c) => c.id === caseId)
 }
 
 export function getActiveCases(): ERCase[] {
-  return ER_CASES.filter((c) => c.status === "Waiting" || c.status === "In Treatment")
+  return ER_CASES_LIST.filter((c) => c.status === "Waiting" || c.status === "In Treatment")
 }
 
 export function getCriticalCases(): ERCase[] {
-  return ER_CASES.filter((c) => c.triageLevel <= 2)
+  return ER_CASES_LIST.filter((c) => c.triageLevel <= 2)
 }
 
 export function getTraumaCases(): ERCase[] {
-  return ER_CASES.filter((c) => c.isTrauma)
+  return ER_CASES_LIST.filter((c) => c.isTrauma)
 }
 
 export function getWaitingQueue(): ERCase[] {
-  return [...ER_CASES]
+  return [...ER_CASES_LIST]
     .filter((c) => c.status === "Waiting")
     .sort((a, b) => a.triageLevel - b.triageLevel || +new Date(a.arrivalTime) - +new Date(b.arrivalTime))
 }
@@ -257,19 +118,19 @@ export function getWaitingQueue(): ERCase[] {
 export function casesByTriageLevel(): { label: string; value: number; color?: string }[] {
   return TRIAGE_LEVELS.map((t) => ({
     label: t.label.split(" · ")[1] ?? t.label,
-    value: ER_CASES.filter((c) => c.triageLevel === t.level).length,
+    value: ER_CASES_LIST.filter((c) => c.triageLevel === t.level).length,
   }))
 }
 
 export function averageWaitMinutes(): number {
-  const waiting = ER_CASES.filter((c) => c.status === "Waiting")
+  const waiting = ER_CASES_LIST.filter((c) => c.status === "Waiting")
   if (waiting.length === 0) return 0
   const total = waiting.reduce((sum, c) => sum + (Date.now() - new Date(c.arrivalTime).getTime()) / 60000, 0)
   return Math.round(total / waiting.length)
 }
 
 export function longestWaitMinutes(): number {
-  const waiting = ER_CASES.filter((c) => c.status === "Waiting")
+  const waiting = ER_CASES_LIST.filter((c) => c.status === "Waiting")
   if (waiting.length === 0) return 0
   const oldest = waiting.reduce((earliest, c) =>
     new Date(c.arrivalTime) < new Date(earliest.arrivalTime) ? c : earliest

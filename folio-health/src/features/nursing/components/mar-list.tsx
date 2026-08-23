@@ -18,7 +18,6 @@ import { NursingModuleTabs } from "./nursing-module-tabs"
 import { getMarColumns } from "./mar-columns"
 import { MEDICATION_ORDERS, type MedicationOrder } from "@/lib/mock/nursing"
 import { NURSES } from "@/lib/mock/staff"
-import { pick } from "@/lib/mock/seed"
 
 const ALL = "all"
 
@@ -41,7 +40,7 @@ function MarList() {
   function handleMarkGiven(order: MedicationOrder) {
     setOrders((prev) =>
       prev.map((o) =>
-        o.id === order.id ? { ...o, status: "Given", administeredByStaffId: pick(NURSES).id } : o
+        o.id === order.id ? { ...o, status: "Given", administeredByStaffId: NURSES[0]?.id ?? "" } : o
       )
     )
     toast.success(`${order.drug} marked as given`, {

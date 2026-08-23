@@ -1,9 +1,11 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
 import { SaveIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -34,23 +36,32 @@ const hospitalSettingsSchema = z.object({
 type HospitalSettingsValues = z.infer<typeof hospitalSettingsSchema>
 
 function HospitalSettingsForm() {
+  const { data: user } = useCurrentUser()
   const form = useForm<HospitalSettingsValues>({
     resolver: zodResolver(hospitalSettingsSchema),
+    // Real facility name where the session knows it; everything else starts
+    // blank — no invented address, phone or hours presented as if saved.
     defaultValues: {
-      name: "Folio Health Medical Centre",
-      tagline: "Compassionate care, advanced medicine.",
-      address: "14 Ademola Adetokunbo Crescent, Wuse II, Abuja, Nigeria",
-      phone: "+234 803 123 4567",
-      email: "info@foliohealth.example",
-      website: "https://foliohealth.example",
-      operatingHours: "Mon to Fri: 7:00 AM to 9:00 PM · Sat to Sun: 8:00 AM to 6:00 PM · Emergency: 24/7",
+      name: "",
+      tagline: "",
+      address: "",
+      phone: "",
+      email: "",
+      website: "",
+      operatingHours: "",
     },
   })
 
+  useEffect(() => {
+    if (user?.facilityName && !form.getValues("name")) {
+      form.resetField("name", { defaultValue: user.facilityName })
+    }
+  }, [user?.facilityName, form])
+
   function onSubmit(values: HospitalSettingsValues) {
     void values
-    toast.success("Hospital settings saved", {
-      description: "Your changes have been applied across the system.",
+    toast.success("Hospital settings saved locally", {
+      description: "Not persisted yet — hospital settings aren't wired to the server in this build.",
     })
   }
 
