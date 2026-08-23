@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { facilityBindingsFromAuthMe, type AuthMeLike } from "@/lib/auth/facility-binding"
+import { NIN_LENGTH, NIN_SYSTEM, ninSchema } from "@/lib/identifiers"
 import { AdminError, medplumFetch } from "@/lib/medplum/admin"
 
 /**
@@ -48,6 +49,41 @@ export async function POST(request: Request) {
     // compartment stamp.
     delete body.id
     delete body.meta
+
+    // Identifiers: the ONLY client-suppliable identifier is a valid NIN — the
+    // MRN is the server-assigned resource id, and arbitrary identifier systems
+    // are not accepted from the browser.
+    const rawIdentifiers = Array.isArray(body.identifier) ? (body.identifier as { system?: string; value?: string }[]) : []
+    const nin = rawIdentifiers.find((i) => i?.system === NIN_SYSTEM)?.value
+    delete body.identifier
+    if (nin !== undefined) {
+      if (!ninSchema.safeParse(String(nin)).success) {
+        return NextResponse.json({ error: `A NIN is exactly ${NIN_LENGTH} digits.` }, { status: 400 })
+      }
+      // Search-before-create: an exact NIN match is the strongest duplicate
+      // signal there is (see docs/research/emr-front-office.md §2). Checked
+      // with the service identity so duplicates are caught across the whole
+      // project, then reported by facility so the message stays useful.
+      const existing = await medplumFetch<{
+        entry?: { resource?: { id?: string; name?: { text?: string; given?: string[]; family?: string }[] } }[]
+      }>(
+        `fhir/R4/Patient?identifier=${encodeURIComponent(`${NIN_SYSTEM}|${nin}`)}&_count=1`,
+        { privileged: true }
+      )
+      const match = existing.entry?.[0]?.resource
+      if (match) {
+        const matchName =
+          match.name?.[0]?.text ??
+          [match.name?.[0]?.given?.join(" "), match.name?.[0]?.family].filter(Boolean).join(" ")
+        return NextResponse.json(
+          {
+            error: `A patient with this NIN is already registered${matchName ? ` (${matchName})` : ""}. Search for them instead of creating a duplicate record.`,
+          },
+          { status: 409 }
+        )
+      }
+      body.identifier = [{ system: NIN_SYSTEM, value: String(nin) }]
+    }
 
     const created = await medplumFetch<Record<string, unknown>>("fhir/R4/Patient", {
       privileged: true,

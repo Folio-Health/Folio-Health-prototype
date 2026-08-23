@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import type { Patient as FhirPatient } from "@medplum/fhirtypes"
 import { registerPatient } from "../lib/register-patient"
 import { phoneSchema, phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
+import { NIN_SYSTEM, ninInputProps, optionalNinSchema, sanitizeNinInput } from "@/lib/identifiers"
 import { ZapIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
 import { Button } from "@/components/ui/button"
@@ -36,6 +37,7 @@ import { RoleGate } from "@/components/common/role-gate"
 const walkInSchema = z.object({
   name: z.string().min(1, "Patient name is required"),
   phone: phoneSchema,
+  nin: optionalNinSchema,
   gender: z.enum(["Male", "Female", "Other"]),
   dob: z.string().min(1, "Date of birth is required"),
   reason: z.string().min(1, "Reason for visit is required"),
@@ -48,7 +50,7 @@ function WalkInRegistration() {
 
   const form = useForm<WalkInValues>({
     resolver: zodResolver(walkInSchema),
-    defaultValues: { name: "", phone: "", gender: "Male", dob: "", reason: "" },
+    defaultValues: { name: "", phone: "", nin: "", gender: "Male", dob: "", reason: "" },
   })
 
   const [submitting, setSubmitting] = useState(false)
@@ -70,6 +72,7 @@ function WalkInRegistration() {
         gender: values.gender.toLowerCase() as FhirPatient["gender"],
         birthDate: values.dob,
         telecom: [{ system: "phone", value: values.phone }],
+        ...(values.nin ? { identifier: [{ system: NIN_SYSTEM, value: values.nin }] } : {}),
         extension: [
           { url: "https://folio.health/fhir/StructureDefinition/visit-reason", valueString: values.reason },
         ],
@@ -131,6 +134,23 @@ function WalkInRegistration() {
                           {...phoneInputProps}
                           {...field}
                           onChange={(e) => field.onChange(sanitizePhoneInput(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="nin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>NIN</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...ninInputProps}
+                          {...field}
+                          onChange={(e) => field.onChange(sanitizeNinInput(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />

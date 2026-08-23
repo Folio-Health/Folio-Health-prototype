@@ -32,11 +32,6 @@ const DURATIONS = [
   { label: "1 hour", minutes: 60 },
 ]
 
-function practitionerName(p: { name?: { text?: string; given?: string[]; family?: string }[] }) {
-  const n = p.name?.[0]
-  return n?.text ?? [n?.given?.join(" "), n?.family].filter(Boolean).join(" ")
-}
-
 /**
  * Book (or rebook) an appointment.
  *
@@ -108,7 +103,7 @@ function NewAppointmentDialog({
         patientId,
         patientDisplay,
         practitionerId,
-        practitionerDisplay: selectedPractitioner ? practitionerName(selectedPractitioner) : undefined,
+        practitionerDisplay: selectedPractitioner?.name,
         start: start.toISOString(),
         end: end.toISOString(),
         reason,
@@ -230,15 +225,16 @@ function NewAppointmentDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {(practitioners ?? []).map((p) => (
-                    <SelectItem key={p.id} value={p.id as string}>
-                      {practitionerName(p) || p.id}
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name || p.id}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {practitioners?.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  No doctor accounts exist yet — create them under Administration → Users.
+                  No doctors at your facility yet — the hospital admin creates them under
+                  Administration → Users.
                 </p>
               )}
             </div>

@@ -11,6 +11,7 @@ import type { Patient as FhirPatient } from "@medplum/fhirtypes"
 import { ageFromBirthDate } from "@/lib/fhir/patient"
 import { registerPatient } from "../lib/register-patient"
 import { phoneSchema, phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
+import { NIN_SYSTEM, ninInputProps, optionalNinSchema, sanitizeNinInput } from "@/lib/identifiers"
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -59,6 +60,9 @@ const registrationSchema = z
     bloodGroup: z.string().min(1, "Blood group is required"),
     maritalStatus: z.enum(["Single", "Married", "Divorced", "Widowed"]),
     occupation: z.string().min(1, "Occupation is required"),
+    // Optional by design: registration is never blocked for lack of a NIN —
+    // when present it becomes an identifier and powers duplicate checking.
+    nin: optionalNinSchema,
 
     phone: phoneSchema,
     email: z.string().min(1, "Email is required").email("Enter a valid email address"),
@@ -90,7 +94,7 @@ const registrationSchema = z
 type RegistrationValues = z.infer<typeof registrationSchema>
 
 const STEP_FIELDS: (keyof RegistrationValues)[][] = [
-  ["firstName", "lastName", "gender", "dob", "bloodGroup", "maritalStatus", "occupation"],
+  ["firstName", "lastName", "gender", "dob", "bloodGroup", "maritalStatus", "occupation", "nin"],
   ["phone", "email", "addressLine1", "city", "state", "postalCode", "country"],
   ["emergencyName", "emergencyRelationship", "emergencyPhone"],
   ["selfPay", "insuranceProvider", "policyNumber", "plan", "validTill"],
@@ -120,6 +124,7 @@ function PatientRegistrationWizard() {
       bloodGroup: "",
       maritalStatus: "Single",
       occupation: "",
+      nin: "",
       phone: "",
       email: "",
       addressLine1: "",
@@ -171,6 +176,7 @@ function PatientRegistrationWizard() {
         gender: values.gender.toLowerCase() as FhirPatient["gender"],
         birthDate: values.dob,
         maritalStatus: { text: values.maritalStatus },
+        ...(values.nin ? { identifier: [{ system: NIN_SYSTEM, value: values.nin }] } : {}),
         telecom: [
           { system: "phone", value: values.phone },
           { system: "email", value: values.email },
@@ -357,6 +363,23 @@ function PatientRegistrationWizard() {
                           <FormLabel>Occupation</FormLabel>
                           <FormControl>
                             <Input placeholder="Software Engineer" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="nin"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-2">
+                          <FormLabel>National Identification Number (NIN)</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...ninInputProps}
+                              {...field}
+                              onChange={(e) => field.onChange(sanitizeNinInput(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -626,6 +649,7 @@ function PatientRegistrationWizard() {
                           return age !== undefined ? `${age} ${age === 1 ? "year" : "years"}` : ""
                         })()}
                       />
+                      <SummaryRow label="NIN" value={values.nin || "Not provided"} />
                       <SummaryRow label="Blood group" value={values.bloodGroup} />
                       <SummaryRow label="Marital status" value={values.maritalStatus} />
                       <SummaryRow label="Occupation" value={values.occupation} />

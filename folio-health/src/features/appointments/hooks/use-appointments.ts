@@ -1,9 +1,8 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { Appointment, Practitioner } from "@medplum/fhirtypes"
+import type { Appointment } from "@medplum/fhirtypes"
 import { FhirError, searchResources } from "@/lib/fhir/client"
-import { FOLIO_ROLE_SYSTEM } from "@/lib/auth/roles"
 import type { AppointmentAction } from "@/lib/appointments/logic"
 
 /**
@@ -45,16 +44,25 @@ export function useAppointmentsForDay(day: Date) {
   })
 }
 
-/** Practitioners bookable as the appointment's provider (role-tagged doctors). */
+export interface BookablePractitioner {
+  id: string
+  name: string
+}
+
+/**
+ * The doctors bookable at the caller's OWN facility, by name. Resolved
+ * server-side (/api/practitioners/bookable): the facility binding lives on
+ * the ProjectMembership, which the browser cannot read — a plain Practitioner
+ * search would list every facility's doctors.
+ */
 export function useBookablePractitioners() {
   return useQuery({
     queryKey: ["bookable-practitioners"],
-    queryFn: async (): Promise<Practitioner[]> => {
-      const { resources } = await searchResources<Practitioner>("Practitioner", {
-        identifier: `${FOLIO_ROLE_SYSTEM}|doctor`,
-        _count: 100,
-      })
-      return resources.filter((p) => p.active !== false)
+    queryFn: async (): Promise<BookablePractitioner[]> => {
+      const response = await fetch("/api/practitioners/bookable")
+      const body = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(body?.error ?? "Could not load doctors.")
+      return body.practitioners ?? []
     },
   })
 }
