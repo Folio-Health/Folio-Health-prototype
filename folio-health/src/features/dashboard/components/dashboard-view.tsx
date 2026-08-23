@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useSyncExternalStore } from "react"
 import { PageHeader } from "@/components/common/page-header"
 import { useUiStore } from "@/stores/ui-store"
 import { useCurrentUser } from "@/lib/fhir/use-current-user"
@@ -15,14 +15,18 @@ import { LabScientistDashboard } from "./lab-scientist-dashboard"
 import { PharmacistDashboard } from "./pharmacist-dashboard"
 import { AccountantDashboard } from "./accountant-dashboard"
 import { HimOfficerDashboard } from "./him-officer-dashboard"
+import { FacilityAdminDashboard } from "./facility-admin-dashboard"
 
 /**
- * Dashboard per FACILITY role (EMR V1 RBAC spec §16). `facility-admin` falls
- * back to AdminDashboard — the two roles largely overlap (administrative
- * oversight of one facility vs. the whole system).
+ * Dashboard per FACILITY role (EMR V1 RBAC spec §16). The hospital
+ * administrator gets an accounts/roles/audit view (§7.8: "clinical content
+ * none") — their AccessPolicy grants no Encounter, ServiceRequest or
+ * Appointment, so the clinical AdminDashboard would only ever 403 for them.
+ * AdminDashboard remains the fallback for an account with no recognised role
+ * yet (the permissive provisioning-gap stance in reconcileRoles).
  */
 const ROLE_DASHBOARDS: Record<Exclude<RoleId, "platform-admin">, React.ComponentType> = {
-  "facility-admin": AdminDashboard,
+  "facility-admin": FacilityAdminDashboard,
   doctor: DoctorDashboard,
   "front-desk": ReceptionistDashboard,
   nurse: NurseDashboard,
@@ -32,23 +36,29 @@ const ROLE_DASHBOARDS: Record<Exclude<RoleId, "platform-admin">, React.Component
   "him-officer": HimOfficerDashboard,
 }
 
+/** Never fires — the browser's "today" doesn't change within a page view. */
+function emptySubscribe() {
+  return () => {}
+}
+
 function DashboardView() {
   const previewRole = useUiStore((s) => s.previewRole)
   const { data: user, isLoading } = useCurrentUser()
 
   // Formatting "today" during render makes the server's HTML disagree with the
-  // browser whenever their timezone or locale differs. Resolve it after mount
-  // so both render the same thing first.
-  const [today, setToday] = useState<string | null>(null)
-  useEffect(() => {
-    setToday(
+  // browser whenever their timezone or locale differs. `useSyncExternalStore`
+  // renders the server snapshot (nothing) first and the browser's date after
+  // hydration — same effect as a mount effect, without setState-in-effect.
+  const today = useSyncExternalStore(
+    emptySubscribe,
+    () =>
       new Date().toLocaleDateString(undefined, {
         weekday: "long",
         month: "long",
         day: "numeric",
-      })
-    )
-  }, [])
+      }),
+    () => null
+  )
 
   if (isLoading) {
     return (
@@ -70,7 +80,9 @@ function DashboardView() {
 
   const DashboardComponent = isPlatform
     ? PlatformDashboard
-    : (ROLE_DASHBOARDS[effectiveRole ?? "facility-admin"] ?? AdminDashboard)
+    : effectiveRole
+      ? (ROLE_DASHBOARDS[effectiveRole] ?? AdminDashboard)
+      : AdminDashboard
 
   const roleLabel = isPlatform
     ? ROLE_LABELS["platform-admin"]
