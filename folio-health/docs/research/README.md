@@ -16,6 +16,10 @@ as the working logic when building or reviewing a Folio module.
 — the same three reports, one deck (54 slides). Source citations live in the
 markdown files (slides omit the Sources blocks for readability).
 
-Regenerate the deck after editing the markdown: the generator script lives in
-the session that produced it; any markdown-to-pptx tool works — keep one slide
-per section and monospace the state-machine blocks.
+Regenerate the deck after editing the markdown:
+
+    python docs/research/build-deck.py    # from folio-health/; needs python-pptx
+
+The deck uses the app's own design tokens from src/app/globals.css — Folio
+Deep #0E443B, Folio Teal #11534A, Signal Coral #E65A4F (small accents only),
+Mint #7FC9BC on dark surfaces, Poppins type — so it matches the product brand.
