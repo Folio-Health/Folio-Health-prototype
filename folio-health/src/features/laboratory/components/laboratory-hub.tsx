@@ -36,14 +36,18 @@ import {
 } from "@/components/ui/dialog"
 import { isToday } from "date-fns"
 import {
-  LAB_RESULTS,
   TEST_NAMES,
   TEST_CATEGORY_BY_NAME,
   type LabResult,
-  type LabWorkflowStatus,
 } from "@/lib/mock/laboratory"
-import { getPatientById, PATIENTS } from "@/lib/mock/patients"
-import { DOCTORS } from "@/lib/mock/staff"
+import { usePatients } from "@/features/patients/hooks/use-patients"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import {
+  useApproveLabResult,
+  useCreateLabOrder,
+  useLabResults,
+  type LabResultWithPatient,
+} from "../hooks/use-laboratory"
 import { getLabColumns } from "./lab-columns"
 
 const TABS = ["All Results", "Pending", "In Progress", "Completed", "Approved"] as const
@@ -52,31 +56,26 @@ function LaboratoryHub() {
   const router = useRouter()
   const [tab, setTab] = useState<(typeof TABS)[number]>("All Results")
   const [search, setSearch] = useState("")
-  const [localResults, setLocalResults] = useState<LabResult[]>([])
-  const [overrides, setOverrides] = useState<Record<string, LabWorkflowStatus>>({})
 
   const [newOpen, setNewOpen] = useState(false)
   const [newPatientId, setNewPatientId] = useState("")
-  const [newDoctorId, setNewDoctorId] = useState("")
   const [newTestName, setNewTestName] = useState(TEST_NAMES[0] ?? "")
 
-  const allResults = useMemo(() => [...localResults, ...LAB_RESULTS], [localResults])
+  const { data: rows = [], isLoading, isError, error } = useLabResults()
+  const createOrder = useCreateLabOrder()
+  const approveResult = useApproveLabResult()
+  const { data: user } = useCurrentUser()
+  // Only fetched while the order dialog is open — the table itself does not
+  // need the patient list, so it never waits on it.
+  const { data: patientData } = usePatients({}, newOpen)
 
-  const rows = useMemo(
-    () =>
-      allResults.map((r) => {
-        const overrideStatus = overrides[r.id]
-        if (!overrideStatus) return r
-        return {
-          ...r,
-          workflowStatus: overrideStatus,
-          displayStatus: r.flag ?? overrideStatus,
-          approvedAt: overrideStatus === "Approved" ? new Date().toISOString() : r.approvedAt,
-          approvedBy: overrideStatus === "Approved" ? "You" : r.approvedBy,
-        }
-      }),
-    [allResults, overrides]
-  )
+  // The approving clinician is the signed-in user, not a picked one: approval
+  // is an attestation, and letting the UI choose whose name goes on it would
+  // make the audit trail meaningless.
+  const approver =
+    user?.id && user.resourceType === "Practitioner"
+      ? { reference: `Practitioner/${user.id}` as const, display: user.name }
+      : undefined
 
   const stats = useMemo(() => {
     const pending = rows.filter((r) => r.workflowStatus === "Pending").length
@@ -91,12 +90,10 @@ function LaboratoryHub() {
       if (tab !== "All Results" && r.workflowStatus !== tab) return false
       if (search) {
         const q = search.toLowerCase()
-        const patient = getPatientById(r.patientId)
         if (
           !r.id.toLowerCase().includes(q) &&
           !r.testName.toLowerCase().includes(q) &&
-          !(patient?.name.toLowerCase().includes(q) ?? false) &&
-          !(patient?.mrn.toLowerCase().includes(q) ?? false)
+          !((r as LabResultWithPatient).patientName?.toLowerCase().includes(q) ?? false)
         ) {
           return false
         }
@@ -105,11 +102,17 @@ function LaboratoryHub() {
     })
   }, [rows, tab, search])
 
-  function handleApprove(result: LabResult) {
-    setOverrides((prev) => ({ ...prev, [result.id]: "Approved" }))
-    toast.success(`${result.id} approved`, {
-      description: `${result.testName} result has been approved and released.`,
-    })
+  async function handleApprove(result: LabResult) {
+    try {
+      await approveResult.mutateAsync({ reportId: result.id, performer: approver })
+      toast.success("Result approved", {
+        description: `${result.testName} has been approved and released.`,
+      })
+    } catch (approvalError) {
+      toast.error(
+        approvalError instanceof Error ? approvalError.message : "Could not approve the result"
+      )
+    }
   }
 
   function handlePrint(result: LabResult) {
@@ -118,43 +121,31 @@ function LaboratoryHub() {
 
   function resetNewOrderForm() {
     setNewPatientId("")
-    setNewDoctorId("")
     setNewTestName(TEST_NAMES[0] ?? "")
   }
 
-  function handleCreateOrder() {
-    if (!newPatientId || !newDoctorId || !newTestName) {
-      toast.error("Select a patient, doctor, and test to place a lab order")
+  async function handleCreateOrder() {
+    if (!newPatientId || !newTestName) {
+      toast.error("Select a patient and a test to place a lab order")
       return
     }
-    const patient = getPatientById(newPatientId)
-    const newResult: LabResult = {
-      id: `LAB-local-${Date.now()}`,
-      patientId: newPatientId,
-      doctorId: newDoctorId,
-      labScientistId: newDoctorId,
-      testType: TEST_CATEGORY_BY_NAME[newTestName] ?? "General",
-      testName: newTestName,
-      parameters: [],
-      resultSummary: "N/A",
-      referenceRangeSummary: "N/A",
-      flag: null,
-      workflowStatus: "Pending",
-      displayStatus: "Pending",
-      orderedAt: new Date().toISOString(),
-      collectedBy: null,
-      collectedAt: null,
-      resultAt: null,
-      approvedAt: null,
-      approvedBy: null,
-      comments: "",
+    try {
+      // The ordering doctor is whoever is signed in. The old form asked the
+      // user to pick one from a list, which let anyone attribute an order to
+      // any doctor.
+      await createOrder.mutateAsync({
+        patientId: newPatientId,
+        testName: newTestName,
+        testCategory: TEST_CATEGORY_BY_NAME[newTestName],
+        priority: "Routine",
+        requester: approver,
+      })
+      toast.success("Lab order placed", { description: `${newTestName} has been ordered.` })
+      resetNewOrderForm()
+      setNewOpen(false)
+    } catch (orderError) {
+      toast.error(orderError instanceof Error ? orderError.message : "Could not place the order")
     }
-    setLocalResults((prev) => [newResult, ...prev])
-    toast.success("Lab order placed", {
-      description: patient ? `${newTestName} ordered for ${patient.name}.` : undefined,
-    })
-    resetNewOrderForm()
-    setNewOpen(false)
   }
 
   const columns = getLabColumns({ onApprove: handleApprove, onPrint: handlePrint })
@@ -163,7 +154,7 @@ function LaboratoryHub() {
     <div>
       <PageHeader
         title="Laboratory"
-        description={`${allResults.length} lab results on record`}
+        description={isLoading ? "Loading..." : `${rows.length} lab results on record`}
         breadcrumbs={[{ label: "Diagnostics" }, { label: "Laboratory" }]}
         actions={
           <RoleGate permission="ORDER">
@@ -230,7 +221,7 @@ function LaboratoryHub() {
                   <SelectValue placeholder="Select patient" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PATIENTS.slice(0, 40).map((p) => (
+                  {(patientData?.patients ?? []).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name} &middot; {p.mrn}
                     </SelectItem>
@@ -239,19 +230,16 @@ function LaboratoryHub() {
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="lab-order-doctor">Ordering doctor</Label>
-              <Select value={newDoctorId} onValueChange={(v) => setNewDoctorId(v ?? "")}>
-                <SelectTrigger id="lab-order-doctor" className="w-full">
-                  <SelectValue placeholder="Select doctor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DOCTORS.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Ordering clinician</Label>
+              {/*
+                Stated, not chosen. The order is attributed to whoever is signed
+                in — a picker here would let any user place an order in another
+                doctor's name, which the FHIR requester field is supposed to
+                answer truthfully.
+              */}
+              <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
+                {user?.name ?? "Signed-in clinician"}
+              </p>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="lab-order-test">Test</Label>

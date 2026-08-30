@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import { format } from "date-fns"
 import {
   PrinterIcon,
@@ -19,9 +19,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { EmptyState } from "@/components/common/empty-state"
-import { getLabResultById } from "@/lib/mock/laboratory"
-import { getPatientById } from "@/lib/mock/patients"
-import { getStaffById } from "@/lib/mock/staff"
+import { usePatient } from "@/features/patients/hooks/use-patients"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { useApproveLabResult, useLabResult } from "../hooks/use-laboratory"
 
 function InfoRow({ icon: Icon, label, value }: { icon: typeof UserRoundIcon; label: string; value: string }) {
   return (
@@ -36,8 +36,38 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof UserRoundIcon; lab
 }
 
 function LabResultDetail({ resultId }: { resultId: string }) {
-  const result = getLabResultById(resultId)
-  const [locallyApproved, setLocallyApproved] = useState(false)
+  const { data: result, isLoading } = useLabResult(resultId)
+  const { data: patient } = usePatient(result?.patientId)
+  const { data: user } = useCurrentUser()
+  const approveResult = useApproveLabResult()
+
+  async function handleApprove() {
+    if (!result) return
+    try {
+      await approveResult.mutateAsync({
+        reportId: result.id,
+        // The approver is the signed-in clinician. Approval is an attestation,
+        // so the name on it must be the person who actually gave it.
+        performer:
+          user?.id && user.resourceType === "Practitioner"
+            ? { reference: `Practitioner/${user.id}`, display: user.name }
+            : undefined,
+      })
+      toast.success("Result approved and released")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not approve the result")
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <EmptyState
+        icon={FlaskConicalIcon}
+        title="Loading result..."
+        description="Fetching this report from Folio."
+      />
+    )
+  }
 
   if (!result) {
     return (
@@ -54,11 +84,8 @@ function LabResultDetail({ resultId }: { resultId: string }) {
     )
   }
 
-  const patient = getPatientById(result.patientId)
-  const doctor = getStaffById(result.doctorId)
-  const scientist = result.collectedBy ? getStaffById(result.collectedBy) : undefined
-  const isApproved = result.workflowStatus === "Approved" || locallyApproved
-  const canApprove = result.workflowStatus === "Completed" && !locallyApproved
+  const isApproved = result.workflowStatus === "Approved"
+  const canApprove = result.workflowStatus === "Completed" && !approveResult.isPending
 
   return (
     <div>
@@ -83,7 +110,7 @@ function LabResultDetail({ resultId }: { resultId: string }) {
               </Button>
             ) : (
               <RoleGate permission="LAB_RELEASE_RESULT">
-                <Button disabled={!canApprove} onClick={() => setLocallyApproved(true)}>
+                <Button disabled={!canApprove} onClick={handleApprove}>
                   <CheckCircleIcon />
                   Approve Result
                 </Button>
@@ -99,16 +126,20 @@ function LabResultDetail({ resultId }: { resultId: string }) {
             <CardContent className="flex flex-col items-center gap-3 text-center">
               {patient ? (
                 <>
-                  <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="lg" className="size-16" />
+                  <PersonAvatar name={patient.name} seed={patient.id} size="lg" className="size-16" />
                   <div>
                     <Link href={`/patients/${patient.id}`} className="font-heading text-base font-semibold text-foreground hover:text-primary hover:underline">
                       {patient.name}
                     </Link>
                     <p className="text-sm text-muted-foreground">
-                      {patient.gender}, {patient.age} Years &middot; {patient.mrn}
+                      {/* Age is omitted when the record has no birth date rather
+                          than shown as 0 — see PatientSummary. */}
+                      {patient.gender}
+                      {patient.age !== undefined ? `, ${patient.age} Years` : ""} &middot;{" "}
+                      {patient.mrn}
                     </p>
                   </div>
-                  <StatusBadge status={patient.bloodGroup} tone="red" />
+                  <StatusBadge status={result.workflowStatus} />
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">Unknown patient</p>
@@ -121,7 +152,11 @@ function LabResultDetail({ resultId }: { resultId: string }) {
               <CardTitle>Order Details</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-              <InfoRow icon={UserRoundIcon} label="Ordering Doctor" value={doctor?.name ?? "Unassigned"} />
+              <InfoRow
+                icon={UserRoundIcon}
+                label="Ordering Doctor"
+                value={result.doctorId ? `Practitioner/${result.doctorId}` : "Unassigned"}
+              />
               <InfoRow icon={FlaskConicalIcon} label="Test Type" value={result.testType} />
               <InfoRow
                 icon={CalendarClockIcon}
@@ -139,7 +174,7 @@ function LabResultDetail({ resultId }: { resultId: string }) {
               <InfoRow
                 icon={ClipboardCheckIcon}
                 label="Collected By"
-                value={scientist?.name ?? "Not yet collected"}
+                value={result.approvedBy ?? "Not recorded"}
               />
               <InfoRow
                 icon={CalendarClockIcon}
