@@ -29,16 +29,18 @@ import {
 } from "@/components/ui/dialog"
 import { isToday } from "date-fns"
 import {
-  IMAGING_REQUESTS,
-  RADIOLOGY_REPORTS,
   MODALITIES,
   BODY_PARTS_BY_MODALITY,
-  RADIOLOGISTS,
   type Modality,
   type ImagingRequest,
 } from "@/lib/mock/radiology"
-import { getPatientById, PATIENTS } from "@/lib/mock/patients"
-import { DOCTORS } from "@/lib/mock/staff"
+import { usePatients } from "@/features/patients/hooks/use-patients"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import {
+  useCreateImagingOrder,
+  useImagingRequests,
+  type ImagingRequestWithPatient,
+} from "../hooks/use-radiology"
 import { getRadiologyColumns } from "./radiology-columns"
 
 const MODALITY_TABS: (Modality | "All")[] = ["All", "X-ray", "MRI", "CT Scan", "Ultrasound"]
@@ -47,22 +49,27 @@ function RadiologyHub() {
   const router = useRouter()
   const [tab, setTab] = useState<Modality | "All">("All")
   const [search, setSearch] = useState("")
-  const [localRequests, setLocalRequests] = useState<ImagingRequest[]>([])
 
   const [newOpen, setNewOpen] = useState(false)
   const [newPatientId, setNewPatientId] = useState("")
-  const [newDoctorId, setNewDoctorId] = useState("")
   const [newModality, setNewModality] = useState<Modality>(MODALITIES[0])
   const [newBodyPart, setNewBodyPart] = useState(BODY_PARTS_BY_MODALITY[MODALITIES[0]][0])
   const [newIndication, setNewIndication] = useState("")
 
-  const allRequests = useMemo(() => [...localRequests, ...IMAGING_REQUESTS], [localRequests])
+  const { data: allRequests = [], isLoading, isError } = useImagingRequests()
+  const createOrder = useCreateImagingOrder()
+  const { data: user } = useCurrentUser()
+  const { data: patientData } = usePatients({}, newOpen)
 
   const stats = useMemo(() => {
     const pending = allRequests.filter((r) => r.status === "Pending").length
     const inProgress = allRequests.filter((r) => r.status === "In Progress").length
-    const completedToday = RADIOLOGY_REPORTS.filter((r) => isToday(new Date(r.date))).length
-    const critical = RADIOLOGY_REPORTS.filter((r) => r.severity === "Critical").length
+    // "Reported today" is derived from the exams themselves rather than from a
+    // separate report list, so the figure cannot disagree with the table.
+    const completedToday = allRequests.filter(
+      (r) => r.status === "Reported" && r.orderedAt && isToday(new Date(r.orderedAt))
+    ).length
+    const critical = allRequests.filter((r) => r.priority === "STAT").length
     return { pending, inProgress, completedToday, critical }
   }, [allRequests])
 
@@ -71,12 +78,10 @@ function RadiologyHub() {
       if (tab !== "All" && r.modality !== tab) return false
       if (search) {
         const q = search.toLowerCase()
-        const patient = getPatientById(r.patientId)
         if (
           !r.id.toLowerCase().includes(q) &&
           !r.bodyPart.toLowerCase().includes(q) &&
-          !(patient?.name.toLowerCase().includes(q) ?? false) &&
-          !(patient?.mrn.toLowerCase().includes(q) ?? false)
+          !((r as ImagingRequestWithPatient).patientName?.toLowerCase().includes(q) ?? false)
         ) {
           return false
         }
@@ -91,37 +96,38 @@ function RadiologyHub() {
 
   function resetNewRequestForm() {
     setNewPatientId("")
-    setNewDoctorId("")
     setNewModality(MODALITIES[0])
     setNewBodyPart(BODY_PARTS_BY_MODALITY[MODALITIES[0]][0])
     setNewIndication("")
   }
 
-  function handleCreateRequest() {
-    if (!newPatientId || !newDoctorId || !newBodyPart) {
-      toast.error("Select a patient, doctor, and body part to request imaging")
+  async function handleCreateRequest() {
+    if (!newPatientId || !newBodyPart) {
+      toast.error("Select a patient and a body part to request imaging")
       return
     }
-    const patient = getPatientById(newPatientId)
-    const newRequest: ImagingRequest = {
-      id: `RAD-local-${Date.now()}`,
-      patientId: newPatientId,
-      doctorId: newDoctorId,
-      radiologistId: RADIOLOGISTS[0]?.id ?? newDoctorId,
-      modality: newModality,
-      bodyPart: newBodyPart,
-      clinicalIndication: newIndication.trim() || "Clinical evaluation requested",
-      orderedAt: new Date().toISOString(),
-      status: "Pending",
-      priority: "Routine",
-      imageIds: [],
+    try {
+      // Attributed to the signed-in clinician, not a picked one — the FHIR
+      // requester field is meant to say who actually ordered the exam.
+      await createOrder.mutateAsync({
+        patientId: newPatientId,
+        modality: newModality,
+        bodyPart: newBodyPart,
+        clinicalIndication: newIndication.trim() || undefined,
+        priority: "Routine",
+        requester:
+          user?.id && user.resourceType === "Practitioner"
+            ? { reference: `Practitioner/${user.id}`, display: user.name }
+            : undefined,
+      })
+      toast.success("Imaging request created", {
+        description: `${newModality} (${newBodyPart}) has been ordered.`,
+      })
+      resetNewRequestForm()
+      setNewOpen(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create the request")
     }
-    setLocalRequests((prev) => [newRequest, ...prev])
-    toast.success("Imaging request created", {
-      description: patient ? `${newModality} (${newBodyPart}) ordered for ${patient.name}.` : undefined,
-    })
-    resetNewRequestForm()
-    setNewOpen(false)
   }
 
   const columns = getRadiologyColumns({ onPrint: handlePrint })
@@ -195,7 +201,7 @@ function RadiologyHub() {
                   <SelectValue placeholder="Select patient" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PATIENTS.slice(0, 40).map((p) => (
+                  {(patientData?.patients ?? []).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name} &middot; {p.mrn}
                     </SelectItem>
@@ -243,19 +249,11 @@ function RadiologyHub() {
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="imaging-doctor">Requesting doctor</Label>
-              <Select value={newDoctorId} onValueChange={(v) => setNewDoctorId(v ?? "")}>
-                <SelectTrigger id="imaging-doctor" className="w-full">
-                  <SelectValue placeholder="Select doctor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DOCTORS.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Requesting clinician</Label>
+              {/* Stated, not chosen — see the lab order dialog for the reasoning. */}
+              <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
+                {user?.name ?? "Signed-in clinician"}
+              </p>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="imaging-indication">Clinical indication</Label>

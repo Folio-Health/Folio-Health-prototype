@@ -19,9 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { StatusBadge } from "@/components/common/status-badge"
 import { EmptyState } from "@/components/common/empty-state"
-import { getImagingRequestById, getReportForRequest } from "@/lib/mock/radiology"
-import { getPatientById } from "@/lib/mock/patients"
-import { getStaffById } from "@/lib/mock/staff"
+import { useImagingRequest } from "../hooks/use-radiology"
 import { unsplash, MEDICAL_IMAGES } from "@/lib/images"
 import { cn } from "@/lib/utils"
 
@@ -42,7 +40,8 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof UserRoundIcon; lab
 }
 
 function RadiologyViewer({ requestId }: { requestId: string }) {
-  const request = getImagingRequestById(requestId)
+  const { data } = useImagingRequest(requestId)
+  const request = data?.request
   const [activeIndex, setActiveIndex] = useState(0)
   const [zoom, setZoom] = useState(100)
   const [rotation, setRotation] = useState(0)
@@ -62,18 +61,26 @@ function RadiologyViewer({ requestId }: { requestId: string }) {
     )
   }
 
-  const patient = getPatientById(request.patientId)
-  const radiologist = getStaffById(request.radiologistId)
-  const report = getReportForRequest(request.id)
+  const report = data?.report
+  // Practitioner names are not resolved on this query; the reference is shown
+  // rather than a fabricated name.
+  const radiologist = request.radiologistId
+    ? { name: `Practitioner/${request.radiologistId}` }
+    : undefined
   const imageIds = request.imageIds.length > 0 ? request.imageIds : [MEDICAL_IMAGES.radiology[0]]
   const activeImage = imageIds[activeIndex] ?? imageIds[0]
+  // Read out here rather than inside the hoisted function below: TypeScript
+  // does not carry the `if (!request) return` narrowing into a function
+  // declaration, and an assertion would hide a genuine undefined if the guard
+  // ever moved.
+  const patientLabel = request.patientName ?? "Unknown"
 
   function handleDownloadReport() {
     if (!report) return
     const content = [
       `Examination: ${report.examination}`,
       `Date: ${format(new Date(report.date), "MMM d, yyyy")}`,
-      `Patient: ${patient?.name ?? "Unknown"}`,
+      `Patient: ${patientLabel}`,
       `Radiologist: ${radiologist?.name ?? "Unassigned"}`,
       "",
       "Findings:",
@@ -97,7 +104,7 @@ function RadiologyViewer({ requestId }: { requestId: string }) {
         title={`${request.modality}, ${request.bodyPart}`}
         breadcrumbs={[
           { label: "Radiology", href: "/radiology" },
-          { label: patient?.name ?? "Unknown Patient" },
+          { label: request.patientName ?? "Unknown Patient" },
           { label: request.modality },
         ]}
         actions={<StatusBadge status={request.status} className="h-7 px-3" />}
@@ -187,13 +194,13 @@ function RadiologyViewer({ requestId }: { requestId: string }) {
         <div className="flex flex-col gap-4">
           <Card>
             <CardContent className="flex flex-col gap-3">
-              <InfoRow icon={UserRoundIcon} label="Patient" value={patient?.name ?? "Unknown"} />
+              <InfoRow icon={UserRoundIcon} label="Patient" value={request.patientName ?? "Unknown"} />
               <InfoRow
                 icon={CalendarClockIcon}
                 label="Ordered"
                 value={format(new Date(request.orderedAt), "MMM d, yyyy h:mm a")}
               />
-              <InfoRow icon={UserRoundIcon} label="Requested By" value={getStaffById(request.doctorId)?.name ?? "Unassigned"} />
+              <InfoRow icon={UserRoundIcon} label="Requested By" value={request.doctorId ? `Practitioner/${request.doctorId}` : "Unassigned"} />
               <InfoRow icon={ScanIcon} label="Clinical Indication" value={request.clinicalIndication} />
             </CardContent>
           </Card>
