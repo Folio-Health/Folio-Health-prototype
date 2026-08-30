@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import {
   UserPlusIcon,
@@ -22,10 +23,9 @@ import { Button } from "@/components/ui/button"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { EmptyState } from "@/components/common/empty-state"
-import { getTodaysAppointments } from "@/lib/mock/appointments"
-import { getPatientById, PATIENTS } from "@/lib/mock/patients"
-import { getStaffById } from "@/lib/mock/staff"
-import { QUEUE_ENTRIES } from "@/features/reception/lib/mock-data"
+import { useAppointmentsForDay } from "@/features/appointments/hooks/use-appointments"
+import { usePatients } from "@/features/patients/hooks/use-patients"
+import { appointmentPatient, appointmentPractitioner } from "@/lib/appointments/logic"
 
 const QUICK_LINKS = [
   {
@@ -72,23 +72,39 @@ const QUICK_LINKS = [
   },
 ]
 
+/** FHIR appointment status to the words a receptionist uses. */
+const STATUS_LABELS: Record<string, string> = {
+  booked: "Scheduled",
+  arrived: "Checked In",
+  fulfilled: "Completed",
+  cancelled: "Cancelled",
+  noshow: "No Show",
+}
+
 function ReceptionDashboard() {
-  const todaysAppointments = getTodaysAppointments()
+  // Stable query key across renders.
+  const [today] = useState(() => new Date())
+  const { data } = useAppointmentsForDay(today)
+  const todaysAppointments = useMemo(() => data ?? [], [data])
+
   const checkedInToday = todaysAppointments.filter((a) =>
-    ["Checked In", "In Progress", "Completed"].includes(a.status)
+    ["arrived", "fulfilled"].includes(a.status ?? "")
   )
-  const noShows = todaysAppointments.filter((a) => a.status === "No Show")
-  const waiting = QUEUE_ENTRIES.filter((q) => q.status === "Waiting")
-  // Mock datasets don't carry a literal "registered today" timestamp for any
-  // record, so the most-recently-registered patients stand in for "today's
-  // new registrations" on this demo dashboard.
-  const recentRegistrations = [...PATIENTS]
-    .sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
-    .slice(0, 6)
+  const noShows = todaysAppointments.filter((a) => a.status === "noshow")
+  // "Waiting" is arrived-but-not-yet-seen. It comes from the appointments
+  // themselves now; the old QUEUE_ENTRIES was a separate fabricated list that
+  // could disagree with the schedule shown right beside it.
+  const waiting = todaysAppointments.filter((a) => a.status === "arrived")
+
+  // The patient list is sorted newest-first by the server, so the head of it
+  // IS the recent registrations. The old version sorted a mock array by a
+  // `registeredAt` field that FHIR does not carry.
+  const { data: patientData } = usePatients({})
+  const recentRegistrations = (patientData?.patients ?? []).slice(0, 6)
 
   const queueRows = todaysAppointments
     .slice()
-    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+    .sort((a, b) => (a.start ?? "").localeCompare(b.start ?? ""))
     .slice(0, 8)
 
   return (
@@ -154,22 +170,27 @@ function ReceptionDashboard() {
           ) : (
             <div className="flex flex-col divide-y divide-border">
               {queueRows.map((apt) => {
-                const patient = getPatientById(apt.patientId)
-                const doctor = getStaffById(apt.doctorId)
-                if (!patient) return null
+                const patient = appointmentPatient(apt)
+                const doctor = appointmentPractitioner(apt)
+                const name = patient?.display ?? "Unknown patient"
                 return (
                   <div key={apt.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-                    <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
+                    <PersonAvatar name={name} seed={patient?.reference ?? apt.id} size="sm" />
                     <div className="flex min-w-0 flex-1 flex-col">
-                      <p className="truncate text-sm font-medium text-foreground">{patient.name}</p>
+                      <p className="truncate text-sm font-medium text-foreground">{name}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {doctor?.name ?? "Unassigned"} &middot; {apt.department}
+                        {doctor?.display ?? "Unassigned"}
                       </p>
                     </div>
                     <span className="text-xs font-medium text-muted-foreground">
-                      {new Date(apt.startTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                      {apt.start
+                        ? new Date(apt.start).toLocaleTimeString("en-US", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })
+                        : "—"}
                     </span>
-                    <StatusBadge status={apt.status} />
+                    <StatusBadge status={STATUS_LABELS[apt.status ?? "booked"] ?? apt.status} />
                   </div>
                 )
               })}
