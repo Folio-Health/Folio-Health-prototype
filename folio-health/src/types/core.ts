@@ -143,6 +143,12 @@ export interface Appointment {
 export interface VitalReading {
   id: string
   patientId: string
+  /**
+   * Resolved from the Observation's included Patient. Optional because a
+   * reading is still valid without it — the table shows the id rather than
+   * inventing a name when the include is unavailable.
+   */
+  patientName?: string
   recordedAt: string
   recordedBy: string
   bpSystolic: number

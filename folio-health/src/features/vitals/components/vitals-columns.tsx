@@ -8,7 +8,6 @@ import { DataTableColumnHeader } from "@/components/tables/data-table-column-hea
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
-import { getPatientById } from "@/lib/mock/patients"
 import type { VitalReading } from "@/types/core"
 
 function vitalsAlertLevel(reading: VitalReading): "Critical" | "Abnormal" | "Normal" {
@@ -26,20 +25,21 @@ export const vitalsColumns: ColumnDef<VitalReading>[] = [
     id: "patient",
     header: "Patient",
     cell: ({ row }) => {
-      const patient = getPatientById(row.original.patientId)
-      if (!patient) return <span className="text-muted-foreground">Unknown patient</span>
+      const { patientId, patientName } = row.original
+      // The reading is real even when the name lookup is not available, so the
+      // row still links to the patient rather than being dropped or faked.
+      const label = patientName ?? "View patient"
       return (
         <Link
-          href={`/patients/${patient.id}`}
+          href={`/patients/${patientId}`}
           className="flex items-center gap-2.5"
           onClick={(e) => e.stopPropagation()}
         >
-          <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
+          <PersonAvatar name={label} seed={patientId} size="sm" />
           <div className="flex flex-col">
             <span className="font-medium text-foreground hover:text-primary hover:underline">
-              {patient.name}
+              {label}
             </span>
-            <span className="text-xs text-muted-foreground">{patient.mrn}</span>
           </div>
         </Link>
       )

@@ -23,40 +23,20 @@ import {
 } from "@/components/ui/dialog"
 import { vitalsColumns } from "./vitals-columns"
 import { VitalsEntryForm, type VitalsFormValues } from "./vitals-entry-form"
-import { PATIENTS, getPatientById } from "@/lib/mock/patients"
-import { getStaffByRole } from "@/lib/mock/staff"
-import { getAllRecentVitals } from "@/lib/mock/vitals"
+import { useRecentVitals, useRecordVitals } from "../hooks/use-vitals"
+import { usePatients } from "@/features/patients/hooks/use-patients"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
 import type { VitalReading } from "@/types/core"
 
-const SEED_VITALS = getAllRecentVitals(60)
-
-function buildReading(values: VitalsFormValues, recordedBy: string): VitalReading {
-  const heightM = values.height / 100
-  return {
-    id: `VIT-LOCAL-${Date.now()}`,
-    patientId: values.patientId,
-    recordedAt: new Date().toISOString(),
-    recordedBy,
-    bpSystolic: values.bpSystolic,
-    bpDiastolic: values.bpDiastolic,
-    pulse: values.pulse,
-    temperature: values.temperature,
-    respiratoryRate: values.respiratoryRate,
-    spo2: values.spo2,
-    weight: values.weight,
-    height: values.height,
-    bmi: Number((values.weight / (heightM * heightM)).toFixed(1)),
-  }
-}
-
 function VitalsHub() {
-  const [extraReadings, setExtraReadings] = useState<VitalReading[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const readings = useMemo(
-    () => [...extraReadings, ...SEED_VITALS].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt)),
-    [extraReadings]
-  )
+  const { data: readings = [], isLoading, isError, error } = useRecentVitals({ limit: 60 })
+  const recordVitals = useRecordVitals()
+  const { data: user } = useCurrentUser()
+  // The picker needs real patients to record against; the hub itself does not
+  // depend on this query, so a slow patient list never blocks the table.
+  const { data: patientData } = usePatients({}, dialogOpen)
 
   const stats = useMemo(() => {
     const todayKey = new Date().toISOString().slice(0, 10)
@@ -85,13 +65,24 @@ function VitalsHub() {
     return { recordingsToday, alerts, avgBp: `${avgSystolic}/${avgDiastolic}`, avgSpo2 }
   }, [readings])
 
-  function handleSubmit(values: VitalsFormValues) {
-    const recordedBy = getStaffByRole("Nurse")[0]?.name ?? "Nurse on Duty"
-    const reading = buildReading(values, recordedBy)
-    setExtraReadings((prev) => [reading, ...prev])
-    setDialogOpen(false)
-    const patient = getPatientById(values.patientId)
-    toast.success(`Vitals recorded for ${patient?.name ?? "patient"}`)
+  async function handleSubmit(values: VitalsFormValues) {
+    try {
+      await recordVitals.mutateAsync({
+        ...values,
+        // Attributes the reading to the signed-in clinician rather than to
+        // whichever nurse the mock layer happened to return first.
+        performer:
+          user?.id && user.resourceType === "Practitioner"
+            ? { reference: `Practitioner/${user.id}`, display: user.name }
+            : undefined,
+      })
+      setDialogOpen(false)
+      toast.success("Vitals recorded")
+    } catch (mutationError) {
+      toast.error(
+        mutationError instanceof Error ? mutationError.message : "Could not record the vitals"
+      )
+    }
   }
 
   return (
@@ -112,7 +103,7 @@ function VitalsHub() {
                 <DialogDescription>Capture a new vital sign reading for a patient.</DialogDescription>
               </DialogHeader>
               <VitalsEntryForm
-                patients={PATIENTS.slice(0, 60)}
+                patients={patientData?.patients ?? []}
                 onSubmit={handleSubmit}
                 onCancel={() => setDialogOpen(false)}
               />
@@ -136,8 +127,15 @@ function VitalsHub() {
       <DataTable
         columns={vitalsColumns}
         data={readings}
-        emptyTitle="No vitals recorded"
-        emptyDescription="Recordings will appear here as they're captured across the hospital."
+        isLoading={isLoading}
+        emptyTitle={isError ? "Could not load vitals" : "No vitals recorded"}
+        emptyDescription={
+          isError
+            ? error instanceof Error
+              ? error.message
+              : "Check your connection and try again."
+            : "Recordings will appear here as they're captured across the hospital."
+        }
       />
     </div>
   )
