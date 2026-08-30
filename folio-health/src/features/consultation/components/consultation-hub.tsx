@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   CalendarCheckIcon,
@@ -12,29 +12,34 @@ import { PageHeader } from "@/components/common/page-header"
 import { StatCard } from "@/components/cards/stat-card"
 import { DataTable } from "@/components/tables/data-table"
 import { consultationColumns } from "./consultation-columns"
-import { getTodaysAppointments } from "@/lib/mock/appointments"
-import type { Appointment } from "@/types/core"
+import { useAppointmentsForDay } from "@/features/appointments/hooks/use-appointments"
 
 function ConsultationHub() {
   const router = useRouter()
+  // `today` is held in state, not recomputed each render: a new Date() in the
+  // render body changes the query key on every pass and re-fetches forever.
+  const [today] = useState(() => new Date())
+  const { data, isLoading, isError } = useAppointmentsForDay(today)
+
+  // `null` is the deliberate "your role has no Appointment grant" signal from
+  // the hook — distinct from an empty day, and it must not read as one.
+  const notPermitted = data === null
   const todaysAppointments = useMemo(
-    () =>
-      [...getTodaysAppointments()].sort((a, b) => a.startTime.localeCompare(b.startTime)),
-    []
+    () => [...(data ?? [])].sort((a, b) => (a.start ?? "").localeCompare(b.start ?? "")),
+    [data]
   )
 
   const stats = useMemo(() => {
-    const completed = todaysAppointments.filter((a) => a.status === "Completed").length
-    const inProgress = todaysAppointments.filter(
-      (a) => a.status === "In Progress" || a.status === "Checked In"
-    ).length
+    const completed = todaysAppointments.filter((a) => a.status === "fulfilled").length
+    const inProgress = todaysAppointments.filter((a) => a.status === "arrived").length
     const totalMinutes = todaysAppointments.reduce((sum, a) => {
-      const mins = (new Date(a.endTime).getTime() - new Date(a.startTime).getTime()) / 60000
-      return sum + mins
+      if (!a.start || !a.end) return sum
+      return sum + (new Date(a.end).getTime() - new Date(a.start).getTime()) / 60000
     }, 0)
-    const avgDuration = todaysAppointments.length
-      ? Math.round(totalMinutes / todaysAppointments.length)
-      : 0
+    // Averaged over appointments that actually carry both times, so one
+    // open-ended booking does not drag the average toward zero.
+    const timed = todaysAppointments.filter((a) => a.start && a.end).length
+    const avgDuration = timed ? Math.round(totalMinutes / timed) : 0
 
     return { completed, inProgress, avgDuration }
   }, [todaysAppointments])
@@ -65,10 +70,23 @@ function ConsultationHub() {
 
       <DataTable
         columns={consultationColumns}
-        data={todaysAppointments as Appointment[]}
-        onRowClick={(apt) => router.push(`/consultation/${apt.id}`)}
-        emptyTitle="No consultations scheduled today"
-        emptyDescription="Appointments booked for today will appear here, ready to start."
+        data={todaysAppointments}
+        isLoading={isLoading}
+        onRowClick={(apt) => apt.id && router.push(`/consultation/${apt.id}`)}
+        emptyTitle={
+          notPermitted
+            ? "Not available for your role"
+            : isError
+              ? "Could not load consultations"
+              : "No consultations scheduled today"
+        }
+        emptyDescription={
+          notPermitted
+            ? "Your role does not have access to the appointment schedule."
+            : isError
+              ? "Check your connection and try again."
+              : "Appointments booked for today will appear here, ready to start."
+        }
       />
     </div>
   )
