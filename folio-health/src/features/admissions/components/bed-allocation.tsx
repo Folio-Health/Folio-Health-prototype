@@ -15,17 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { getPatientById } from "@/lib/mock/patients"
-import {
-  WARDS_LIST,
-  getBedsByWard,
-  getAdmissionByBedId,
-  availableBedsCount,
-  occupiedBedsCount,
-  reservedBedsCount,
-  cleaningBedsCount,
-  BEDS_LIST,
-} from "@/lib/mock/admissions"
+import { useAdmissions, useWardsAndBeds } from "../hooks/use-admissions"
 import type { BedStatus } from "@/lib/mock/admissions"
 
 const ALL = "all"
@@ -41,16 +31,44 @@ function BedAllocation() {
   const [wardFilter, setWardFilter] = useState(ALL)
   const [statusFilter, setStatusFilter] = useState(ALL)
 
+  const { data, isLoading } = useWardsAndBeds()
+  // Current inpatients only: who is in each bed right now.
+  const { data: admissions = [] } = useAdmissions(false)
+
+  const allWards = useMemo(() => data?.wards ?? [], [data])
+  const allBeds = useMemo(() => data?.beds ?? [], [data])
+
   const wards = useMemo(
-    () => (wardFilter === ALL ? WARDS_LIST : WARDS_LIST.filter((w) => w.id === wardFilter)),
-    [wardFilter]
+    () => (wardFilter === ALL ? allWards : allWards.filter((w) => w.id === wardFilter)),
+    [wardFilter, allWards]
+  )
+
+  /** Who occupies each bed, from the live admissions rather than a lookup table. */
+  const occupantByBed = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const admission of admissions) {
+      if (admission.bedId) map.set(admission.bedId, admission.patientName ?? "Patient")
+    }
+    return map
+  }, [admissions])
+
+  const counts = useMemo(
+    () => ({
+      available: allBeds.filter((b) => b.status === "Available").length,
+      occupied: allBeds.filter((b) => b.status === "Occupied").length,
+      reserved: allBeds.filter((b) => b.status === "Reserved").length,
+      cleaning: allBeds.filter((b) => b.status === "Cleaning").length,
+    }),
+    [allBeds]
   )
 
   return (
     <div>
       <PageHeader
         title="Bed Allocation"
-        description={`${BEDS_LIST.length} beds across ${WARDS_LIST.length} wards`}
+        description={
+          isLoading ? "Loading..." : `${allBeds.length} beds across ${allWards.length} wards`
+        }
         breadcrumbs={[
           { label: "Inpatient" },
           { label: "Admissions", href: "/admissions" },
@@ -59,10 +77,10 @@ function BedAllocation() {
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Available Beds" value={availableBedsCount()} icon={CheckCircle2Icon} tone="emerald" />
-        <StatCard label="Occupied Beds" value={occupiedBedsCount()} icon={BedDoubleIcon} />
-        <StatCard label="Reserved Beds" value={reservedBedsCount()} icon={LockIcon} tone="violet" />
-        <StatCard label="Beds Being Cleaned" value={cleaningBedsCount()} icon={SparklesIcon} tone="amber" />
+        <StatCard label="Available Beds" value={counts.available} icon={CheckCircle2Icon} tone="emerald" />
+        <StatCard label="Occupied Beds" value={counts.occupied} icon={BedDoubleIcon} />
+        <StatCard label="Reserved Beds" value={counts.reserved} icon={LockIcon} tone="violet" />
+        <StatCard label="Beds Being Cleaned" value={counts.cleaning} icon={SparklesIcon} tone="amber" />
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
@@ -72,7 +90,7 @@ function BedAllocation() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All Wards</SelectItem>
-            {WARDS_LIST.map((w) => (
+            {allWards.map((w) => (
               <SelectItem key={w.id} value={w.id}>
                 {w.name}
               </SelectItem>
@@ -95,8 +113,8 @@ function BedAllocation() {
 
       <div className="flex flex-col gap-4">
         {wards.map((wardItem) => {
-          const beds = getBedsByWard(wardItem.id).filter(
-            (b) => statusFilter === ALL || b.status === statusFilter
+          const beds = allBeds.filter(
+            (b) => b.wardId === wardItem.id && (statusFilter === ALL || b.status === statusFilter)
           )
           if (beds.length === 0) return null
           return (
@@ -118,8 +136,7 @@ function BedAllocation() {
               <CardContent>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
                   {beds.map((bed) => {
-                    const admission = getAdmissionByBedId(bed.id)
-                    const patient = admission ? getPatientById(admission.patientId) : undefined
+                    const occupant = occupantByBed.get(bed.id)
                     return (
                       <div
                         key={bed.id}
@@ -133,7 +150,7 @@ function BedAllocation() {
                           <StatusBadge status={bed.status} />
                         </div>
                         <span className="truncate text-xs text-muted-foreground">
-                          {patient ? patient.name : "N/A"}
+                          {occupant ?? "—"}
                         </span>
                       </div>
                     )

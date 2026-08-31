@@ -15,32 +15,34 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getPatientById } from "@/lib/mock/patients"
-import { getStaffById } from "@/lib/mock/staff"
-import { getWardById, getBedById } from "@/lib/mock/admissions"
 import type { Admission } from "@/lib/mock/admissions"
 
-function admissionsColumns(onDischarge: (admission: Admission) => void): ColumnDef<Admission>[] {
+/**
+ * @param names ward and bed labels, keyed by id. The caller already holds them
+ *   from the wards/beds query, so passing them in avoids a lookup per row
+ *   against data this component would otherwise have to fetch itself.
+ */
+function admissionsColumns(
+  onDischarge: (admission: Admission) => void,
+  names: { wards?: Map<string, string>; beds?: Map<string, string> } = {}
+): ColumnDef<Admission>[] {
   return [
     {
       id: "patient",
       header: "Patient",
       cell: ({ row }) => {
-        const patient = getPatientById(row.original.patientId)
-        if (!patient) return <span className="text-muted-foreground">Unknown patient</span>
+        const { patientId, patientName } = row.original as Admission & { patientName?: string }
+        const label = patientName ?? "View patient"
         return (
           <Link
-            href={`/patients/${patient.id}`}
+            href={`/patients/${patientId}`}
             className="flex items-center gap-2.5"
             onClick={(e) => e.stopPropagation()}
           >
-            <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
-            <div className="flex flex-col">
-              <span className="font-medium text-foreground hover:text-primary hover:underline">
-                {patient.name}
-              </span>
-              <span className="text-xs text-muted-foreground">{patient.mrn}</span>
-            </div>
+            <PersonAvatar name={label} seed={patientId} size="sm" />
+            <span className="font-medium text-foreground hover:text-primary hover:underline">
+              {label}
+            </span>
           </Link>
         )
       },
@@ -49,12 +51,12 @@ function admissionsColumns(onDischarge: (admission: Admission) => void): ColumnD
       id: "ward",
       header: "Ward / Bed",
       cell: ({ row }) => {
-        const ward = getWardById(row.original.wardId)
-        const bed = getBedById(row.original.bedId)
+        const ward = names.wards?.get(row.original.wardId)
+        const bed = names.beds?.get(row.original.bedId)
         return (
           <div className="flex flex-col">
-            <span className="text-foreground">{ward?.name ?? "N/A"}</span>
-            <span className="text-xs text-muted-foreground">{bed?.label ?? "N/A"}</span>
+            <span className="text-foreground">{ward ?? "Unassigned"}</span>
+            <span className="text-xs text-muted-foreground">{bed ?? "No bed"}</span>
           </div>
         )
       },
@@ -63,8 +65,14 @@ function admissionsColumns(onDischarge: (admission: Admission) => void): ColumnD
       id: "doctor",
       header: "Admitting Doctor",
       cell: ({ row }) => {
-        const doctor = getStaffById(row.original.doctorId)
-        return <span className="text-muted-foreground">{doctor?.name ?? "Unassigned"}</span>
+        const { doctorId } = row.original
+        // Practitioner names are not included on this query; the reference is
+        // shown rather than a fabricated name.
+        return (
+          <span className="text-muted-foreground">
+            {doctorId ? `Practitioner/${doctorId}` : "Unassigned"}
+          </span>
+        )
       },
     },
     {

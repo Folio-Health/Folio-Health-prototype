@@ -35,18 +35,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { getPatientById } from "@/lib/mock/patients"
-import { PATIENTS } from "@/lib/mock/patients"
-import { DOCTORS } from "@/lib/mock/staff"
+import { usePatients } from "@/features/patients/hooks/use-patients"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
 import {
-  ADMISSIONS_LIST,
-  WARDS_LIST,
-  averageLengthOfStay,
-  getBedsByWard,
-  todaysAdmissionsCount,
-  todaysDischargesCount,
-} from "@/lib/mock/admissions"
-import type { Admission, AdmissionStatus } from "@/lib/mock/admissions"
+  useAdmissions,
+  useAdmitPatient,
+  useDischargePatient,
+  useWardsAndBeds,
+  type AdmissionWithPatient,
+} from "../hooks/use-admissions"
+import type { Admission } from "@/lib/mock/admissions"
 import { admissionsColumns } from "./admissions-columns"
 
 const ALL = "all"
@@ -55,59 +53,85 @@ function AdmissionsHub() {
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState(ALL)
   const [ward, setWard] = useState(ALL)
-  const [overrides, setOverrides] = useState<Record<string, AdmissionStatus>>({})
   const [pendingDischarge, setPendingDischarge] = useState<Admission | null>(null)
-  const [localAdmissions, setLocalAdmissions] = useState<Admission[]>([])
 
   const [newOpen, setNewOpen] = useState(false)
   const [newPatientId, setNewPatientId] = useState("")
   const [newWardId, setNewWardId] = useState("")
   const [newBedId, setNewBedId] = useState("")
-  const [newDoctorId, setNewDoctorId] = useState("")
   const [newDiagnosis, setNewDiagnosis] = useState("")
 
-  const allAdmissions = useMemo(
-    () => [...localAdmissions, ...ADMISSIONS_LIST],
-    [localAdmissions]
-  )
+  // Discharged admissions are included so the list can show history; the
+  // status filter below narrows it.
+  const { data: rows = [], isLoading, isError } = useAdmissions(true)
+  const { data: wardsAndBeds } = useWardsAndBeds()
+  const wards = wardsAndBeds?.wards ?? []
+  const admitPatient = useAdmitPatient()
+  const dischargePatient = useDischargePatient()
+  const { data: user } = useCurrentUser()
+  const { data: patientData } = usePatients({}, newOpen)
 
-  const rows = useMemo(
-    () => allAdmissions.map((a) => ({ ...a, status: overrides[a.id] ?? a.status })),
-    [allAdmissions, overrides]
-  )
+  const todaysAdmissionsCount = useMemo(() => {
+    const today = new Date().toDateString()
+    return rows.filter((a) => a.admissionDate && new Date(a.admissionDate).toDateString() === today)
+      .length
+  }, [rows])
 
-  const availableBedsForNewWard = newWardId ? getBedsByWard(newWardId).filter((b) => b.status === "Available") : []
+  const todaysDischargesCount = useMemo(() => {
+    const today = new Date().toDateString()
+    return rows.filter((a) => a.dischargeDate && new Date(a.dischargeDate).toDateString() === today)
+      .length
+  }, [rows])
+
+  /** Mean stay in days over DISCHARGED admissions only — an open stay has no length yet. */
+  const averageLengthOfStay = useMemo(() => {
+    const closed = rows.filter((a) => a.admissionDate && a.dischargeDate)
+    if (closed.length === 0) return 0
+    const totalDays = closed.reduce((sum, a) => {
+      const start = new Date(a.admissionDate).getTime()
+      const end = new Date(a.dischargeDate as string).getTime()
+      return sum + (end - start) / 86_400_000
+    }, 0)
+    return Math.round((totalDays / closed.length) * 10) / 10
+  }, [rows])
+
+  // Only beds that are genuinely free: occupancy is derived from live
+  // encounters, so this cannot offer a bed someone is already in.
+  const availableBedsForNewWard = newWardId
+    ? (wardsAndBeds?.beds ?? []).filter((b) => b.wardId === newWardId && b.status === "Available")
+    : []
 
   function resetNewAdmissionForm() {
     setNewPatientId("")
     setNewWardId("")
     setNewBedId("")
-    setNewDoctorId("")
     setNewDiagnosis("")
   }
 
-  function handleCreateAdmission() {
-    if (!newPatientId || !newWardId || !newBedId || !newDoctorId) {
-      toast.error("Fill in patient, ward, bed, and doctor to admit a patient")
+  async function handleCreateAdmission() {
+    if (!newPatientId || !newWardId || !newBedId) {
+      toast.error("Choose a patient, ward and bed to admit")
       return
     }
-    const patient = getPatientById(newPatientId)
-    const admission: Admission = {
-      id: `ADM-local-${Date.now()}`,
-      patientId: newPatientId,
-      wardId: newWardId,
-      bedId: newBedId,
-      doctorId: newDoctorId,
-      admissionDate: new Date().toISOString(),
-      diagnosis: newDiagnosis.trim() || "Under evaluation",
-      status: "Admitted",
+    try {
+      // The admitting doctor is the signed-in clinician, not a picked one.
+      await admitPatient.mutateAsync({
+        patientId: newPatientId,
+        bedId: newBedId,
+        diagnosis: newDiagnosis.trim(),
+        doctor:
+          user?.id && user.resourceType === "Practitioner"
+            ? { reference: `Practitioner/${user.id}`, display: user.name }
+            : undefined,
+      })
+      toast.success("Patient admitted", {
+        description: "They now appear in the active admissions list.",
+      })
+      resetNewAdmissionForm()
+      setNewOpen(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not admit the patient")
     }
-    setLocalAdmissions((prev) => [admission, ...prev])
-    toast.success(`${patient?.name ?? "Patient"} admitted`, {
-      description: "The patient now appears in the active admissions list.",
-    })
-    resetNewAdmissionForm()
-    setNewOpen(false)
   }
 
   const filtered = useMemo(() => {
@@ -116,11 +140,7 @@ function AdmissionsHub() {
       if (ward !== ALL && a.wardId !== ward) return false
       if (search) {
         const q = search.toLowerCase()
-        const patient = getPatientById(a.patientId)
-        if (
-          !patient?.name.toLowerCase().includes(q) &&
-          !patient?.mrn.toLowerCase().includes(q)
-        ) {
+        if (!(a as AdmissionWithPatient).patientName?.toLowerCase().includes(q)) {
           return false
         }
       }
@@ -132,24 +152,37 @@ function AdmissionsHub() {
     setPendingDischarge(admission)
   }
 
-  function confirmDischarge() {
+  async function confirmDischarge() {
     if (!pendingDischarge) return
-    setOverrides((prev) => ({ ...prev, [pendingDischarge.id]: "Discharged" }))
-    const patient = getPatientById(pendingDischarge.patientId)
-    toast.success(`${patient?.name ?? "Patient"} discharged`, {
-      description: "The bed has been marked for cleaning and the admission closed.",
-    })
-    setPendingDischarge(null)
+    try {
+      await dischargePatient.mutateAsync(pendingDischarge.id)
+      toast.success("Patient discharged", {
+        description: "The admission is closed and the bed is free again.",
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not discharge the patient")
+    } finally {
+      setPendingDischarge(null)
+    }
   }
 
-  const columns = useMemo(() => admissionsColumns(handleDischarge), [])
+  const wardNames = useMemo(() => new Map(wards.map((w) => [w.id, w.name])), [wards])
+  const bedNames = useMemo(
+    () => new Map((wardsAndBeds?.beds ?? []).map((b) => [b.id, b.label])),
+    [wardsAndBeds]
+  )
+  const columns = useMemo(
+    () => admissionsColumns(handleDischarge, { wards: wardNames, beds: bedNames }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [wardNames, bedNames]
+  )
   const activeCount = rows.filter((a) => a.status === "Admitted").length
 
   return (
     <div>
       <PageHeader
         title="Admissions"
-        description={`${allAdmissions.length} admission records on file`}
+        description={isLoading ? "Loading..." : `${rows.length} admission records on file`}
         breadcrumbs={[{ label: "Inpatient" }, { label: "Admissions" }]}
         actions={
           <RoleGate roles={["doctor", "nurse"]}>
@@ -163,11 +196,11 @@ function AdmissionsHub() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Current Admissions" value={activeCount} icon={BedDoubleIcon} />
-        <StatCard label="Today's Admissions" value={todaysAdmissionsCount()} icon={LogInIcon} tone="emerald" />
-        <StatCard label="Today's Discharges" value={todaysDischargesCount()} icon={LogOutIcon} tone="amber" />
+        <StatCard label="Today's Admissions" value={todaysAdmissionsCount} icon={LogInIcon} tone="emerald" />
+        <StatCard label="Today's Discharges" value={todaysDischargesCount} icon={LogOutIcon} tone="amber" />
         <StatCard
           label="Avg. Length of Stay"
-          value={`${averageLengthOfStay()}d`}
+          value={`${averageLengthOfStay}d`}
           icon={ClockIcon}
           tone="violet"
         />
@@ -176,7 +209,8 @@ function AdmissionsHub() {
       <DataTable
         columns={columns}
         data={filtered}
-        emptyTitle="No admissions found"
+        isLoading={isLoading}
+        emptyTitle={isError ? "Could not load admissions" : "No admissions found"}
         emptyDescription="Try adjusting your search or filters, or admit a new patient."
         toolbar={
           <div className="flex flex-wrap items-center gap-2.5">
@@ -196,7 +230,7 @@ function AdmissionsHub() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>All Wards</SelectItem>
-                {WARDS_LIST.map((w) => (
+                {wards.map((w) => (
                   <SelectItem key={w.id} value={w.id}>
                     {w.name}
                   </SelectItem>
@@ -224,7 +258,7 @@ function AdmissionsHub() {
           title="Discharge patient?"
           description={
             pendingDischarge
-              ? `This will discharge ${getPatientById(pendingDischarge.patientId)?.name ?? "this patient"} and free up their bed for cleaning.`
+              ? `This will discharge ${(pendingDischarge as AdmissionWithPatient).patientName ?? "this patient"} and free their bed.`
               : ""
           }
           confirmLabel="Discharge"
@@ -247,7 +281,7 @@ function AdmissionsHub() {
                   <SelectValue placeholder="Select patient" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PATIENTS.slice(0, 40).map((p) => (
+                  {(patientData?.patients ?? []).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name} &middot; {p.mrn}
                     </SelectItem>
@@ -269,7 +303,7 @@ function AdmissionsHub() {
                     <SelectValue placeholder="Select ward" />
                   </SelectTrigger>
                   <SelectContent>
-                    {WARDS_LIST.map((w) => (
+                    {wards.map((w) => (
                       <SelectItem key={w.id} value={w.id}>
                         {w.name}
                       </SelectItem>
@@ -299,19 +333,11 @@ function AdmissionsHub() {
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="admission-doctor">Admitting doctor</Label>
-              <Select value={newDoctorId} onValueChange={(v) => setNewDoctorId(v ?? "")}>
-                <SelectTrigger id="admission-doctor" className="w-full">
-                  <SelectValue placeholder="Select doctor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DOCTORS.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Admitting clinician</Label>
+              {/* Stated, not chosen — the encounter records who actually admitted. */}
+              <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
+                {user?.name ?? "Signed-in clinician"}
+              </p>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="admission-diagnosis">Diagnosis / reason</Label>
