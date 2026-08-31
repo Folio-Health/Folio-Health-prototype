@@ -23,9 +23,13 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { PharmacyModuleTabs } from "./pharmacy-module-tabs"
 import { getPrescriptionColumns } from "./prescription-columns"
-import { PRESCRIPTIONS, DRUGS, isToday, getInventoryStatus, isExpiringThisMonth } from "@/lib/mock/pharmacy"
-import { getPatientById } from "@/lib/mock/patients"
-import { getStaffById } from "@/lib/mock/staff"
+import { DRUGS, isToday, getInventoryStatus, isExpiringThisMonth } from "@/lib/mock/pharmacy"
+import {
+  useDispensePrescription,
+  usePrescriptions,
+  type PrescriptionWithPatient,
+} from "../hooks/use-prescriptions"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
 import { format } from "date-fns"
 import type { Prescription, PrescriptionStatus } from "@/lib/mock/pharmacy"
 
@@ -38,29 +42,22 @@ const TABS: { value: string; label: string }[] = [
 ]
 
 function PharmacyList() {
-  const [statuses, setStatuses] = useState<Record<string, PrescriptionStatus>>(() => {
-    const initial: Record<string, PrescriptionStatus> = {}
-    for (const rx of PRESCRIPTIONS) initial[rx.id] = rx.status
-    return initial
-  })
   const [tab, setTab] = useState(ALL)
   const [search, setSearch] = useState("")
   const [viewing, setViewing] = useState<Prescription | null>(null)
 
-  const rows = useMemo(
-    () => PRESCRIPTIONS.map((rx) => ({ ...rx, status: statuses[rx.id] ?? rx.status })),
-    [statuses]
-  )
+  const { data: rows = [], isLoading, isError } = usePrescriptions()
+  const dispensePrescription = useDispensePrescription()
+  const { data: user } = useCurrentUser()
 
   const filtered = useMemo(() => {
     return rows.filter((rx) => {
       if (tab !== ALL && rx.status !== tab) return false
       if (search) {
         const q = search.toLowerCase()
-        const patient = getPatientById(rx.patientId)
         if (
           !rx.id.toLowerCase().includes(q) &&
-          !patient?.name.toLowerCase().includes(q) &&
+          !(rx as PrescriptionWithPatient).patientName?.toLowerCase().includes(q) &&
           !rx.medications.some((m) => m.drugName.toLowerCase().includes(q))
         ) {
           return false
@@ -75,13 +72,24 @@ function PharmacyList() {
   const lowStockCount = DRUGS.filter((d) => getInventoryStatus(d) === "Low Stock").length
   const expiringThisMonthCount = DRUGS.filter((d) => isExpiringThisMonth(d)).length
 
-  function handleDispense(rx: Prescription) {
-    setStatuses((prev) => ({ ...prev, [rx.id]: "Dispensed" }))
-    const patient = getPatientById(rx.patientId)
-    toast.success(`${rx.id} dispensed`, {
-      description: patient ? `Medications released to ${patient.name}.` : undefined,
-    })
-    setViewing(null)
+  async function handleDispense(rx: Prescription) {
+    try {
+      await dispensePrescription.mutateAsync({
+        prescriptionId: rx.id,
+        // The dispensing pharmacist is whoever is signed in — the dispense
+        // record is meant to say who actually handed the drugs over.
+        performer:
+          user?.id && user.resourceType === "Practitioner"
+            ? { reference: `Practitioner/${user.id}`, display: user.name }
+            : undefined,
+      })
+      toast.success("Prescription dispensed", {
+        description: `Medications released to ${(rx as PrescriptionWithPatient).patientName ?? "the patient"}.`,
+      })
+      setViewing(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not dispense the prescription")
+    }
   }
 
   function handlePrint(rx: Prescription) {
@@ -94,8 +102,14 @@ function PharmacyList() {
     onPrint: handlePrint,
   })
 
-  const viewingPatient = viewing ? getPatientById(viewing.patientId) : undefined
-  const viewingDoctor = viewing ? getStaffById(viewing.prescribedByStaffId) : undefined
+  const viewingPatient = viewing
+    ? { name: (viewing as PrescriptionWithPatient).patientName ?? "Patient", mrn: viewing.patientId }
+    : undefined
+  // Practitioner names are not resolved on this query; the reference is a
+  // truthful pointer where a fabricated name would not be.
+  const viewingDoctor = viewing?.prescribedByStaffId
+    ? { name: `Practitioner/${viewing.prescribedByStaffId}` }
+    : undefined
 
   return (
     <div>
@@ -128,8 +142,9 @@ function PharmacyList() {
         <DataTable
           columns={columns}
           data={filtered}
+          isLoading={isLoading}
           onRowClick={(rx) => setViewing(rx)}
-          emptyTitle="No prescriptions found"
+          emptyTitle={isError ? "Could not load prescriptions" : "No prescriptions found"}
           emptyDescription="Try adjusting your search or filters."
           toolbar={
             <InputGroup className="h-9 max-w-xs">
@@ -161,7 +176,7 @@ function PharmacyList() {
               <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
                 <div className="flex items-center gap-2.5">
                   {viewingPatient && (
-                    <PersonAvatar name={viewingPatient.name} seed={viewingPatient.avatarSeed} size="sm" />
+                    <PersonAvatar name={viewingPatient.name} seed={viewingPatient.mrn} size="sm" />
                   )}
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-foreground">

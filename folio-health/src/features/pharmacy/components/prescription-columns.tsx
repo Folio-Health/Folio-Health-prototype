@@ -14,8 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getPatientById } from "@/lib/mock/patients"
-import { getStaffById } from "@/lib/mock/staff"
 import type { Prescription } from "@/lib/mock/pharmacy"
 
 function getPrescriptionColumns({
@@ -37,15 +35,14 @@ function getPrescriptionColumns({
       id: "patient",
       header: "Patient",
       cell: ({ row }) => {
-        const patient = getPatientById(row.original.patientId)
-        if (!patient) return <span className="text-muted-foreground">Unknown</span>
+        const { patientId, patientName } = row.original as Prescription & {
+          patientName?: string
+        }
+        const label = patientName ?? "Patient"
         return (
           <div className="flex items-center gap-2.5">
-            <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
-            <div className="flex flex-col">
-              <span className="font-medium text-foreground">{patient.name}</span>
-              <span className="text-xs text-muted-foreground">{patient.mrn}</span>
-            </div>
+            <PersonAvatar name={label} seed={patientId} size="sm" />
+            <span className="font-medium text-foreground">{label}</span>
           </div>
         )
       },
@@ -71,8 +68,12 @@ function getPrescriptionColumns({
       id: "prescribedBy",
       header: "Prescribed By",
       cell: ({ row }) => {
-        const doctor = getStaffById(row.original.prescribedByStaffId)
-        return <span className="text-muted-foreground">{doctor?.name ?? "N/A"}</span>
+        const { prescribedByStaffId } = row.original
+        return (
+          <span className="text-muted-foreground">
+            {prescribedByStaffId ? `Practitioner/${prescribedByStaffId}` : "Unassigned"}
+          </span>
+        )
       },
     },
     {
