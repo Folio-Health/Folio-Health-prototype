@@ -8,16 +8,9 @@ import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
-import { getPatientById } from "@/lib/mock/patients"
-import { getStaffById } from "@/lib/mock/staff"
-import {
-  WARDS_LIST,
-  BEDS_LIST,
-  getBedById,
-  getAdmissionById,
-  ICU_PATIENTS_LIST,
-} from "@/lib/mock/admissions"
-import type { ICUPatient, ICUStatus } from "@/lib/mock/admissions"
+import { useIcuPatients, useWardsAndBeds, type IcuPatientRow } from "../hooks/use-admissions"
+import { useRecentVitals } from "@/features/vitals/hooks/use-vitals"
+import type { ICUStatus } from "@/lib/mock/admissions"
 
 const STATUS_TONE: Record<ICUStatus, "red" | "green" | "blue"> = {
   Critical: "red",
@@ -26,29 +19,44 @@ const STATUS_TONE: Record<ICUStatus, "red" | "green" | "blue"> = {
 }
 
 function IcuDashboard() {
-  const icuWard = WARDS_LIST.find((w) => w.name === "ICU")
-  const icuBeds = icuWard ? BEDS_LIST.filter((b) => b.wardId === icuWard.id) : []
+  const { data: icuPatients = [], isLoading, isError } = useIcuPatients()
+  const { data: wardsAndBeds } = useWardsAndBeds()
+
+  // One vitals query for the whole board; the newest reading per patient is
+  // picked below. Fetching per row would be a request per bed.
+  const { data: recentVitals = [] } = useRecentVitals({ limit: 200 })
+  const latestVitalsByPatient = useMemo(() => {
+    const map = new Map<string, (typeof recentVitals)[number]>()
+    // useRecentVitals returns newest first, so the first sighting wins.
+    for (const reading of recentVitals) {
+      if (!map.has(reading.patientId)) map.set(reading.patientId, reading)
+    }
+    return map
+  }, [recentVitals])
+
+  const icuWard = (wardsAndBeds?.wards ?? []).find((w) =>
+    /icu|intensive/i.test(w.department || w.name)
+  )
+  const icuBeds = icuWard
+    ? (wardsAndBeds?.beds ?? []).filter((b) => b.wardId === icuWard.id)
+    : []
   const availableIcuBeds = icuBeds.filter((b) => b.status === "Available").length
-  const ventilatorCount = ICU_PATIENTS_LIST.filter((p) => p.onVentilator).length
+  const ventilatorCount = icuPatients.filter((p) => p.onVentilator).length
   const ventilatorUsagePct = icuBeds.length
     ? Math.round((ventilatorCount / icuBeds.length) * 100)
     : 0
 
-  const columns: ColumnDef<ICUPatient>[] = useMemo(
+  const columns: ColumnDef<IcuPatientRow>[] = useMemo(
     () => [
       {
         id: "patient",
         header: "Patient",
         cell: ({ row }) => {
-          const patient = getPatientById(row.original.patientId)
-          if (!patient) return <span className="text-muted-foreground">Unknown patient</span>
+          const label = row.original.patientName ?? "Patient"
           return (
             <div className="flex items-center gap-2.5">
-              <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
-              <div className="flex flex-col">
-                <span className="font-medium text-foreground">{patient.name}</span>
-                <span className="text-xs text-muted-foreground">{patient.mrn}</span>
-              </div>
+              <PersonAvatar name={label} seed={row.original.patientId} size="sm" />
+              <span className="font-medium text-foreground">{label}</span>
             </div>
           )
         },
@@ -56,28 +64,35 @@ function IcuDashboard() {
       {
         id: "bed",
         header: "Bed",
-        cell: ({ row }) => {
-          const bed = getBedById(row.original.bedId)
-          return <span className="text-muted-foreground">{bed?.label ?? "N/A"}</span>
-        },
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">{row.original.bedLabel ?? "Unassigned"}</span>
+        ),
       },
       {
         id: "doctor",
         header: "Attending Doctor",
-        cell: ({ row }) => {
-          const admission = getAdmissionById(row.original.admissionId)
-          const doctor = admission ? getStaffById(admission.doctorId) : undefined
-          return <span className="text-muted-foreground">{doctor?.name ?? "Unassigned"}</span>
-        },
+        // Practitioner names are not resolved on this query; the encounter id
+        // is a truthful pointer, unlike a fabricated name.
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">
+            {row.original.admissionId ? `Encounter/${row.original.admissionId}` : "Unassigned"}
+          </span>
+        ),
       },
       {
         id: "vitals",
         header: "Vitals",
         cell: ({ row }) => {
-          const v = row.original.vitals
+          const reading = latestVitalsByPatient.get(row.original.patientId)
+          // No recorded observations means exactly that. Showing zeros would
+          // read as a patient with no pulse.
+          if (!reading) {
+            return <span className="text-xs text-muted-foreground">No vitals recorded</span>
+          }
           return (
             <span className="text-xs tabular-nums text-muted-foreground">
-              HR {v.hr} &middot; BP {v.bp} &middot; SpO2 {v.spo2}% &middot; {v.temp}°C
+              HR {reading.pulse} &middot; BP {reading.bpSystolic}/{reading.bpDiastolic} &middot;
+              SpO2 {reading.spo2}% &middot; {reading.temperature}°C
             </span>
           )
         },
@@ -100,7 +115,7 @@ function IcuDashboard() {
         ),
       },
     ],
-    []
+    [latestVitalsByPatient]
   )
 
   return (
@@ -117,16 +132,23 @@ function IcuDashboard() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="ICU Beds" value={icuBeds.length} icon={BedDoubleIcon} />
-        <StatCard label="Occupied" value={ICU_PATIENTS_LIST.length} icon={HeartPulseIcon} tone="red" />
+        <StatCard label="Occupied" value={icuPatients.length} icon={HeartPulseIcon} tone="red" />
         <StatCard label="Available" value={availableIcuBeds} icon={CheckCircle2Icon} tone="emerald" />
         <StatCard label="Ventilator Usage" value={`${ventilatorUsagePct}%`} icon={ActivityIcon} tone="violet" />
       </div>
 
       <DataTable
         columns={columns}
-        data={ICU_PATIENTS_LIST}
-        emptyTitle="No ICU patients"
-        emptyDescription="Patients currently admitted to the ICU will appear here."
+        data={icuPatients}
+        isLoading={isLoading}
+        emptyTitle={isError ? "Could not load ICU patients" : "No ICU patients"}
+        emptyDescription={
+          isError
+            ? "Check your connection and try again."
+            : icuWard
+              ? "Patients currently admitted to the ICU will appear here."
+              : "No ICU ward exists yet. Create one in Ward Management to use this board."
+        }
       />
     </div>
   )

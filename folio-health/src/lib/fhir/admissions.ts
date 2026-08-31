@@ -5,8 +5,18 @@ import type {
   Practitioner,
   PractitionerRole,
   Reference,
+  ServiceRequest,
 } from "@medplum/fhirtypes"
-import type { Admission, AdmissionStatus, Bed, BedStatus, Ward } from "@/lib/mock/admissions"
+import type {
+  Admission,
+  AdmissionStatus,
+  Bed,
+  BedStatus,
+  ICUStatus,
+  Transfer,
+  TransferStatus,
+  Ward,
+} from "@/lib/mock/admissions"
 
 /**
  * Admissions to FHIR.
@@ -52,6 +62,37 @@ export const BED_STATE_EXTENSION_URL = "https://folio.health/fhir/StructureDefin
  */
 export const READY_FOR_DISCHARGE_EXTENSION_URL =
   "https://folio.health/fhir/StructureDefinition/ready-for-discharge"
+
+/**
+ * ICU acuity — Critical / Stable / Improving.
+ *
+ * Not a FHIR concept. The nearest standard equivalent would be a scored
+ * assessment (APACHE, SOFA) recorded as an Observation, which is a different
+ * and much heavier thing than the three-level flag this board shows. Carried
+ * as an extension on the Encounter, set by whoever is watching the patient.
+ */
+export const ICU_ACUITY_EXTENSION_URL = "https://folio.health/fhir/StructureDefinition/icu-acuity"
+
+/** Whether the patient is ventilated. Same reasoning as acuity. */
+export const ON_VENTILATOR_EXTENSION_URL =
+  "https://folio.health/fhir/StructureDefinition/on-ventilator"
+
+/**
+ * Transfer approval state.
+ *
+ * FHIR records where a patient IS (Encounter.location) but has no resource for
+ * "a transfer that has been requested and is awaiting approval". The move
+ * itself is a real location change; the approval workflow around it is Folio's,
+ * so it is carried on a ServiceRequest that references the encounter.
+ */
+export const TRANSFER_CATEGORY = {
+  system: "https://folio.health/fhir/sid/request-category",
+  code: "ward-transfer",
+  display: "Ward transfer",
+}
+
+export const TRANSFER_TO_BED_EXTENSION_URL =
+  "https://folio.health/fhir/StructureDefinition/transfer-to-bed"
 
 export function isWard(location: Location): boolean {
   return location.physicalType?.coding?.some((c) => c.code === "wa") ?? false
@@ -237,6 +278,66 @@ export function buildAdmission(input: BuildAdmissionInput): Encounter {
   }
 }
 
+/** The ICU acuity recorded against an encounter, when one has been set. */
+export function icuAcuityOf(encounter: Encounter): ICUStatus | undefined {
+  const value = encounter.extension?.find((e) => e.url === ICU_ACUITY_EXTENSION_URL)?.valueString
+  return value === "Critical" || value === "Stable" || value === "Improving" ? value : undefined
+}
+
+export function onVentilator(encounter: Encounter): boolean {
+  return (
+    encounter.extension?.some(
+      (e) => e.url === ON_VENTILATOR_EXTENSION_URL && e.valueBoolean === true
+    ) ?? false
+  )
+}
+
+/** Set acuity and ventilation, preserving extensions this app does not own. */
+export function withIcuState(
+  encounter: Encounter,
+  state: { acuity?: ICUStatus; onVentilator?: boolean }
+): Encounter {
+  const kept = (encounter.extension ?? []).filter(
+    (e) => e.url !== ICU_ACUITY_EXTENSION_URL && e.url !== ON_VENTILATOR_EXTENSION_URL
+  )
+  const extension = [
+    ...kept,
+    ...(state.acuity ? [{ url: ICU_ACUITY_EXTENSION_URL, valueString: state.acuity }] : []),
+    ...(state.onVentilator !== undefined
+      ? [{ url: ON_VENTILATOR_EXTENSION_URL, valueBoolean: state.onVentilator }]
+      : []),
+  ]
+  return { ...encounter, extension: extension.length ? extension : undefined }
+}
+
+/**
+ * Move a patient to a different bed.
+ *
+ * Closes the current location entry and opens a new one rather than editing the
+ * existing entry, so the encounter keeps a truthful history of where the
+ * patient has been. Overwriting would erase the fact that they were ever in the
+ * previous bed — which is exactly what an infection trace needs.
+ */
+export function withBedMove(encounter: Encounter, toBedId: string): Encounter {
+  const now = new Date().toISOString()
+  const closed = (encounter.location ?? []).map((entry) =>
+    entry.status === "active" || !entry.status
+      ? { ...entry, status: "completed" as const, period: { ...entry.period, end: now } }
+      : entry
+  )
+  return {
+    ...encounter,
+    location: [
+      ...closed,
+      {
+        location: { reference: `Location/${toBedId}` },
+        status: "active" as const,
+        period: { start: now },
+      },
+    ],
+  }
+}
+
 /** Flag or unflag an encounter as medically ready for discharge. */
 export function withReadyForDischarge(encounter: Encounter, ready: boolean): Encounter {
   const kept = (encounter.extension ?? []).filter(
@@ -267,5 +368,79 @@ export function dischargeEncounter(encounter: Encounter): Encounter {
       status: "completed",
       period: { ...entry.period, end: now },
     })),
+  }
+}
+
+// -- Transfers ---------------------------------------------------------------
+
+/**
+ * A ward transfer request.
+ *
+ * The MOVE is a location change on the Encounter. The REQUEST — who asked, why,
+ * and whether it has been approved — is a ServiceRequest pointing at that
+ * encounter, because FHIR has nowhere else to put an approval workflow.
+ *
+ * Keeping them separate matters: a pending request must not move the patient,
+ * and a completed move must remain true even if the request is later amended.
+ */
+export function toTransferStatus(request: ServiceRequest): TransferStatus {
+  if (request.status === "completed") return "Completed"
+  if (request.status === "active") return "Approved"
+  return "Pending"
+}
+
+export function toTransfer(request: ServiceRequest): Transfer {
+  const toBed =
+    request.extension?.find((e) => e.url === TRANSFER_TO_BED_EXTENSION_URL)?.valueReference
+      ?.reference?.split("/")[1] ?? ""
+
+  return {
+    id: request.id ?? "",
+    patientId: request.subject?.reference?.split("/")[1] ?? "",
+    // Wards are resolved by the caller from each bed's partOf; the request
+    // itself records beds, which is the precise thing being moved between.
+    fromWardId: "",
+    fromBedId: request.locationReference?.[0]?.reference?.split("/")[1] ?? "",
+    toWardId: "",
+    toBedId: toBed,
+    requestedBy: request.requester?.display ?? request.requester?.reference ?? "",
+    reason: request.reasonCode?.[0]?.text ?? "",
+    date: request.authoredOn ?? request.meta?.lastUpdated ?? "",
+    status: toTransferStatus(request),
+  }
+}
+
+export interface BuildTransferInput {
+  patientId: string
+  encounterId: string
+  fromBedId: string
+  toBedId: string
+  reason: string
+  requester?: Reference<Practitioner | PractitionerRole>
+}
+
+export function buildTransferRequest(input: BuildTransferInput): ServiceRequest {
+  return {
+    resourceType: "ServiceRequest",
+    // "draft" is the FHIR status for a request not yet acted on, which is what
+    // Pending means here. Approval moves it to active, the move to completed.
+    status: "draft",
+    intent: "order",
+    category: [{ coding: [TRANSFER_CATEGORY] }],
+    code: { text: "Ward transfer" },
+    subject: { reference: `Patient/${input.patientId}` },
+    encounter: { reference: `Encounter/${input.encounterId}` },
+    locationReference: [{ reference: `Location/${input.fromBedId}` }],
+    authoredOn: new Date().toISOString(),
+    ...(input.reason ? { reasonCode: [{ text: input.reason }] } : {}),
+    ...(input.requester ? { requester: input.requester } : {}),
+    // The destination bed has no standard field on ServiceRequest —
+    // locationReference means "where the service happens", not "move to here".
+    extension: [
+      {
+        url: TRANSFER_TO_BED_EXTENSION_URL,
+        valueReference: { reference: `Location/${input.toBedId}` },
+      },
+    ],
   }
 }

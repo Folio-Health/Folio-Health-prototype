@@ -1,7 +1,13 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { Encounter, Location, Patient, Resource } from "@medplum/fhirtypes"
+import type {
+  Encounter,
+  Location,
+  Patient,
+  Resource,
+  ServiceRequest,
+} from "@medplum/fhirtypes"
 import { createResource, readResource, searchResources, updateResource } from "@/lib/fhir/client"
 import { toPatientSummary } from "@/lib/fhir/patient"
 import {
@@ -12,13 +18,29 @@ import {
   isBed,
   isWard,
   occupiedBedIds,
+  buildTransferRequest,
+  icuAcuityOf,
+  onVentilator,
   toAdmission,
   toBed,
+  toTransfer,
   toWard,
+  withBedMove,
+  withIcuState,
   withReadyForDischarge,
+  TRANSFER_CATEGORY,
+  TRANSFER_TO_BED_EXTENSION_URL,
   type BuildAdmissionInput,
+  type BuildTransferInput,
 } from "@/lib/fhir/admissions"
-import type { Admission, Bed, Ward } from "@/lib/mock/admissions"
+import type {
+  Admission,
+  Bed,
+  ICUPatient,
+  ICUStatus,
+  Transfer,
+  Ward,
+} from "@/lib/mock/admissions"
 
 /**
  * Admissions, wards and beds from Medplum.
@@ -201,5 +223,224 @@ export function useDischargePatient() {
       queryClient.invalidateQueries({ queryKey: ["admissions"] })
       queryClient.invalidateQueries({ queryKey: ["wards-and-beds"] })
     },
+  })
+}
+
+// -- Transfers ---------------------------------------------------------------
+
+export interface TransferWithNames extends Transfer {
+  patientName?: string
+  fromBedLabel?: string
+  toBedLabel?: string
+}
+
+/**
+ * Ward transfer requests.
+ *
+ * Bed labels and ward ids are resolved in ONE Location fetch covering every bed
+ * mentioned by any request, rather than two lookups per row.
+ */
+export function useTransfers(enabled = true) {
+  return useQuery({
+    queryKey: ["transfers"],
+    enabled,
+    queryFn: async (): Promise<TransferWithNames[]> => {
+      const { resources } = await searchResources<Resource>("ServiceRequest", {
+        category: `${TRANSFER_CATEGORY.system}|${TRANSFER_CATEGORY.code}`,
+        _count: PAGE_SIZE,
+        _sort: "-authored",
+        _include: "ServiceRequest:subject",
+      })
+
+      const requests = resources.filter(
+        (r): r is ServiceRequest => r.resourceType === "ServiceRequest"
+      )
+      const names = new Map<string, string>()
+      for (const resource of resources) {
+        if (resource.resourceType !== "Patient") continue
+        const patient = resource as Patient
+        if (patient.id) names.set(patient.id, toPatientSummary(patient).name)
+      }
+
+      const transfers = requests.map(toTransfer)
+      const bedIds = Array.from(
+        new Set(transfers.flatMap((t) => [t.fromBedId, t.toBedId]).filter(Boolean))
+      )
+
+      const bedLabels = new Map<string, string>()
+      const bedWard = new Map<string, string>()
+      if (bedIds.length > 0) {
+        const { resources: beds } = await searchResources<Location>("Location", {
+          _id: bedIds.join(","),
+          _count: PAGE_SIZE,
+        })
+        for (const bed of beds) {
+          if (!bed.id) continue
+          bedLabels.set(bed.id, bed.name ?? "Bed")
+          const wardId = bed.partOf?.reference?.split("/")[1]
+          if (wardId) bedWard.set(bed.id, wardId)
+        }
+      }
+
+      return transfers.map((t) => ({
+        ...t,
+        fromWardId: bedWard.get(t.fromBedId) ?? "",
+        toWardId: bedWard.get(t.toBedId) ?? "",
+        fromBedLabel: bedLabels.get(t.fromBedId),
+        toBedLabel: bedLabels.get(t.toBedId),
+        patientName: names.get(t.patientId),
+      }))
+    },
+  })
+}
+
+export function useRequestTransfer() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: BuildTransferInput) => createResource(buildTransferRequest(input)),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["transfers"] }),
+  })
+}
+
+/**
+ * Approve a pending transfer, or complete an approved one.
+ *
+ * Completing is what actually MOVES the patient: the encounter's current bed is
+ * closed and the destination opened. Approving alone changes nothing physical,
+ * which is the point of having the two steps.
+ */
+export function useAdvanceTransfer() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      transferId,
+      to,
+    }: {
+      transferId: string
+      to: "Approved" | "Completed"
+    }) => {
+      const request = await readResource<ServiceRequest>("ServiceRequest", transferId)
+
+      if (to === "Approved") {
+        return updateResource<ServiceRequest>({ ...request, status: "active" })
+      }
+
+      const toBedId = request.extension
+        ?.find((e) => e.url === TRANSFER_TO_BED_EXTENSION_URL)
+        ?.valueReference?.reference?.split("/")[1]
+      const encounterId = request.encounter?.reference?.split("/")[1]
+      if (!toBedId || !encounterId) {
+        throw new Error("This transfer is missing its destination bed or encounter.")
+      }
+
+      // Move first, then mark the request complete. Reversed, a failure between
+      // the two would leave a transfer that claims to be done with the patient
+      // still in the old bed.
+      const encounter = await readResource<Encounter>("Encounter", encounterId)
+      await updateResource<Encounter>(withBedMove(encounter, toBedId))
+      return updateResource<ServiceRequest>({ ...request, status: "completed" })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transfers"] })
+      queryClient.invalidateQueries({ queryKey: ["admissions"] })
+      queryClient.invalidateQueries({ queryKey: ["wards-and-beds"] })
+    },
+  })
+}
+
+// -- ICU ---------------------------------------------------------------------
+
+export interface IcuPatientRow extends ICUPatient {
+  patientName?: string
+  bedLabel?: string
+}
+
+/**
+ * Patients currently in an ICU ward.
+ *
+ * "ICU" is matched on the ward's department text, which is what the ward
+ * creation form captures. A dedicated ICU flag on Location would be firmer;
+ * this at least derives the list from where patients actually are, rather than
+ * from a separate hand-maintained roster that could disagree with the beds.
+ */
+export function useIcuPatients(enabled = true) {
+  return useQuery({
+    queryKey: ["icu-patients"],
+    enabled,
+    queryFn: async (): Promise<IcuPatientRow[]> => {
+      const [{ resources: locations }, { resources: encounterResources }] = await Promise.all([
+        searchResources<Location>("Location", { _count: PAGE_SIZE }),
+        searchResources<Resource>("Encounter", {
+          class: "IMP",
+          status: "in-progress",
+          _count: PAGE_SIZE,
+          _include: "Encounter:subject",
+        }),
+      ])
+
+      const icuWardIds = new Set(
+        locations
+          .filter(isWard)
+          .filter((w) => /icu|intensive/i.test(w.type?.[0]?.text ?? w.name ?? ""))
+          .map((w) => w.id)
+          .filter((id): id is string => Boolean(id))
+      )
+      const bedById = new Map(locations.filter(isBed).map((b) => [b.id ?? "", b]))
+
+      const encounters = encounterResources.filter(
+        (r): r is Encounter => r.resourceType === "Encounter"
+      )
+      const names = new Map<string, string>()
+      for (const resource of encounterResources) {
+        if (resource.resourceType !== "Patient") continue
+        const patient = resource as Patient
+        if (patient.id) names.set(patient.id, toPatientSummary(patient).name)
+      }
+
+      const rows: IcuPatientRow[] = []
+      for (const encounter of encounters) {
+        const admission = toAdmission(encounter)
+        const bed = bedById.get(admission.bedId)
+        const wardId = bed?.partOf?.reference?.split("/")[1]
+        if (!wardId || !icuWardIds.has(wardId)) continue
+
+        rows.push({
+          admissionId: admission.id,
+          patientId: admission.patientId,
+          bedId: admission.bedId,
+          // Undefined acuity shows as Stable. That is "nobody has set this
+          // yet", not a clinical assertion that the patient is stable.
+          status: icuAcuityOf(encounter) ?? "Stable",
+          onVentilator: onVentilator(encounter),
+          // Vitals are read by the board from the vitals hook, which holds real
+          // Observations. This query does not invent numbers to fill the shape.
+          vitals: { hr: 0, bp: "—", spo2: 0, temp: 0 },
+          patientName: names.get(admission.patientId),
+          bedLabel: bed?.name,
+        })
+      }
+      return rows
+    },
+  })
+}
+
+export function useSetIcuState() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      encounterId,
+      acuity,
+      onVentilator: ventilated,
+    }: {
+      encounterId: string
+      acuity?: ICUStatus
+      onVentilator?: boolean
+    }) => {
+      const encounter = await readResource<Encounter>("Encounter", encounterId)
+      return updateResource<Encounter>(
+        withIcuState(encounter, { acuity, onVentilator: ventilated })
+      )
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["icu-patients"] }),
   })
 }

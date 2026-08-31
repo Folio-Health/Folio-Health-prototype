@@ -25,30 +25,36 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { getPatientById } from "@/lib/mock/patients"
 import {
-  TRANSFERS_LIST,
-  WARDS_LIST,
-  getActiveAdmissions,
-  getBedsByWard,
-  getWardById,
-} from "@/lib/mock/admissions"
-import type { Transfer, TransferStatus } from "@/lib/mock/admissions"
+  useAdmissions,
+  useAdvanceTransfer,
+  useRequestTransfer,
+  useTransfers,
+  useWardsAndBeds,
+  type TransferWithNames,
+} from "../hooks/use-admissions"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import type { Transfer } from "@/lib/mock/admissions"
 import { transfersColumns } from "./transfers-columns"
 
 const ALL = "all"
 
 function TransfersList() {
   const [status, setStatus] = useState(ALL)
-  const [overrides, setOverrides] = useState<Record<string, TransferStatus>>({})
-  const [localTransfers, setLocalTransfers] = useState<Transfer[]>([])
 
   const [newOpen, setNewOpen] = useState(false)
   const [newAdmissionId, setNewAdmissionId] = useState("")
   const [newToWardId, setNewToWardId] = useState("")
   const [newReason, setNewReason] = useState("")
 
-  const activeAdmissions = useMemo(() => getActiveAdmissions(), [])
+  const { data: rows = [], isLoading, isError } = useTransfers()
+  const { data: activeAdmissions = [] } = useAdmissions(false)
+  const { data: wardsAndBeds } = useWardsAndBeds()
+  const requestTransfer = useRequestTransfer()
+  const advanceTransfer = useAdvanceTransfer()
+  const { data: user } = useCurrentUser()
+
+  const wards = wardsAndBeds?.wards ?? []
   const selectedAdmission = activeAdmissions.find((a) => a.id === newAdmissionId)
 
   function resetNewTransferForm() {
@@ -57,55 +63,64 @@ function TransfersList() {
     setNewReason("")
   }
 
-  function handleCreateTransfer() {
+  async function handleCreateTransfer() {
     if (!selectedAdmission || !newToWardId) {
       toast.error("Select a patient and a destination ward")
       return
     }
-    const destinationBeds = getBedsByWard(newToWardId).filter((b) => b.status === "Available")
-    const transfer: Transfer = {
-      id: `TRF-local-${Date.now()}`,
-      patientId: selectedAdmission.patientId,
-      fromWardId: selectedAdmission.wardId,
-      fromBedId: selectedAdmission.bedId,
-      toWardId: newToWardId,
-      toBedId: destinationBeds[0]?.id ?? "",
-      requestedBy: "You",
-      reason: newReason.trim() || "Ward reassignment",
-      date: new Date().toISOString(),
-      status: "Pending",
+    // Only genuinely free beds: occupancy is derived from live encounters, so
+    // this cannot request a move into a bed someone is already in.
+    const destinationBed = (wardsAndBeds?.beds ?? []).find(
+      (b) => b.wardId === newToWardId && b.status === "Available"
+    )
+    if (!destinationBed) {
+      toast.error("That ward has no free beds")
+      return
     }
-    setLocalTransfers((prev) => [transfer, ...prev])
-    const patient = getPatientById(selectedAdmission.patientId)
-    toast.success("Transfer requested", {
-      description: `${patient?.name ?? "Patient"}'s transfer to ${getWardById(newToWardId)?.name ?? "the new ward"} is pending approval.`,
-    })
-    resetNewTransferForm()
-    setNewOpen(false)
+    try {
+      await requestTransfer.mutateAsync({
+        patientId: selectedAdmission.patientId,
+        encounterId: selectedAdmission.id,
+        fromBedId: selectedAdmission.bedId,
+        toBedId: destinationBed.id,
+        reason: newReason.trim(),
+        requester:
+          user?.id && user.resourceType === "Practitioner"
+            ? { reference: `Practitioner/${user.id}`, display: user.name }
+            : undefined,
+      })
+      toast.success("Transfer requested", { description: "It is now pending approval." })
+      resetNewTransferForm()
+      setNewOpen(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not request the transfer")
+    }
   }
-
-  const allTransfers = useMemo(() => [...localTransfers, ...TRANSFERS_LIST], [localTransfers])
-
-  const rows = useMemo(
-    () => allTransfers.map((t) => ({ ...t, status: overrides[t.id] ?? t.status })),
-    [allTransfers, overrides]
-  )
 
   const filtered = useMemo(
     () => rows.filter((t) => status === ALL || t.status === status),
     [rows, status]
   )
 
-  function approve(transfer: Transfer) {
-    setOverrides((prev) => ({ ...prev, [transfer.id]: "Approved" }))
-    const patient = getPatientById(transfer.patientId)
-    toast.success(`Transfer approved`, { description: `${patient?.name ?? "Patient"}'s transfer is now approved.` })
+  async function approve(transfer: Transfer) {
+    try {
+      await advanceTransfer.mutateAsync({ transferId: transfer.id, to: "Approved" })
+      toast.success("Transfer approved", { description: "The move has not happened yet." })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not approve the transfer")
+    }
   }
 
-  function complete(transfer: Transfer) {
-    setOverrides((prev) => ({ ...prev, [transfer.id]: "Completed" }))
-    const patient = getPatientById(transfer.patientId)
-    toast.success(`Transfer completed`, { description: `${patient?.name ?? "Patient"} has been moved to the new ward.` })
+  async function complete(transfer: Transfer) {
+    try {
+      // This is the step that actually moves the patient between beds.
+      await advanceTransfer.mutateAsync({ transferId: transfer.id, to: "Completed" })
+      toast.success("Transfer completed", {
+        description: `${(transfer as TransferWithNames).patientName ?? "The patient"} has been moved.`,
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not complete the transfer")
+    }
   }
 
   const columns = useMemo(() => transfersColumns(approve, complete), [])
@@ -118,7 +133,7 @@ function TransfersList() {
     <div>
       <PageHeader
         title="Patient Transfers"
-        description={`${allTransfers.length} transfer requests on record`}
+        description={isLoading ? "Loading..." : `${rows.length} transfer requests on record`}
         breadcrumbs={[
           { label: "Inpatient" },
           { label: "Admissions", href: "/admissions" },
@@ -175,10 +190,10 @@ function TransfersList() {
                 </SelectTrigger>
                 <SelectContent>
                   {activeAdmissions.map((a) => {
-                    const patient = getPatientById(a.patientId)
+                    const wardName = wards.find((w) => w.id === a.wardId)?.name ?? "Unassigned"
                     return (
                       <SelectItem key={a.id} value={a.id}>
-                        {patient?.name ?? a.patientId} &middot; {getWardById(a.wardId)?.name}
+                        {a.patientName ?? "Patient"} &middot; {wardName}
                       </SelectItem>
                     )
                   })}
@@ -187,7 +202,10 @@ function TransfersList() {
             </div>
             {selectedAdmission && (
               <p className="text-xs text-muted-foreground">
-                Currently in <span className="font-medium text-foreground">{getWardById(selectedAdmission.wardId)?.name}</span>
+                Currently in{" "}
+                <span className="font-medium text-foreground">
+                  {wards.find((w) => w.id === selectedAdmission.wardId)?.name ?? "an unassigned ward"}
+                </span>
               </p>
             )}
             <div className="flex flex-col gap-1.5">
@@ -197,7 +215,7 @@ function TransfersList() {
                   <SelectValue placeholder="Select destination ward" />
                 </SelectTrigger>
                 <SelectContent>
-                  {WARDS_LIST.filter((w) => w.id !== selectedAdmission?.wardId).map((w) => (
+                  {wards.filter((w) => w.id !== selectedAdmission?.wardId).map((w) => (
                     <SelectItem key={w.id} value={w.id}>
                       {w.name}
                     </SelectItem>
