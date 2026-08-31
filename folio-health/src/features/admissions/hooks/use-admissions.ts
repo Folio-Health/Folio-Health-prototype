@@ -15,6 +15,7 @@ import {
   toAdmission,
   toBed,
   toWard,
+  withReadyForDischarge,
   type BuildAdmissionInput,
 } from "@/lib/fhir/admissions"
 import type { Admission, Bed, Ward } from "@/lib/mock/admissions"
@@ -163,6 +164,23 @@ export function useAdmitPatient() {
       // The bed the patient just took is now occupied.
       queryClient.invalidateQueries({ queryKey: ["wards-and-beds"] })
     },
+  })
+}
+
+/**
+ * Mark an admission ready for discharge (or clear the flag).
+ *
+ * Read-then-write: the flag lives in extension[] alongside anything else stored
+ * there, and a blind overwrite would drop extensions this app does not own.
+ */
+export function useMarkReadyForDischarge() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ encounterId, ready }: { encounterId: string; ready: boolean }) => {
+      const encounter = await readResource<Encounter>("Encounter", encounterId)
+      return updateResource<Encounter>(withReadyForDischarge(encounter, ready))
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admissions"] }),
   })
 }
 

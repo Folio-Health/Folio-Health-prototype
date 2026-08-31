@@ -41,6 +41,18 @@ export const WARD_CAPACITY_EXTENSION_URL = "https://folio.health/fhir/StructureD
 /** Marks a bed unavailable for reasons other than occupancy (cleaning, reserved). */
 export const BED_STATE_EXTENSION_URL = "https://folio.health/fhir/StructureDefinition/bed-state"
 
+/**
+ * "Ready for discharge" — a workflow state FHIR does not model.
+ *
+ * An Encounter is either in-progress or finished; there is no standard way to
+ * say "medically done, waiting on paperwork or transport", which is exactly the
+ * state a discharge queue exists to track. Carried as a Folio extension rather
+ * than faked by finishing the encounter early, which would free the bed while
+ * the patient is still in it.
+ */
+export const READY_FOR_DISCHARGE_EXTENSION_URL =
+  "https://folio.health/fhir/StructureDefinition/ready-for-discharge"
+
 export function isWard(location: Location): boolean {
   return location.physicalType?.coding?.some((c) => c.code === "wa") ?? false
 }
@@ -114,9 +126,12 @@ export function toAdmission(encounter: Encounter): Admission {
     diagnosis: encounter.reasonCode?.[0]?.text ?? "",
     status: toAdmissionStatus(encounter),
     dischargeDate: encounter.period?.end,
-    // FHIR has no "ready for discharge" flag. It is a workflow state this app
-    // does not yet persist, so it is reported as unknown rather than guessed.
-    readyForDischarge: undefined,
+    readyForDischarge: encounter.extension?.some(
+      (e) => e.url === READY_FOR_DISCHARGE_EXTENSION_URL && e.valueBoolean === true
+    ),
+    // Still unmodelled: whether the discharge SUMMARY document is written. That
+    // is a DocumentReference question, not a flag, and is reported as unknown
+    // rather than conflated with medical readiness.
     dischargeSummaryReady: undefined,
   }
 }
@@ -220,6 +235,18 @@ export function buildAdmission(input: BuildAdmissionInput): Encounter {
       : {}),
     ...(input.facility ? { serviceProvider: input.facility } : {}),
   }
+}
+
+/** Flag or unflag an encounter as medically ready for discharge. */
+export function withReadyForDischarge(encounter: Encounter, ready: boolean): Encounter {
+  const kept = (encounter.extension ?? []).filter(
+    (e) => e.url !== READY_FOR_DISCHARGE_EXTENSION_URL
+  )
+  const extension = ready
+    ? [...kept, { url: READY_FOR_DISCHARGE_EXTENSION_URL, valueBoolean: true }]
+    : kept
+  // Omit the array entirely when empty: an empty extension[] is invalid FHIR.
+  return { ...encounter, extension: extension.length ? extension : undefined }
 }
 
 /**

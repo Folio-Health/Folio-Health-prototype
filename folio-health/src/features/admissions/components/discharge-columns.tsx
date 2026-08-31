@@ -14,9 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getPatientById } from "@/lib/mock/patients"
-import { getStaffById } from "@/lib/mock/staff"
-import { getWardById } from "@/lib/mock/admissions"
 import type { Admission } from "@/lib/mock/admissions"
 
 function dischargeColumns(
@@ -28,15 +25,12 @@ function dischargeColumns(
       id: "patient",
       header: "Patient",
       cell: ({ row }) => {
-        const patient = getPatientById(row.original.patientId)
-        if (!patient) return <span className="text-muted-foreground">Unknown patient</span>
+        const { patientId, patientName } = row.original as Admission & { patientName?: string }
+        const label = patientName ?? "Patient"
         return (
           <div className="flex items-center gap-2.5">
-            <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
-            <div className="flex flex-col">
-              <span className="font-medium text-foreground">{patient.name}</span>
-              <span className="text-xs text-muted-foreground">{patient.mrn}</span>
-            </div>
+            <PersonAvatar name={label} seed={patientId} size="sm" />
+            <span className="font-medium text-foreground">{label}</span>
           </div>
         )
       },
@@ -44,17 +38,22 @@ function dischargeColumns(
     {
       id: "ward",
       header: "Ward",
-      cell: ({ row }) => {
-        const ward = getWardById(row.original.wardId)
-        return <span className="text-muted-foreground">{ward?.name ?? "N/A"}</span>
-      },
+      // Ward names are held by the queue's wards query; the id alone is shown
+      // here rather than threading a second lookup through this column set.
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">{row.original.wardId || "Unassigned"}</span>
+      ),
     },
     {
       id: "doctor",
       header: "Admitting Doctor",
       cell: ({ row }) => {
-        const doctor = getStaffById(row.original.doctorId)
-        return <span className="text-muted-foreground">{doctor?.name ?? "Unassigned"}</span>
+        const { doctorId } = row.original
+        return (
+          <span className="text-muted-foreground">
+            {doctorId ? `Practitioner/${doctorId}` : "Unassigned"}
+          </span>
+        )
       },
     },
     {
