@@ -31,13 +31,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PharmacyModuleTabs } from "./pharmacy-module-tabs"
 import { getPurchaseOrderColumns } from "./purchase-order-columns"
 import {
-  PURCHASE_ORDERS,
-  SUPPLIERS,
-  getSupplierById,
   formatNaira,
   type PurchaseOrder,
   type PurchaseOrderStatus,
 } from "@/lib/mock/pharmacy"
+import {
+  useAdvancePurchaseOrder,
+  useCreatePurchaseOrder,
+  usePurchaseOrders,
+  useSuppliers,
+} from "../hooks/use-inventory"
 
 const NEXT_STATUS: Record<PurchaseOrderStatus, PurchaseOrderStatus | null> = {
   Draft: "Pending",
@@ -47,11 +50,20 @@ const NEXT_STATUS: Record<PurchaseOrderStatus, PurchaseOrderStatus | null> = {
 }
 
 function PurchaseOrdersList() {
-  const [orders, setOrders] = useState<PurchaseOrder[]>(PURCHASE_ORDERS)
   const [search, setSearch] = useState("")
   const [viewing, setViewing] = useState<PurchaseOrder | null>(null)
   const [creating, setCreating] = useState(false)
-  const [supplierId, setSupplierId] = useState<string>(SUPPLIERS[0]?.id ?? "")
+  const [supplierId, setSupplierId] = useState<string>("")
+
+  const { data: orders = [], isLoading, isError } = usePurchaseOrders()
+  const { data: suppliers = [] } = useSuppliers()
+  const createOrder = useCreatePurchaseOrder()
+  const advanceOrder = useAdvancePurchaseOrder()
+
+  const supplierById = useMemo(
+    () => new Map(suppliers.map((s) => [s.id, s])),
+    [suppliers]
+  )
 
   const pendingCount = orders.filter((o) => o.status === "Pending").length
   const approvedCount = orders.filter((o) => o.status === "Approved").length
@@ -62,44 +74,49 @@ function PurchaseOrdersList() {
     if (!search.trim()) return orders
     const q = search.trim().toLowerCase()
     return orders.filter((o) => {
-      const supplier = getSupplierById(o.supplierId)
-      return o.id.toLowerCase().includes(q) || supplier?.name.toLowerCase().includes(q)
+      const supplier = supplierById.get(o.supplierId)
+      return o.id.toLowerCase().includes(q) || Boolean(supplier?.name.toLowerCase().includes(q))
     })
-  }, [orders, search])
+  }, [orders, search, supplierById])
 
-  function handleAdvance(po: PurchaseOrder) {
+  async function handleAdvance(po: PurchaseOrder) {
     const next = NEXT_STATUS[po.status]
     if (!next) return
-    setOrders((prev) => prev.map((o) => (o.id === po.id ? { ...o, status: next } : o)))
-    toast.success(`${po.id} moved to ${next}`)
-    setViewing((v) => (v && v.id === po.id ? { ...v, status: next } : v))
+    try {
+      await advanceOrder.mutateAsync({ orderId: po.id, status: next })
+      toast.success(`Order moved to ${next}`, {
+        // Receiving an order is what puts the drugs on the shelf, so say so.
+        description: next === "Delivered" ? "Stock levels have been increased." : undefined,
+      })
+      setViewing((v) => (v && v.id === po.id ? { ...v, status: next } : v))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update the order")
+    }
   }
 
-  function handleCreate() {
-    const supplier = getSupplierById(supplierId)
+  async function handleCreate() {
+    const supplier = supplierById.get(supplierId)
     if (!supplier) {
       toast.error("Select a supplier")
       return
     }
-    // No invented line items: with no real drug catalog wired up yet, a new
-    // draft starts empty rather than being filled with random picks.
-    const items: PurchaseOrder["items"] = []
-    const totalAmount = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-    const newPo: PurchaseOrder = {
-      id: `PO-${String(orders.length + 1).padStart(4, "0")}`,
-      supplierId,
-      items,
-      totalAmount,
-      status: "Draft",
-      date: new Date().toISOString(),
+    try {
+      // A draft starts with no line items; they are added when the buyer knows
+      // what is being ordered, and the total is computed from them server-side.
+      await createOrder.mutateAsync({
+        supplier: { reference: `Organization/${supplier.id}`, display: supplier.name },
+        items: [],
+        status: "Draft",
+      })
+      toast.success("Draft order created", { description: `For ${supplier.name}.` })
+      setCreating(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create the order")
     }
-    setOrders((prev) => [newPo, ...prev])
-    toast.success(`${newPo.id} created`, { description: `Draft order for ${supplier.name}.` })
-    setCreating(false)
   }
 
   const columns = getPurchaseOrderColumns({ onView: setViewing, onAdvance: handleAdvance })
-  const viewingSupplier = viewing ? getSupplierById(viewing.supplierId) : undefined
+  const viewingSupplier = viewing ? supplierById.get(viewing.supplierId) : undefined
 
   return (
     <div>
@@ -133,6 +150,7 @@ function PurchaseOrdersList() {
       <DataTable
         columns={columns}
         data={filtered}
+        isLoading={isLoading}
         onRowClick={(po) => setViewing(po)}
         emptyTitle="No purchase orders found"
         emptyDescription="Try adjusting your search, or create a new purchase order."
@@ -215,7 +233,7 @@ function PurchaseOrdersList() {
                 <SelectValue placeholder="Select supplier" />
               </SelectTrigger>
               <SelectContent>
-                {SUPPLIERS.map((s) => (
+                {suppliers.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.name}
                   </SelectItem>

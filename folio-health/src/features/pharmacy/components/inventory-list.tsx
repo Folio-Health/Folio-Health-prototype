@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/dialog"
 import { PharmacyModuleTabs } from "./pharmacy-module-tabs"
 import { getInventoryColumns } from "./inventory-columns"
-import { DRUGS, getInventoryStatus, getSupplierById, formatNaira, type Drug } from "@/lib/mock/pharmacy"
+import { getInventoryStatus, formatNaira, type Drug } from "@/lib/mock/pharmacy"
+import { useDrugs, useSuppliers } from "../hooks/use-inventory"
 
 const ALL = "all"
 const TABS = [
@@ -33,6 +34,9 @@ function InventoryList() {
   const [tab, setTab] = useState(ALL)
   const [search, setSearch] = useState("")
   const [viewing, setViewing] = useState<Drug | null>(null)
+
+  const { data: DRUGS = [], isLoading, isError } = useDrugs()
+  const { data: suppliers = [] } = useSuppliers()
 
   const totalSkus = DRUGS.length
   const lowStockCount = DRUGS.filter((d) => getInventoryStatus(d) === "Low Stock").length
@@ -64,7 +68,9 @@ function InventoryList() {
   }
 
   const columns = getInventoryColumns({ onView: setViewing, onReorder: handleReorder })
-  const viewingSupplier = viewing ? getSupplierById(viewing.supplierId) : undefined
+  const viewingSupplier = viewing
+    ? suppliers.find((s) => s.id === viewing.supplierId)
+    : undefined
 
   return (
     <div>
@@ -101,8 +107,9 @@ function InventoryList() {
         <DataTable
           columns={columns}
           data={filtered}
+          isLoading={isLoading}
           onRowClick={(drug) => setViewing(drug)}
-          emptyTitle="No drugs found"
+          emptyTitle={isError ? "Could not load stock" : "No drugs found"}
           emptyDescription="Try adjusting your search or filters."
           toolbar={
             <InputGroup className="h-9 max-w-xs">
