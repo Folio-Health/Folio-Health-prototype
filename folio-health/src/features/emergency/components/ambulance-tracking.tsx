@@ -24,8 +24,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { PATIENTS } from "@/lib/mock/patients"
-import { AMBULANCE_DISPATCHES_LIST } from "@/lib/mock/emergency"
+import { usePatients } from "@/features/patients/hooks/use-patients"
+import { useAmbulanceDispatches, useCreateDispatch } from "../hooks/use-emergency"
 import type { AmbulanceDispatch } from "@/lib/mock/emergency"
 import { ambulanceColumns } from "./ambulance-columns"
 
@@ -40,7 +40,6 @@ const DESTINATIONS = [
 
 function AmbulanceTracking() {
   const [status, setStatus] = useState(ALL)
-  const [localDispatches, setLocalDispatches] = useState<AmbulanceDispatch[]>([])
 
   const [newOpen, setNewOpen] = useState(false)
   const [newAmbulanceId, setNewAmbulanceId] = useState("")
@@ -48,10 +47,10 @@ function AmbulanceTracking() {
   const [newPatientId, setNewPatientId] = useState("")
   const [newEta, setNewEta] = useState("15")
 
-  const allDispatches = useMemo(
-    () => [...localDispatches, ...AMBULANCE_DISPATCHES_LIST],
-    [localDispatches]
-  )
+  const { data: allDispatches = [], isLoading, isError } = useAmbulanceDispatches()
+  const createDispatch = useCreateDispatch()
+  // Only fetched while the dispatch dialog is open.
+  const { data: patientData } = usePatients({}, newOpen)
 
   function resetNewDispatchForm() {
     setNewAmbulanceId("")
@@ -60,26 +59,29 @@ function AmbulanceTracking() {
     setNewEta("15")
   }
 
-  function handleDispatch() {
+  async function handleDispatch() {
     if (!newAmbulanceId.trim() || !newDestination) {
       toast.error("Enter an ambulance unit and destination")
       return
     }
-    const dispatch: AmbulanceDispatch = {
-      id: `AMB-local-${Date.now()}`,
-      ambulanceId: newAmbulanceId.trim(),
-      status: "Dispatched",
-      destination: newDestination,
-      etaMinutes: Number(newEta) || 15,
-      crew: ["Unassigned crew"],
-      patientId: newPatientId || undefined,
+    try {
+      await createDispatch.mutateAsync({
+        ambulanceId: newAmbulanceId.trim(),
+        status: "Dispatched",
+        destination: newDestination,
+        // Blank means "no ETA recorded" rather than defaulting to a number the
+        // dispatcher never gave.
+        etaMinutes: newEta.trim() ? Number(newEta) : undefined,
+        patient: newPatientId ? { reference: `Patient/${newPatientId}` } : undefined,
+      })
+      toast.success("Dispatch request sent", {
+        description: `${newAmbulanceId.trim()} dispatched to ${newDestination}.`,
+      })
+      resetNewDispatchForm()
+      setNewOpen(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not send the dispatch")
     }
-    setLocalDispatches((prev) => [dispatch, ...prev])
-    toast.success("Dispatch request sent", {
-      description: `${dispatch.ambulanceId} dispatched to ${newDestination}.`,
-    })
-    resetNewDispatchForm()
-    setNewOpen(false)
   }
 
   const filtered = useMemo(
@@ -96,7 +98,7 @@ function AmbulanceTracking() {
     <div>
       <PageHeader
         title="Ambulance Tracking"
-        description={`${allDispatches.length} ambulances in the fleet`}
+        description={isLoading ? "Loading..." : `${allDispatches.length} dispatches on record`}
         breadcrumbs={[{ label: "Emergency", href: "/emergency" }, { label: "Ambulance Tracking" }]}
         actions={
           <Button onClick={() => setNewOpen(true)}>
@@ -172,7 +174,7 @@ function AmbulanceTracking() {
                   <SelectValue placeholder="No patient linked yet" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PATIENTS.slice(0, 40).map((p) => (
+                  {(patientData?.patients ?? []).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name} &middot; {p.mrn}
                     </SelectItem>

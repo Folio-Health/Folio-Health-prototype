@@ -5,7 +5,6 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { TruckIcon } from "lucide-react"
 import { StatusBadge } from "@/components/common/status-badge"
 import { PersonAvatar } from "@/components/common/person-avatar"
-import { getPatientById } from "@/lib/mock/patients"
 import type { AmbulanceDispatch, AmbulanceStatus } from "@/lib/mock/emergency"
 
 const STATUS_TONE: Record<AmbulanceStatus, "amber" | "blue" | "violet" | "green"> = {
@@ -37,16 +36,20 @@ export const ambulanceColumns: ColumnDef<AmbulanceDispatch>[] = [
     id: "patient",
     header: "Patient",
     cell: ({ row }) => {
-      const patient = row.original.patientId ? getPatientById(row.original.patientId) : undefined
-      if (!patient) return <span className="text-muted-foreground">Unassigned</span>
+      const { patientId } = row.original
+      // A dispatch often has no patient yet — an empty ambulance is a normal
+      // state, not missing data.
+      if (!patientId) return <span className="text-muted-foreground">Unassigned</span>
       return (
         <Link
-          href={`/patients/${patient.id}`}
+          href={`/patients/${patientId}`}
           className="flex items-center gap-2.5"
           onClick={(e) => e.stopPropagation()}
         >
-          <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
-          <span className="font-medium text-foreground hover:text-primary hover:underline">{patient.name}</span>
+          <PersonAvatar name="Patient" seed={patientId} size="sm" />
+          <span className="font-medium text-foreground hover:text-primary hover:underline">
+            View patient
+          </span>
         </Link>
       )
     },

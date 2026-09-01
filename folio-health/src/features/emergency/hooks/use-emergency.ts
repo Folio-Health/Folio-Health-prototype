@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { Encounter, Patient, Resource } from "@medplum/fhirtypes"
+import type { Basic, Encounter, Patient, Resource } from "@medplum/fhirtypes"
 import { createResource, readResource, searchResources, updateResource } from "@/lib/fhir/client"
 import { toPatientSummary } from "@/lib/fhir/patient"
 import {
@@ -12,7 +12,19 @@ import {
   withTriageLevel,
   type BuildErCaseInput,
 } from "@/lib/fhir/emergency"
-import type { ERCase, TriageLevel } from "@/lib/mock/emergency"
+import { FOLIO_BASIC_SYSTEM } from "@/lib/fhir/custom"
+import {
+  buildAmbulanceDispatch,
+  toAmbulanceDispatch,
+  withDispatchStatus,
+  type BuildDispatchInput,
+} from "@/lib/fhir/ambulance"
+import type {
+  AmbulanceDispatch,
+  AmbulanceStatus,
+  ERCase,
+  TriageLevel,
+} from "@/lib/mock/emergency"
 
 /**
  * Emergency department cases from Medplum.
@@ -122,5 +134,57 @@ export function useCloseErCase() {
       return updateResource<Encounter>(closeErCase(encounter, admitted))
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["er-cases"] }),
+  })
+}
+
+// -- Ambulance dispatch ------------------------------------------------------
+
+/**
+ * Ambulance dispatches, stored as Basic records (see lib/fhir/ambulance.ts).
+ *
+ * Kept in this module rather than its own because the ED board reads dispatches
+ * and cases side by side; splitting them would mean two hooks whose loading
+ * states have to be reconciled in every consumer.
+ */
+export function useAmbulanceDispatches(enabled = true) {
+  return useQuery({
+    queryKey: ["ambulance-dispatches"],
+    enabled,
+    queryFn: async (): Promise<AmbulanceDispatch[]> => {
+      const { resources } = await searchResources<Basic>("Basic", {
+        code: `${FOLIO_BASIC_SYSTEM}|ambulance-dispatch`,
+        _count: PAGE_SIZE,
+        _sort: "-_lastUpdated",
+      })
+      return resources.map(toAmbulanceDispatch)
+    },
+  })
+}
+
+export function useCreateDispatch() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: BuildDispatchInput) => createResource(buildAmbulanceDispatch(input)),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["ambulance-dispatches"] }),
+  })
+}
+
+export function useUpdateDispatchStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      dispatchId,
+      status,
+      etaMinutes,
+    }: {
+      dispatchId: string
+      status: AmbulanceStatus
+      etaMinutes?: number
+    }) => {
+      // Read-then-write so crew, destination and patient survive a status change.
+      const basic = await readResource<Basic>("Basic", dispatchId)
+      return updateResource<Basic>(withDispatchStatus(basic, status, etaMinutes))
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["ambulance-dispatches"] }),
   })
 }
