@@ -17,26 +17,31 @@ import {
 } from "@/components/ui/select"
 import { EmptyState } from "@/components/common/empty-state"
 import { cn } from "@/lib/utils"
-import { getPatientById } from "@/lib/mock/patients"
-import { getStaffById } from "@/lib/mock/staff"
-import { ER_CASES_LIST, TRIAGE_LEVELS, triageMeta } from "@/lib/mock/emergency"
+import { TRIAGE_LEVELS, triageMeta } from "@/lib/mock/emergency"
+import { useErCases, useSetTriageLevel, type ErCaseWithPatient } from "../hooks/use-emergency"
 import type { TriageLevel } from "@/lib/mock/emergency"
 
 function TriageQueue() {
-  const [overrides, setOverrides] = useState<Record<string, TriageLevel>>({})
+  const { data: allCases = [] } = useErCases(false)
+  const setTriageLevel = useSetTriageLevel()
 
-  const cases = useMemo(() => {
-    return ER_CASES_LIST.filter((c) => c.status === "Waiting" || c.status === "In Treatment")
-      .map((c) => ({ ...c, triageLevel: overrides[c.id] ?? c.triageLevel }))
-      .sort((a, b) => a.triageLevel - b.triageLevel || +new Date(a.arrivalTime) - +new Date(b.arrivalTime))
-  }, [overrides])
+  // The hook already returns sickest-first, longest-waiting next; this only
+  // narrows to the patients still physically in the department.
+  const cases = useMemo(
+    () => allCases.filter((c) => c.status === "Waiting" || c.status === "In Treatment"),
+    [allCases]
+  )
 
-  function reassign(caseId: string, level: TriageLevel) {
-    setOverrides((prev) => ({ ...prev, [caseId]: level }))
-    const patient = getPatientById(ER_CASES_LIST.find((c) => c.id === caseId)?.patientId ?? "")
-    toast.success(`Triage level updated`, {
-      description: `${patient?.name ?? "Patient"} reassigned to ${triageMeta(level).label}.`,
-    })
+  async function reassign(caseId: string, level: TriageLevel) {
+    const target = cases.find((c) => c.id === caseId) as ErCaseWithPatient | undefined
+    try {
+      await setTriageLevel.mutateAsync({ caseId, level })
+      toast.success("Triage level updated", {
+        description: `${target?.patientName ?? "Patient"} reassigned to ${triageMeta(level).label}.`,
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update the triage level")
+    }
   }
 
   return (
@@ -68,20 +73,22 @@ function TriageQueue() {
       ) : (
         <div className="flex flex-col gap-3">
           {cases.map((c) => {
-            const patient = getPatientById(c.patientId)
-            const doctor = getStaffById(c.assignedDoctorId)
+            const patientName = c.patientName ?? "Unknown patient"
             const meta = triageMeta(c.triageLevel)
             return (
               <Card key={c.id} className={cn("border-l-4 py-0", meta.colorClass.split(" ").find((cl) => cl.startsWith("border-")))}>
                 <CardContent className="flex flex-wrap items-center gap-4 py-4">
-                  <PersonAvatar name={patient?.name ?? "Unknown"} seed={patient?.avatarSeed} />
+                  <PersonAvatar name={patientName} seed={c.patientId} />
                   <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="font-medium text-foreground">{patient?.name ?? "Unknown patient"}</span>
+                    <span className="font-medium text-foreground">{patientName}</span>
                     <span className="truncate text-sm text-muted-foreground">{c.chiefComplaint}</span>
                   </div>
                   <div className="flex flex-col text-xs text-muted-foreground">
                     <span>Arrived {formatDistanceToNow(new Date(c.arrivalTime), { addSuffix: true })}</span>
-                    <span>Doctor: {doctor?.name ?? "Unassigned"}</span>
+                    <span>
+                      Doctor:{" "}
+                      {c.assignedDoctorId ? `Practitioner/${c.assignedDoctorId}` : "Unassigned"}
+                    </span>
                   </div>
                   <span
                     className={cn(

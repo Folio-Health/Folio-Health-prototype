@@ -15,13 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getPatientById } from "@/lib/mock/patients"
-import {
-  ER_CASES_LIST,
-  getActiveCases,
-  getCriticalCases,
-  averageWaitMinutes,
-} from "@/lib/mock/emergency"
+import { useErCases } from "../hooks/use-emergency"
 import { emergencyColumns } from "./emergency-columns"
 
 const ALL = "all"
@@ -30,29 +24,41 @@ function EmergencyDashboard() {
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState(ALL)
 
+  // Includes closed cases: the dashboard is the day's picture, not just who is
+  // still in the department.
+  const { data: cases = [], isLoading, isError } = useErCases(true)
+
   const filtered = useMemo(() => {
-    return ER_CASES_LIST.filter((c) => {
+    return cases.filter((c) => {
       if (status !== ALL && c.status !== status) return false
       if (search) {
         const q = search.toLowerCase()
-        const patient = getPatientById(c.patientId)
         if (
           !c.chiefComplaint.toLowerCase().includes(q) &&
-          !(patient?.name.toLowerCase().includes(q) ?? false) &&
-          !(patient?.mrn.toLowerCase().includes(q) ?? false)
+          !(c.patientName?.toLowerCase().includes(q) ?? false)
         ) {
           return false
         }
       }
       return true
     })
-  }, [search, status])
+  }, [cases, search, status])
+
+  const averageWaitMinutes = useMemo(() => {
+    const waiting = cases.filter((c) => c.status === "Waiting" && c.arrivalTime)
+    if (waiting.length === 0) return 0
+    const total = waiting.reduce(
+      (sum, c) => sum + (Date.now() - new Date(c.arrivalTime).getTime()) / 60000,
+      0
+    )
+    return Math.round(total / waiting.length)
+  }, [cases])
 
   return (
     <div>
       <PageHeader
         title="Emergency Dashboard"
-        description={`${ER_CASES_LIST.length} cases logged in the last 24 hours`}
+        description={isLoading ? "Loading..." : `${cases.length} cases on record`}
         breadcrumbs={[{ label: "Emergency" }]}
         actions={
           <>
@@ -65,21 +71,23 @@ function EmergencyDashboard() {
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Active Cases" value={getActiveCases().length} icon={ActivityIcon} />
-        <StatCard label="Critical" value={getCriticalCases().length} icon={TriangleAlertIcon} tone="red" />
+        <StatCard label="Active Cases" value={cases.filter((c) => c.status === "Waiting" || c.status === "In Treatment").length} icon={ActivityIcon} />
+        <StatCard label="Critical" value={cases.filter((c) => c.triageLevel <= 2 && c.status !== "Discharged").length} icon={TriangleAlertIcon} tone="red" />
         <StatCard
           label="Waiting"
-          value={ER_CASES_LIST.filter((c) => c.status === "Waiting").length}
+          value={cases.filter((c) => c.status === "Waiting").length}
           icon={HourglassIcon}
           tone="amber"
         />
-        <StatCard label="Avg Wait Time" value={`${averageWaitMinutes()}m`} icon={ClockIcon} tone="violet" />
+        <StatCard label="Avg Wait Time" // Mean wait for patients still waiting, computed from arrival times.
+          value={`${averageWaitMinutes}m`} icon={ClockIcon} tone="violet" />
       </div>
 
       <DataTable
         columns={emergencyColumns}
         data={filtered}
-        emptyTitle="No ER cases found"
+        isLoading={isLoading}
+        emptyTitle={isError ? "Could not load ER cases" : "No ER cases found"}
         emptyDescription="Try adjusting your search or filters."
         toolbar={
           <div className="flex flex-wrap items-center gap-2.5">

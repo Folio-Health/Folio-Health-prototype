@@ -9,8 +9,8 @@ import { StatusBadge } from "@/components/common/status-badge"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { EmptyState } from "@/components/common/empty-state"
-import { getPatientById } from "@/lib/mock/patients"
-import { getWaitingQueue, triageMeta, averageWaitMinutes, longestWaitMinutes } from "@/lib/mock/emergency"
+import { triageMeta } from "@/lib/mock/emergency"
+import { useErCases } from "../hooks/use-emergency"
 
 const TRIAGE_TONE: Record<"Critical" | "Urgent" | "Standard", "red" | "amber" | "blue"> = {
   Critical: "red",
@@ -19,7 +19,22 @@ const TRIAGE_TONE: Record<"Critical" | "Urgent" | "Standard", "red" | "amber" | 
 }
 
 function EmergencyQueue() {
-  const queue = useMemo(() => getWaitingQueue(), [])
+  const { data: cases = [] } = useErCases(false)
+
+  // Already ordered sickest-first, longest-waiting next by the hook.
+  const queue = useMemo(() => cases.filter((c) => c.status === "Waiting"), [cases])
+
+  const waitMinutes = useMemo(
+    () =>
+      queue
+        .filter((c) => c.arrivalTime)
+        .map((c) => Math.round((Date.now() - new Date(c.arrivalTime).getTime()) / 60000)),
+    [queue]
+  )
+  const averageWaitMinutes = waitMinutes.length
+    ? Math.round(waitMinutes.reduce((a, b) => a + b, 0) / waitMinutes.length)
+    : 0
+  const longestWaitMinutes = waitMinutes.length ? Math.max(...waitMinutes) : 0
 
   return (
     <div>
@@ -31,8 +46,8 @@ function EmergencyQueue() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Patients Waiting" value={queue.length} icon={UsersIcon} />
-        <StatCard label="Avg Wait Time" value={`${averageWaitMinutes()}m`} icon={ClockIcon} tone="amber" />
-        <StatCard label="Longest Wait" value={`${longestWaitMinutes()}m`} icon={HourglassIcon} tone="red" />
+        <StatCard label="Avg Wait Time" value={`${averageWaitMinutes}m`} icon={ClockIcon} tone="amber" />
+        <StatCard label="Longest Wait" value={`${longestWaitMinutes}m`} icon={HourglassIcon} tone="red" />
       </div>
 
       {queue.length === 0 ? (
@@ -44,7 +59,7 @@ function EmergencyQueue() {
       ) : (
         <div className="flex flex-col gap-2.5">
           {queue.map((c, index) => {
-            const patient = getPatientById(c.patientId)
+            const patientName = c.patientName ?? "Unknown patient"
             const meta = triageMeta(c.triageLevel)
             return (
               <Card key={c.id} className="py-0">
@@ -52,10 +67,10 @@ function EmergencyQueue() {
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground">
                     {index + 1}
                   </span>
-                  <PersonAvatar name={patient?.name ?? "Unknown"} seed={patient?.avatarSeed} size="sm" />
+                  <PersonAvatar name={patientName} seed={c.patientId} size="sm" />
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate font-medium text-foreground">
-                      {patient?.name ?? "Unknown patient"}
+                      {patientName}
                     </span>
                     <span className="truncate text-xs text-muted-foreground">{c.chiefComplaint}</span>
                   </div>
