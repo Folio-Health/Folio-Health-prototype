@@ -27,7 +27,7 @@ import type { Basic, Extension, Reference } from "@medplum/fhirtypes"
 export const FOLIO_BASIC_SYSTEM = "https://folio.health/fhir/sid/record-type"
 
 /** The kinds of Folio record stored as Basic. */
-export type FolioRecordType = "purchase-order" | "ambulance-dispatch"
+export type FolioRecordType = "purchase-order" | "ambulance-dispatch" | "refund"
 
 export function basicCode(type: FolioRecordType) {
   return { coding: [{ system: FOLIO_BASIC_SYSTEM, code: type }], text: type }
