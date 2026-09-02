@@ -1,273 +1,258 @@
-# Handover — clinical modules moved onto real FHIR
+# Handover: clinical modules on real FHIR
 
-Everything below landed **after your last pull** (`e4f5853` — *"Booking patient
-lookup by name, phone number, or NIN"*).
+Everything here landed after the last pull (`e4f5853`, "Booking patient lookup by
+name, phone number, or NIN").
 
-**Range:** `e4f5853..6e2efc3` · **16 commits** · **63 files** · **+5,990 / −1,039**
-**Branch:** `main`, pushed to `origin`. Typecheck clean at every commit.
+Range `e4f5853..8039353`, 17 commits, 63 files, +5,990/-1,039. On `main`, pushed.
 
----
+## Background
 
-## Why any of this was needed
+An earlier commit stripped the fabricated records out of `src/lib/mock/*` but
+left every module still importing those arrays. They were empty by then, so most
+clinical screens rendered blank tables.
 
-A previous commit removed the fabricated records from `src/lib/mock/*` but left
-the modules reading those (now empty) arrays. The visible effect was that most
-clinical screens rendered **permanently blank tables**, and — less visibly —
-their write actions changed React component state that vanished on navigation.
+The less obvious problem was the write side. Buttons that looked like they worked
+were setting React state that disappeared on navigation:
 
-So several buttons across the app looked like they worked and did nothing:
+- Front-desk check-in turned the row green locally, nothing hit the server
+- Discharge set a local flag, so the bed was never released and the patient
+  stayed admitted as far as everyone else was concerned
+- Approving a lab result never released it
+- Approving a transfer was a colour change
+- Marking an ICU patient critical was a colour change
+- Dispensing a prescription never recorded the drugs as issued
+- Signing a surgical consent wasn't possible, no signing action existed
+- The pre-op checklist was read-only, so a theatre team couldn't tick anything
 
-| Action | What actually happened before |
-|---|---|
-| Front-desk **check-in** | Row turned green locally; nothing reached the server |
-| **Discharge** a patient | Local flag; bed never released, patient still admitted for everyone else |
-| Approve a **lab result** | Local flag; result never released |
-| Approve a **transfer** | Colour change only |
-| Mark ICU patient **critical** | Colour change only |
-| **Dispense** a prescription | Local flag; drugs never recorded as issued |
-| **Sign a surgical consent** | *No signing action existed at all* |
-| Complete a **pre-op checklist** | Read-only; a theatre team could not tick anything |
+All of those write to Medplum now.
 
-All of the above now write to Medplum.
+## What's done
 
----
-
-## Modules completed
-
-| Module | Files | FHIR resources |
+| Module | Files | Resources |
 |---|---|---|
-| Vitals | 3 | `Observation` (LOINC-coded) |
-| Laboratory | 3 | `ServiceRequest`, `DiagnosticReport`, `Observation` |
-| Radiology | 3 | `ServiceRequest`, `DiagnosticReport` |
-| Reception | 3 | `Appointment`, `Patient` |
-| Admissions | 9 | `Encounter` (IMP), `Location`, `ServiceRequest` |
-| Pharmacy | 8 | `MedicationRequest`, `MedicationDispense`, `Medication`, `Organization`, `Basic` |
-| Emergency | 7 | `Encounter` (EMER), `Basic` |
-| Surgery | 8 | `Procedure`, `Consent` |
-| Consultation hub | 2 | `Appointment` (reuses the existing appointments layer) |
+| Vitals | 3 | Observation (LOINC-coded) |
+| Laboratory | 3 | ServiceRequest, DiagnosticReport, Observation |
+| Radiology | 3 | ServiceRequest, DiagnosticReport |
+| Reception | 3 | Appointment, Patient |
+| Admissions | 9 | Encounter (IMP), Location, ServiceRequest |
+| Pharmacy | 8 | MedicationRequest, MedicationDispense, Medication, Organization, Basic |
+| Emergency | 7 | Encounter (EMER), Basic |
+| Surgery | 8 | Procedure, Consent |
+| Consultation hub | 2 | Appointment, reusing the existing appointments layer |
 
-**19 new files**, all typechecked:
+Twenty new files. Mapping layers in `src/lib/fhir/`: `admissions.ts` (446 lines),
+`billing.ts`, `laboratory.ts` (361), `surgery.ts` (338), `radiology.ts` (264),
+`inventory.ts` (237), `loinc.ts` (222), `vitals.ts` (217), `emergency.ts` (213),
+`pharmacy.ts` (165), `custom.ts` (122), `ambulance.ts` (97). Query hooks under
+`src/features/*/hooks/` for admissions, billing, emergency, laboratory,
+inventory, prescriptions, radiology, surgery and vitals.
 
-```
-src/lib/fhir/           admissions.ts (446)  laboratory.ts (361)  surgery.ts (338)
-                        radiology.ts  (264)  inventory.ts  (237)  loinc.ts   (222)
-                        vitals.ts     (217)  emergency.ts  (213)  pharmacy.ts (165)
-                        custom.ts     (122)  ambulance.ts   (97)
+## Decisions worth a second opinion
 
-src/features/*/hooks/   use-admissions · use-emergency · use-laboratory
-                        use-inventory · use-prescriptions · use-radiology
-                        use-surgery · use-vitals
-```
+These are the ones that are annoying to undo later. Each is commented in the file
+it affects, so this is a summary rather than the full reasoning.
 
----
+### LOINC
 
-## Decisions you should know about
+`src/lib/fhir/loinc.ts` codes the whole lab catalogue, 12 panels and 24 analytes.
+Every entry carries the official LOINC long common name next to the code, which
+is how you check a code without looking it up. If the name doesn't match
+loinc.org for that code, the code is wrong.
 
-These are the judgement calls that are painful to reverse later. Each is
-documented in the file it affects.
+Two need a lab scientist:
 
-### 1. LOINC coding of the whole lab catalogue
+"Urea" is coded as urea *nitrogen* (`3094-0`), not urea. The catalogue's 7-20
+mg/dL range is the BUN interval; serum urea runs roughly 15-40. If the lab really
+does report urea, this is out by a factor of about 2.14, which is the kind of
+error that reaches a patient.
 
-`src/lib/fhir/loinc.ts` codes **12 panels and 24 analytes**. Every entry stores
-the official LOINC long common name beside the code so a reviewer can check it
-without a lookup — if the name doesn't match loinc.org, the code is wrong.
+Malaria antigen uses the species-agnostic code (`46094-9`). A P. falciparum-only
+HRP2 kit, which is what a lot of Nigerian labs stock, should be `76772-3`. The
+generic code isn't wrong, just less specific, so it's safe either way.
 
-**Two you should have a lab scientist confirm:**
+Urine protein and glucose use the dipstick "Presence" codes rather than the
+quantitative serum ones. Their results are Negative/Trace/1+, and a quantitative
+code would claim a measurement nobody made.
 
-- **"Urea" is coded as urea *nitrogen* (`3094-0`), not urea.** The catalogue's
-  7–20 mg/dL range is the BUN interval; serum urea runs ~15–40. If your lab
-  genuinely reports urea, this is wrong by a factor of ~2.14.
-- **Malaria antigen uses the species-agnostic code (`46094-9`).** A
-  P. falciparum-only HRP2 kit — common in Nigeria — should be `76772-3`. The
-  generic code isn't wrong, just less specific.
+### Custom resources
 
-Urine protein and glucose deliberately use the **dipstick "Presence"** codes,
-not the quantitative serum ones; a quantitative code would claim a measurement
-nobody made.
+Applied as a split rather than uniformly. Real FHIR where the thing genuinely is
+that thing, `Basic` only where R4 has nothing:
 
-### 2. Custom resources — your "use custom Medplum resources" decision
+- Supplier is an `Organization` with a supplier role. A supplier is an
+  organization.
+- Drug is a `Medication` with stock extensions. Batch and expiry use the real
+  `Medication.batch` fields rather than inventing extensions for things that
+  already exist.
+- Purchase order, ambulance dispatch and refund are `Basic` with Folio codes.
 
-Applied as a **split**, not uniformly. Real FHIR wherever the thing genuinely
-*is* that thing; `Basic` only where R4 has no resource:
+`Basic` was chosen over stretching `SupplyRequest` or `Transport`. Those mean
+specific things, and putting a commercial order in one puts wrong data somewhere
+another system reads literally. Ambulance dispatch is deliberately shaped like
+R5's `Transport`, so an upgrade later is a rename rather than a redesign.
 
-| Thing | Storage | Why |
-|---|---|---|
-| Supplier | `Organization` + supplier role | A supplier *is* an organization |
-| Drug | `Medication` + stock extensions | A drug *is* a medication; batch/expiry use real `Medication.batch` |
-| Purchase order | `Basic` `purchase-order` | No R4 resource |
-| Ambulance dispatch | `Basic` `ambulance-dispatch` | No R4 resource (R5 adds `Transport`) |
-| Refund | `Basic` `refund` | No R4 resource |
+The upside of keeping this in Medplum instead of a side table is that it inherits
+AccessPolicy enforcement, history and search. A separate store needs its own
+authorisation, and then "who can see this facility's stock" has two answers.
 
-`Basic` was chosen over stretching `SupplyRequest`/`Transport`, which mean
-specific things — putting a commercial order in one puts wrong data where
-another system reads it literally.
+### Extensions for things FHIR doesn't model
 
-**Ambulance dispatch is shaped like R5 `Transport`**, so an upgrade is a rename
-rather than a redesign.
+`ready-for-discharge`, `icu-acuity`, `on-ventilator`, `ward-capacity`,
+`bed-state`, `theatre-number`, `pre-op-checklist`, `blood-loss-ml`, `is-trauma`,
+`mechanism-of-injury`, `invoice-due-date`.
 
-Everything inherits Medplum's AccessPolicy enforcement, history and search. A
-separate store would have needed its own authorisation, and *"who may see this
-facility's stock"* would then have two answers.
+The important one is `ready-for-discharge`. FHIR has no way to say "medically
+done, waiting on paperwork or transport", which is exactly what a discharge queue
+tracks; an Encounter is either in-progress or finished. Faking it by finishing
+the encounter early would free the bed while the patient is still in it, so it's
+an extension instead.
 
-### 3. Things FHIR does not model — carried as Folio extensions
+ICU acuity is an extension because the nearest standard equivalent is a scored
+assessment like APACHE or SOFA, which is a much heavier thing than a three-level
+flag on a board.
 
-| Concept | Extension | Why not a standard field |
-|---|---|---|
-| Ready for discharge | `ready-for-discharge` | An Encounter is in-progress or finished; there is no "medically done, awaiting transport" |
-| ICU acuity | `icu-acuity` | Nearest standard is a scored assessment (APACHE/SOFA), far heavier than a 3-level flag |
-| On ventilator | `on-ventilator` | Same |
-| Ward capacity | `ward-capacity` | `Location` has no capacity field |
-| Bed state (cleaning/reserved) | `bed-state` | `Location.status` says whether a bed *exists*, not whether it's free |
-| Theatre number | `theatre-number` | No `Procedure` field |
-| Pre-op checklist | `pre-op-checklist` | No R4 resource |
-| Blood loss (ml) | `blood-loss-ml` | No `Procedure` field |
-| Trauma flag / mechanism | `is-trauma`, `mechanism-of-injury` | No `Encounter` fields |
-| Invoice due date | `invoice-due-date` | FHIR `Invoice` has no due date |
+### Derived rather than stored
 
-**Critically: `ready-for-discharge` is an extension rather than finishing the
-encounter early.** Finishing it would free the bed while the patient is still
-lying in it.
+Storing these next to their source would give two answers that drift:
 
-### 4. Derived, never stored
+- Bed occupancy comes from live encounters, not `Location.status`. A bed with a
+  patient in it is occupied no matter what anyone marked it as.
+- Theatre "In Use" comes from whether an operation is actually in progress.
+- The ICU roster comes from where patients actually are: bed, ward, department.
+- Outstanding bills are a view over unpaid invoices past their due date.
+- Invoice balance comes from line items and recorded payments. Nothing reads a
+  stored balance, so the ledger can't contradict itself.
+- `itemsSupplied` per supplier is counted from the drugs naming that supplier.
 
-Storing these alongside the source data would create two answers that drift
-apart:
-
-- **Bed occupancy** — from live encounters, not `Location.status`. A bed with a
-  patient in it is occupied regardless of what anyone marked it.
-- **Theatre "In Use"** — from whether an operation is actually in progress.
-- **ICU roster** — from where patients actually are (bed → ward → department).
-- **Outstanding bills** — an unpaid invoice past its due date is a *view*.
-- **Invoice balance** — from line items and recorded payments. No screen reads
-  a stored balance, so the ledger cannot disagree with itself.
-- **`itemsSupplied`** per supplier — counted from drugs naming that supplier.
-
-### 5. Attribution: pickers replaced with the signed-in user
+### Attribution
 
 Lab orders, imaging orders, admissions, surgery, vitals, prescriptions and
-dispensing all previously offered a **dropdown of mock doctors**, letting any
-user attribute an action to anyone. FHIR's `requester` / `performer` /
-`participant` fields exist to answer *"who actually did this"*.
+dispensing all used to offer a dropdown of mock doctors, which let any user
+attribute an action to anyone. FHIR's `requester`, `performer` and `participant`
+exist to answer "who actually did this". They all record the signed-in clinician
+now, shown read-only in the form.
 
-All now record the signed-in clinician, stated read-only in the form.
+### Concurrency
 
-### 6. Concurrency
+Stock adjustments take a delta and are applied read-modify-write. Sending
+absolute totals would let two concurrent dispenses each write their own figure
+and silently lose one.
 
-- **Stock adjustments take a delta**, applied read-modify-write. Absolute totals
-  would let two concurrent dispenses each write their own figure, losing one.
-- **Every status change is read-then-write**, so it can't revert a concurrent
-  edit to another field on the same resource.
-- **Multi-resource writes are ordered so a mid-way failure is safe:**
-  Observations before the DiagnosticReport that references them; the bed move
-  before the transfer is marked complete; the radiology report before the order
-  is closed.
-- **Batch writes are sequential, not parallel** — Medplum rate-limits bursts,
-  and a half-written vitals reading reassembles as a row of zeros.
+Status changes are read-then-write throughout, so they can't revert a concurrent
+edit to a different field on the same resource.
 
-### 7. Honest gaps — deliberately left blank rather than filled
+Multi-resource writes are ordered so a failure in the middle is safe.
+Observations go in before the DiagnosticReport that references them, the bed move
+happens before the transfer is marked complete, and the radiology report is
+written before the order closes.
 
-These render as "Unassigned", "—", or are removed entirely. **Nothing invents a
-value to fill a shape.**
+Batch writes are sequential rather than parallel. Medplum rate-limits bursts, and
+a half-written vitals reading reassembles as a row of zeros.
 
-- **Ward "nurse in charge"** → *Unassigned*. `Location` has no such field;
-  proper modelling needs a `PractitionerRole`.
-- **Post-operative recovery outcome** → **column removed**. No FHIR home yet; a
-  placeholder status would assert a recovery nobody recorded. The column now
-  reports what the note *does* hold — whether complications occurred.
-- **ICU vitals with no observations** → *"No vitals recorded"*, not zeros.
-  Zeros read as a patient with no pulse.
-- **`dischargeSummaryReady`** → unknown. Whether the summary *document* exists
-  is a `DocumentReference` question, not a boolean.
-- **`lastReminderSent`** → `null`. Reminders aren't modelled; a date would claim
-  a patient was chased when nobody contacted them.
-- **Ambulance ETA left blank** → stored as absent, not defaulted to 15 minutes.
-- **Practitioner names** not resolved by a query → shows `Practitioner/<id>`
-  rather than a fabricated name.
-- **Unrecognised triage level** → falls back to **3** (mid-scale). Defaulting an
-  unknown case to "resuscitate now" would cry wolf on the board.
-- **Unset ICU acuity** → displays *Stable*. ⚠️ **This one is worth revisiting** —
-  it means "nobody has set this yet" but reads as a clinical assertion. Fine on
-  a dashboard, wrong if the board is ever used for triage.
+## Gaps left visible on purpose
 
-### 8. Uncoded on purpose
+Nothing invents a value to fill a shape. These show as "Unassigned", a dash, or
+are removed:
 
-Free text, not a guessed code:
+- Ward "nurse in charge" reads Unassigned. `Location` has no such field, and
+  doing it properly needs a `PractitionerRole`.
+- The post-op recovery outcome column is gone. There's no FHIR home for recovery
+  notes yet, and a placeholder status would assert a recovery nobody recorded.
+  The column now shows what the note does hold, whether complications occurred.
+- ICU vitals with no observations read "No vitals recorded" rather than zeros.
+  Zeros render as a patient with no pulse.
+- `dischargeSummaryReady` is unknown. Whether the summary document exists is a
+  `DocumentReference` question, not a boolean.
+- `lastReminderSent` is null because reminders aren't modelled. A date there
+  would claim someone chased a patient when nobody did.
+- A blank ambulance ETA stores as absent rather than defaulting to 15 minutes.
+- Practitioner names a query doesn't resolve show `Practitioner/<id>` instead of
+  a made-up name.
+- An unrecognised triage level falls back to 3, mid-scale. Defaulting an unknown
+  case to "resuscitate now" would cry wolf on the board.
 
-- **Lab test names** where no confirmed LOINC exists
-- **Radiology exam names** — the catalogue is body-parts × modalities with no
-  safe RadLex/LOINC lookup
-- **Procedure names** — hospital-local theatre language; a wrong SNOMED code is
-  a *clinical* error
-- **Drug codes** use Folio's catalogue id, not a guessed RxNorm code
-- **Insurers** — free text; Nigerian HMOs aren't in a FHIR-published directory,
-  and a reference to a nonexistent Organization is a dangling pointer
+One to revisit: unset ICU acuity currently displays as Stable. It means "nobody
+has set this yet" but reads as a clinical assertion. Fine on a dashboard, wrong
+if that board is ever used for triage.
 
-Modality *is* DICOM-coded (`CR`/`MR`/`CT`/`US`) because that vocabulary is
-unambiguous.
+## Deliberately uncoded
 
----
+Free text rather than a guessed code, because a wrong code is silently wrong
+forever and propagates into everything downstream:
 
-## Things that changed behaviour, not just plumbing
+- Lab test names with no confirmed LOINC
+- Radiology exam names. The catalogue is body parts crossed with modalities and
+  there's no safe lookup from that pair to RadLex or LOINC.
+- Procedure names. Hospital-local theatre language, and a wrong SNOMED code here
+  is a clinical error rather than a data-quality one.
+- Drug codes use Folio's own catalogue id, not a guessed RxNorm code.
+- Insurers. Nigerian HMOs aren't in a FHIR-published directory, and a reference
+  to an Organization nobody created is a dangling pointer.
 
-- **Ordering-doctor dropdowns removed** across lab, radiology, admissions and
-  surgery (see §5).
-- **`QUEUE_ENTRIES` collapsed into appointments** on the reception dashboard.
-  Two fabricated sources side by side could disagree about who is in the
-  building.
-- **Recent registrations** now come from the server-sorted patient list,
-  replacing a sort on a `registeredAt` field FHIR doesn't carry.
-- **Check-in offers only transitions the state machine allows** — it asks
-  `allowedActions()` rather than re-deriving, so the UI can't offer something
-  the server will refuse.
-- **A role with no Appointment grant** now sees *"Not available for your role"*
-  instead of an empty day. Those are very different statements to a clinician.
-- **Receiving a purchase order increases stock.** A status change alone would
-  leave the shelves and the system disagreeing.
-- **Consent starts `proposed`, not `active`.** A form existing is not consent
-  having been given.
-- **Transfers are two steps.** Approving changes nothing physical; *completing*
-  moves the patient. The move appends a location entry rather than editing, so
-  the encounter keeps a truthful history — which is what an infection trace
-  reads.
+Modality is DICOM-coded (CR/MR/CT/US) because that vocabulary is unambiguous.
 
----
+## Behaviour changes, not just plumbing
 
-## Environment notes
+- Ordering-doctor dropdowns removed across lab, radiology, admissions and
+  surgery.
+- `QUEUE_ENTRIES` folded into appointments on the reception dashboard. Two
+  fabricated sources side by side could disagree about who's in the building.
+- Recent registrations come from the server-sorted patient list, replacing a sort
+  on a `registeredAt` field FHIR doesn't have.
+- Check-in only offers transitions the state machine allows. It asks
+  `allowedActions()` instead of re-deriving, so the UI can't offer something the
+  server will refuse.
+- A role with no Appointment grant now sees "Not available for your role" instead
+  of an empty day. Those are very different things to tell a clinician.
+- Receiving a purchase order increases stock. A status change on its own leaves
+  the shelves and the system disagreeing.
+- Consent starts `proposed`, not `active`. A form existing isn't consent having
+  been given, and signing is a separate action.
+- Transfers are two steps. Approving changes nothing physical, completing moves
+  the patient. The move appends a location entry rather than editing one, so the
+  encounter keeps a real history of where the patient has been, which is what an
+  infection trace reads.
 
-- **Your Medplum project had zero `Location` and zero `Encounter` resources.**
-  Admissions therefore includes **ward and bed creation** — without it there is
-  nowhere to admit anyone.
-- **Doctor and Nurse AccessPolicies were missing** and have been installed from
-  your authoritative builders in `Folio-Web/packages/fhir-model` (21 resource
-  rules each). The three existing policies were **not** overwritten — that would
-  change live access for users already bound to them.
-- **A service ClientApplication was created** (`Folio Credential Service`) and
-  wired into `.env.local` as `MEDPLUM_SERVICE_CLIENT_ID` / `_SECRET`.
+## Environment
 
----
+The Medplum project had zero `Location` and zero `Encounter` resources, so
+admissions includes ward and bed creation. Without it there's nowhere to admit
+anyone.
 
-## Still to do
+The Doctor and Nurse AccessPolicies were missing. They've been installed from the
+builders in `Folio-Web/packages/fhir-model`, 21 resource rules each. The three
+policies that already existed were left alone, since overwriting them would
+change live access for users already bound to them.
 
-**In progress, uncommitted:** billing layer + hooks
-(`src/lib/fhir/billing.ts`, `src/features/billing/hooks/use-billing.ts`) are
-written; the **12 billing components are not yet wired**.
+A service ClientApplication ("Folio Credential Service") was created and wired
+into `.env.local` as `MEDPLUM_SERVICE_CLIENT_ID` and
+`MEDPLUM_SERVICE_CLIENT_SECRET`.
 
-**Untouched modules:** nursing (10), obstetrics (8), pediatrics (7),
-blood-bank (6), portal (10), analytics (9), hr (7), communication (6), and the
-**consultation workspace** (SOAP notes, orders, medications, attachments — still
-entirely local state).
+## Outstanding
 
-**Housekeeping:**
+Billing has its layer and hooks committed and typechecking, but the 12 components
+aren't wired yet. Worth knowing that layer hit three type errors and one real bug
+during development, the last of them found by re-reading the code while writing
+this doc: the due-date reader and writer used different extension URLs, so no
+invoice would ever have shown as overdue. It's had less scrutiny than the other
+modules.
 
-- Rotate `operator@folio.local`'s password — it was pasted into a chat
-  transcript during this work.
-- Delete the `e2e.nurse.*@folio.local` test accounts in Medplum.
-- Pre-existing lint error in `src/app/(auth)/login/page.tsx:54`
-  (`setRedirectTo` inside an effect) — predates this work; 16 other files trip
+Untouched: nursing (10 files), obstetrics (8), pediatrics (7), blood-bank (6),
+portal (10), analytics (9), hr (7), communication (6), and the consultation
+workspace, which is still entirely local state.
+
+Housekeeping:
+
+- Rotate `operator@folio.local`. Its password was pasted into a chat transcript
+  during this work.
+- Delete the `e2e.nurse.*@folio.local` test accounts in Medplum, left over from
+  verifying the forced password change.
+- There's a pre-existing lint error at `src/app/(auth)/login/page.tsx:54`,
+  `setRedirectTo` inside an effect. It predates this work and 16 other files trip
   the same rule.
 
-**Note on remaining `lib/mock` imports:** these are now almost all
-`import type` — the modules still supply vocabulary (statuses, catalogues,
-checklist item lists) with the fabricated records removed. That's intentional;
-moving the type definitions is a separate refactor from putting real data behind
-them.
+On the remaining `lib/mock` imports: they're nearly all `import type` now. Those
+modules still supply vocabulary, statuses, catalogues, checklist items, with the
+fabricated records removed. Moving the type definitions out is a separate
+refactor from putting real data behind them, and doing both at once would have
+made these diffs unreviewable.
