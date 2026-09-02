@@ -13,7 +13,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getPatientById } from "@/lib/mock/patients"
 import type { ConsentForm } from "@/lib/mock/surgery"
 
 function consentFormsColumns(
@@ -25,15 +24,13 @@ function consentFormsColumns(
       id: "patient",
       header: "Patient",
       cell: ({ row }) => {
-        const patient = getPatientById(row.original.patientId)
-        if (!patient) return <span className="text-muted-foreground">Unknown patient</span>
+        const { patientId } = row.original
+        // Consent forms are listed by procedure; the patient link stays useful
+        // without a resolved name rather than reading "Unknown".
         return (
           <div className="flex items-center gap-2.5">
-            <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
-            <div className="flex flex-col">
-              <span className="font-medium text-foreground">{patient.name}</span>
-              <span className="text-xs text-muted-foreground">{patient.mrn}</span>
-            </div>
+            <PersonAvatar name="Patient" seed={patientId} size="sm" />
+            <span className="font-medium text-foreground">View patient</span>
           </div>
         )
       },

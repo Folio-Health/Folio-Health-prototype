@@ -17,29 +17,53 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { getPatientById } from "@/lib/mock/patients"
-import { CONSENT_FORMS_LIST } from "@/lib/mock/surgery"
 import type { ConsentForm } from "@/lib/mock/surgery"
+import { useConsentForms, useSignConsent } from "../hooks/use-surgery"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
 import { consentFormsColumns } from "./consent-forms-columns"
 
 function ConsentForms() {
   const [viewing, setViewing] = useState<ConsentForm | null>(null)
 
+  const { data: forms = [], isLoading, isError } = useConsentForms()
+  const signConsentForm = useSignConsent()
+  const { data: user } = useCurrentUser()
+
   const rows = useMemo(
-    () => [...CONSENT_FORMS_LIST].sort((a, b) => +new Date(b.date) - +new Date(a.date)),
-    []
+    () => [...forms].sort((a, b) => +new Date(b.date) - +new Date(a.date)),
+    [forms]
   )
   const signedCount = rows.filter((f) => f.signed).length
   const pendingCount = rows.length - signedCount
 
   function handlePrint(form: ConsentForm) {
-    const patient = getPatientById(form.patientId)
-    toast.success("Sending consent form to printer...", { description: patient?.name })
+    toast.success("Sending consent form to printer...", { description: form.procedure })
   }
 
-  const columns = useMemo(() => consentFormsColumns((f) => setViewing(f), handlePrint), [])
+  /**
+   * Record that the patient signed.
+   *
+   * Deliberately an explicit action rather than something the form does when it
+   * is created: a form existing is not a patient having agreed.
+   */
+  async function handleSign(form: ConsentForm) {
+    try {
+      await signConsentForm.mutateAsync({
+        consentId: form.id,
+        signedBy: user?.name ?? "Signed-in clinician",
+      })
+      toast.success("Consent recorded", { description: `${form.procedure} consent is now signed.` })
+      setViewing(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not record the consent")
+    }
+  }
 
-  const viewingPatient = viewing ? getPatientById(viewing.patientId) : undefined
+  const columns = useMemo(
+    () => consentFormsColumns((f) => setViewing(f), handlePrint),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
 
   return (
     <div>
@@ -58,8 +82,9 @@ function ConsentForms() {
       <DataTable
         columns={columns}
         data={rows}
+        isLoading={isLoading}
         onRowClick={(form) => setViewing(form)}
-        emptyTitle="No consent forms found"
+        emptyTitle={isError ? "Could not load consent forms" : "No consent forms found"}
         emptyDescription="Consent forms generated for scheduled procedures will appear here."
       />
 
@@ -68,7 +93,7 @@ function ConsentForms() {
           <DialogHeader>
             <DialogTitle>{viewing?.procedure}</DialogTitle>
             <DialogDescription>
-              {viewingPatient?.name} &middot; {viewing && format(new Date(viewing.date), "MMM d, yyyy")}
+              {viewing && format(new Date(viewing.date), "MMM d, yyyy")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 text-sm">
@@ -92,6 +117,15 @@ function ConsentForms() {
             >
               Print
             </Button>
+            {/* Only offered while unsigned — consent is given once. */}
+            {viewing && !viewing.signed && (
+              <Button
+                disabled={signConsentForm.isPending}
+                onClick={() => handleSign(viewing)}
+              >
+                Record signature
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

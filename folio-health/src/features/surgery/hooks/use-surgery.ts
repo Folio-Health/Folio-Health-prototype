@@ -41,6 +41,18 @@ const PAGE_SIZE = 200
 
 export interface SurgeryWithPatient extends Surgery {
   patientName?: string
+  /**
+   * The pre-op checklist, carried on the list query so the theatre board can
+   * show completion without a fetch per row.
+   */
+  checklistItems: Record<string, boolean>
+}
+
+/** Percentage of checklist items ticked. 0 when nothing has been recorded. */
+export function checklistCompletionOf(items: Record<string, boolean>, total: number): number {
+  if (total === 0) return 0
+  const done = Object.values(items).filter(Boolean).length
+  return Math.round((done / total) * 100)
 }
 
 export function useSurgeries(enabled = true) {
@@ -62,9 +74,14 @@ export function useSurgeries(enabled = true) {
         if (patient.id) names.set(patient.id, toPatientSummary(patient).name)
       }
 
-      return procedures
-        .map(toSurgery)
-        .map((s) => ({ ...s, patientName: names.get(s.patientId) }))
+      return procedures.map((procedure) => {
+        const surgery = toSurgery(procedure)
+        return {
+          ...surgery,
+          patientName: names.get(surgery.patientId),
+          checklistItems: toPreOpChecklist(procedure).items,
+        }
+      })
     },
   })
 }
@@ -94,10 +111,11 @@ export function useSurgery(surgeryId: string | undefined) {
         }
       }
 
+      const checklist = toPreOpChecklist(procedure)
       return {
-        surgery: { ...surgery, patientName },
+        surgery: { ...surgery, patientName, checklistItems: checklist.items },
         note: toProcedureNote(procedure),
-        checklist: toPreOpChecklist(procedure),
+        checklist,
       }
     },
   })
@@ -217,5 +235,55 @@ export function useSignConsent() {
       return updateResource<Consent>(signConsent(consent, signedBy))
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["consent-forms"] }),
+  })
+}
+
+export interface ProcedureNoteWithContext extends ProcedureNote {
+  patientName?: string
+  procedureName: string
+  surgeonId: string
+}
+
+/**
+ * Operative notes, drawn from the Procedures that have one.
+ *
+ * There is no separate note resource to list — a Procedure with findings,
+ * complications or operative detail IS a written-up operation, so the list is
+ * derived rather than stored twice.
+ */
+export function useProcedureNotes(enabled = true) {
+  return useQuery({
+    queryKey: ["procedure-notes"],
+    enabled,
+    queryFn: async (): Promise<ProcedureNoteWithContext[]> => {
+      const { resources } = await searchResources<Resource>("Procedure", {
+        _count: PAGE_SIZE,
+        _sort: "-date",
+        _include: "Procedure:subject",
+      })
+
+      const procedures = resources.filter((r): r is Procedure => r.resourceType === "Procedure")
+      const names = new Map<string, string>()
+      for (const resource of resources) {
+        if (resource.resourceType !== "Patient") continue
+        const patient = resource as Patient
+        if (patient.id) names.set(patient.id, toPatientSummary(patient).name)
+      }
+
+      return procedures
+        .map((procedure) => {
+          const note = toProcedureNote(procedure)
+          const surgery = toSurgery(procedure)
+          return {
+            ...note,
+            patientName: names.get(surgery.patientId),
+            procedureName: surgery.procedure,
+            surgeonId: surgery.surgeonId,
+          }
+        })
+        // Only operations that have actually been written up. An empty note
+        // would show a scheduled operation as though it had been performed.
+        .filter((n) => n.procedureDetails || n.findings || n.complications || n.bloodLossMl)
+    },
   })
 }
