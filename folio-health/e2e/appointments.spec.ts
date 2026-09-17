@@ -60,8 +60,9 @@ test("front desk books, and double-booking the doctor is refused", async ({ page
 
   await book(page, "10:00", "Follow-up")
   await expectToast(page, "Appointment booked")
-  const row = page.locator("div").filter({ hasText: patient.name }).filter({ hasText: "Follow-up" }).last()
-  await expect(row.getByText("Booked")).toBeVisible()
+  await expect(page.getByText(patient.name).first()).toBeVisible()
+  await expect(page.getByText("Follow-up").first()).toBeVisible()
+  await expect(page.getByText("Booked", { exact: true }).first()).toBeVisible()
 
   await book(page, "10:15", "Overlap attempt")
   await expectToast(page, /already has an appointment/i)
@@ -105,7 +106,7 @@ test("cancelling keeps the appointment on the record with its reason", async ({ 
 
   await page.getByRole("button", { name: "Cancel", exact: true }).last().click()
   const dialog = page.getByRole("dialog")
-  await expect(dialog.getByText("Cancel appointment")).toBeVisible()
+  await expect(dialog.getByRole("heading", { name: "Cancel appointment" })).toBeVisible()
   await dialog.getByRole("button", { name: "Cancel appointment" }).click()
   await expectToast(page, /cancelled/i)
   await expect(page.getByText("Patient request").first()).toBeVisible()

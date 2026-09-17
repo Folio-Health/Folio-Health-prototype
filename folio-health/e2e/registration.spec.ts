@@ -41,12 +41,11 @@ async function fillWizard(page: Page) {
   await page.getByLabel("First name").fill(patientName.first)
   await page.getByLabel("Last name").fill(patientName.last)
   await page.getByLabel("Date of birth").fill("1993-04-12")
-  // Selects on this step, in order: gender, blood group, marital status.
-  await page.getByRole("combobox").nth(1).click()
+  await page.getByLabel("Blood group").click()
   await pickOption(page, /^O\+$/)
   await page.getByLabel("Occupation").fill("Teacher")
   await page.getByLabel("National Identification Number (NIN)").fill(nin)
-  await page.getByRole("button", { name: "Next" }).click()
+  await page.getByRole("button", { name: "Next", exact: true }).click()
 
   // Step 2 — contact & address
   await page.getByLabel("Phone number").fill(`070${String(Date.now()).slice(-8)}`)
@@ -56,20 +55,21 @@ async function fillWizard(page: Page) {
   await page.getByLabel("State").fill("Ogun")
   await page.getByLabel("Postal code").fill("110001")
   await page.getByLabel("Country").fill("Nigeria")
-  await page.getByRole("button", { name: "Next" }).click()
+  await page.getByRole("button", { name: "Next", exact: true }).click()
 
   // Step 3 — emergency contact
   await page.getByLabel("Contact full name").fill("Chidi Okafor")
-  await page.getByLabel("Relationship").fill("Brother")
+  await page.getByLabel("Relationship").click()
+  await pickOption(page, "Sibling")
   await page.getByLabel("Phone number").fill("08011122233")
-  await page.getByRole("button", { name: "Next" }).click()
+  await page.getByRole("button", { name: "Next", exact: true }).click()
 
   // Step 4 — insurance: self pay
   await page.getByRole("checkbox").first().click()
-  await page.getByRole("button", { name: "Next" }).click()
+  await page.getByRole("button", { name: "Next", exact: true }).click()
 
   // Step 5 — review
-  await expect(page.getByText("Age")).toBeVisible()
+  await expect(page.getByText("Age", { exact: true })).toBeVisible()
   await expect(page.getByText(nin)).toBeVisible()
 }
 

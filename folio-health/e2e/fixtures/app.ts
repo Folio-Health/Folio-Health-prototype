@@ -7,8 +7,10 @@ export async function signIn(page: Page, user: Pick<TestUser, "email" | "passwor
   await page.locator('input[type="email"]').fill(user.email)
   await page.locator('input[type="password"]').fill(user.password)
   await page.locator('button[type="submit"]').click()
-  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 })
-  await expect(page.getByRole("button", { name: "Account menu" })).toBeVisible()
+  // First visit to a route in `next dev` can take tens of seconds to compile;
+  // wait on the URL change (commit), not on the full load, then on the shell.
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 90_000, waitUntil: "commit" })
+  await expect(page.getByRole("button", { name: "Account menu" })).toBeVisible({ timeout: 90_000 })
 }
 
 /** Sign out through the account menu (which also wipes client state). */

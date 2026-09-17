@@ -77,33 +77,46 @@ export function usePatient(id: string | undefined) {
  * Front-desk patient lookup, the way a desk actually asks for it: by name,
  * phone number, or NIN — one box.
  *
- *  - 11 digits  → exact NIN identifier match (the strongest signal there is)
- *  - 7+ digits  → phone search
+ *  - 7+ digits → a phone search; and because a Nigerian phone number and a
+ *    NIN are BOTH 11 digits, an 11-digit query is also tried as an exact NIN
+ *    identifier and the two result sets are merged (a phone will match the
+ *    phone search, a NIN the identifier search — never both).
  *  - otherwise  → name fragment (`name:contains`)
  *
  * Results stay scoped to the caller's facility by their own AccessPolicy.
  */
 export function usePatientLookup(term: string, enabled = true) {
   const query = term.trim()
+  const compact = query.replace(/[\s\-+]/g, "")
   const digits = query.replace(/\D/g, "")
-  const isNin = digits.length === NIN_LENGTH && /^\d+$/.test(query.replace(/\s/g, ""))
-  const isPhone = !isNin && digits.length >= 7 && digits.length === query.replace(/[\s\-+]/g, "").length
+  const numeric = digits.length >= 7 && digits.length === compact.length
+  const maybeNin = numeric && digits.length === NIN_LENGTH
 
   return useQuery({
     queryKey: ["patient-lookup", query],
     enabled: enabled && query.length >= 2,
     queryFn: async (): Promise<PatientSummary[]> => {
-      const params = isNin
-        ? { identifier: `${NIN_SYSTEM}|${digits}` }
-        : isPhone
-          ? { phone: digits }
-          : { "name:contains": query }
-      const { resources } = await searchResources<FhirPatient>("Patient", {
-        ...params,
-        _count: 8,
-        _sort: "-_lastUpdated",
-      })
-      return resources.map(toPatientSummary)
+      const base = { _count: 8, _sort: "-_lastUpdated" }
+      const searches: Promise<{ resources: FhirPatient[] }>[] = numeric
+        ? [
+            searchResources<FhirPatient>("Patient", { ...base, phone: digits }),
+            ...(maybeNin
+              ? [searchResources<FhirPatient>("Patient", { ...base, identifier: `${NIN_SYSTEM}|${digits}` })]
+              : []),
+          ]
+        : [searchResources<FhirPatient>("Patient", { ...base, "name:contains": query })]
+      const results = await Promise.all(searches)
+      const seen = new Set<string>()
+      const merged: FhirPatient[] = []
+      for (const { resources } of results) {
+        for (const r of resources) {
+          if (r.id && !seen.has(r.id)) {
+            seen.add(r.id)
+            merged.push(r)
+          }
+        }
+      }
+      return merged.map(toPatientSummary)
     },
   })
 }
