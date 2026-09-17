@@ -23,15 +23,13 @@ import {
 } from "@/components/ui/dialog"
 import { PharmacyModuleTabs } from "./pharmacy-module-tabs"
 import { getSupplierColumns } from "./supplier-columns"
-import { useCreateSupplier, useSetSupplierActive, useSuppliers } from "../hooks/use-inventory"
+import { SUPPLIERS } from "@/lib/mock/pharmacy"
 import type { Supplier } from "@/lib/mock/pharmacy"
 
 const EMPTY_FORM = { name: "", contact: "", phone: "", email: "" }
 
 function SuppliersList() {
-  const { data: suppliers = [], isLoading, isError } = useSuppliers()
-  const createSupplier = useCreateSupplier()
-  const setSupplierActive = useSetSupplierActive()
+  const [suppliers, setSuppliers] = useState<Supplier[]>(SUPPLIERS)
   const [search, setSearch] = useState("")
   const [viewing, setViewing] = useState<Supplier | null>(null)
   const [adding, setAdding] = useState(false)
@@ -48,36 +46,31 @@ function SuppliersList() {
     )
   }, [suppliers, search])
 
-  async function handleToggleStatus(supplier: Supplier) {
-    try {
-      await setSupplierActive.mutateAsync({
-        supplierId: supplier.id,
-        active: supplier.status !== "Active",
-      })
-      toast.success(`${supplier.name} ${supplier.status === "Active" ? "deactivated" : "activated"}`)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not update the supplier")
-    }
+  function handleToggleStatus(supplier: Supplier) {
+    setSuppliers((prev) =>
+      prev.map((s) => (s.id === supplier.id ? { ...s, status: s.status === "Active" ? "Inactive" : "Active" } : s))
+    )
+    toast.success(`${supplier.name} ${supplier.status === "Active" ? "deactivated" : "activated"}`)
   }
 
-  async function handleAddSupplier() {
+  function handleAddSupplier() {
     if (!form.name.trim() || !form.contact.trim() || !form.phone.trim() || !form.email.trim()) {
       toast.error("Please fill in all fields")
       return
     }
-    try {
-      await createSupplier.mutateAsync({
-        name: form.name.trim(),
-        contact: form.contact.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim(),
-      })
-      toast.success(`${form.name} added as a supplier`)
-      setForm(EMPTY_FORM)
-      setAdding(false)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not add the supplier")
+    const newSupplier: Supplier = {
+      id: `SUP-${String(suppliers.length + 1).padStart(4, "0")}`,
+      name: form.name,
+      contact: form.contact,
+      phone: form.phone,
+      email: form.email,
+      itemsSupplied: 0,
+      status: "Active",
     }
+    setSuppliers((prev) => [newSupplier, ...prev])
+    toast.success(`${newSupplier.name} added as a supplier`)
+    setForm(EMPTY_FORM)
+    setAdding(false)
   }
 
   const columns = getSupplierColumns({ onView: setViewing, onToggleStatus: handleToggleStatus })
@@ -114,7 +107,6 @@ function SuppliersList() {
       <DataTable
         columns={columns}
         data={filtered}
-        isLoading={isLoading}
         onRowClick={(supplier) => setViewing(supplier)}
         emptyTitle="No suppliers found"
         emptyDescription="Try adjusting your search, or add a new supplier."

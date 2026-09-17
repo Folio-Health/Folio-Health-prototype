@@ -10,8 +10,9 @@ import { StatusBadge } from "@/components/common/status-badge"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { EmptyState } from "@/components/common/empty-state"
-import { triageMeta } from "@/lib/mock/emergency"
-import { useErCases } from "../hooks/use-emergency"
+import { getPatientById } from "@/lib/mock/patients"
+import { getStaffById } from "@/lib/mock/staff"
+import { getCriticalCases, triageMeta } from "@/lib/mock/emergency"
 
 function VitalTile({ icon: Icon, label, value }: { icon: typeof HeartPulseIcon; label: string; value: string }) {
   return (
@@ -26,13 +27,9 @@ function VitalTile({ icon: Icon, label, value }: { icon: typeof HeartPulseIcon; 
 }
 
 function CriticalPatients() {
-  const { data: allCases = [] } = useErCases(false)
-
   const cases = useMemo(
-    // Levels 1-2 are the resuscitate/emergent band; the hook already orders
-    // sickest first, so this only filters.
-    () => allCases.filter((c) => c.triageLevel <= 2 && c.status !== "Discharged"),
-    [allCases]
+    () => [...getCriticalCases()].sort((a, b) => a.triageLevel - b.triageLevel),
+    []
   )
 
   return (
@@ -68,22 +65,23 @@ function CriticalPatients() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {cases.map((c) => {
-            const patientName = c.patientName ?? "Unknown patient"
+            const patient = getPatientById(c.patientId)
+            const doctor = getStaffById(c.assignedDoctorId)
             const meta = triageMeta(c.triageLevel)
             return (
               <Card key={c.id} className="border-red-500/30">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <PersonAvatar name={patientName} seed={c.patientId} size="sm" />
+                      <PersonAvatar name={patient?.name ?? "Unknown"} seed={patient?.avatarSeed} size="sm" />
                       <div className="flex flex-col">
                         <Link
-                          href={`/patients/${c.patientId}`}
+                          href={patient ? `/patients/${patient.id}` : "#"}
                           className="text-sm font-medium text-foreground hover:text-primary hover:underline"
                         >
-                          {patientName}
+                          {patient?.name ?? "Unknown patient"}
                         </Link>
-
+                        <span className="text-xs text-muted-foreground">{patient?.mrn}</span>
                       </div>
                     </div>
                     <StatusBadge status={meta.badgeLabel} tone="red" />
@@ -98,9 +96,7 @@ function CriticalPatients() {
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Arrived {formatDistanceToNow(new Date(c.arrivalTime), { addSuffix: true })}</span>
-                    <span>
-                      {c.assignedDoctorId ? `Practitioner/${c.assignedDoctorId}` : "Unassigned"}
-                    </span>
+                    <span>{doctor?.name ?? "Unassigned"}</span>
                   </div>
                 </CardContent>
               </Card>

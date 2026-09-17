@@ -14,37 +14,39 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import type { ProcedureNote } from "@/lib/mock/surgery"
-import { useProcedureNotes, type ProcedureNoteWithContext } from "../hooks/use-surgery"
+import { getPatientById } from "@/lib/mock/patients"
+import { getStaffById } from "@/lib/mock/staff"
+import {
+  PROCEDURE_NOTES_LIST,
+  getSurgeryById,
+  getPostOpNoteForSurgery,
+} from "@/lib/mock/surgery"
+import type { ProcedureNote, RecoveryStatus } from "@/lib/mock/surgery"
 import { procedureNotesColumns } from "./procedure-notes-columns"
+
+const RECOVERY_TONE: Record<RecoveryStatus, "green" | "amber" | "red"> = {
+  Stable: "green",
+  Guarded: "amber",
+  Critical: "red",
+}
 
 function ProcedureNotes() {
   const [viewing, setViewing] = useState<ProcedureNote | null>(null)
 
-  const { data: notes = [], isLoading, isError } = useProcedureNotes()
-
   const rows = useMemo(
-    () => [...notes].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
-    [notes]
+    () => [...PROCEDURE_NOTES_LIST].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
+    []
   )
 
   const totalBloodLoss = rows.reduce((sum, n) => sum + n.bloodLossMl, 0)
-  // An empty complications field means none were recorded, so it counts as
-  // no complication rather than as an unknown.
-  const withComplications = rows.filter(
-    (n) => n.complications && n.complications !== "None"
-  ).length
+  const withComplications = rows.filter((n) => n.complications !== "None").length
 
   const columns = useMemo(() => procedureNotesColumns((n) => setViewing(n)), [])
 
-  const viewingContext = viewing as ProcedureNoteWithContext | null
-  const viewingSurgery = viewingContext ? { procedure: viewingContext.procedureName } : undefined
-  const viewingPatient = viewingContext?.patientName
-    ? { name: viewingContext.patientName }
-    : undefined
-  const viewingSurgeon = viewingContext?.surgeonId
-    ? { name: `Practitioner/${viewingContext.surgeonId}` }
-    : undefined
+  const viewingSurgery = viewing ? getSurgeryById(viewing.surgeryId) : undefined
+  const viewingPatient = viewingSurgery ? getPatientById(viewingSurgery.patientId) : undefined
+  const viewingSurgeon = viewingSurgery ? getStaffById(viewingSurgery.surgeonId) : undefined
+  const viewingPostOp = viewing ? getPostOpNoteForSurgery(viewing.surgeryId) : undefined
 
   return (
     <div>
@@ -63,9 +65,8 @@ function ProcedureNotes() {
       <DataTable
         columns={columns}
         data={rows}
-        isLoading={isLoading}
         onRowClick={(note) => setViewing(note)}
-        emptyTitle={isError ? "Could not load notes" : "No procedure notes yet"}
+        emptyTitle="No procedure notes yet"
         emptyDescription="Notes for completed and in-progress procedures will appear here."
       />
 
@@ -95,11 +96,12 @@ function ProcedureNotes() {
               <span className="text-muted-foreground">Estimated Blood Loss</span>
               <span className="tabular-nums text-foreground">{viewing?.bloodLossMl} mL</span>
             </div>
-            {/*
-              Recovery outcome is not shown. Post-operative recovery notes have
-              no FHIR resource in this app yet, and rendering a placeholder
-              status would assert a recovery nobody recorded.
-            */}
+            {viewingPostOp && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Recovery Outcome</span>
+                <StatusBadge status={viewingPostOp.recoveryStatus} tone={RECOVERY_TONE[viewingPostOp.recoveryStatus]} />
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

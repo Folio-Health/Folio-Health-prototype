@@ -14,6 +14,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { getPatientById } from "@/lib/mock/patients"
+import { getStaffById } from "@/lib/mock/staff"
 import { triageMeta } from "@/lib/mock/emergency"
 import type { ERCase } from "@/lib/mock/emergency"
 
@@ -35,18 +37,21 @@ export const emergencyColumns: ColumnDef<ERCase>[] = [
     id: "patient",
     header: "Patient",
     cell: ({ row }) => {
-      const { patientId, patientName } = row.original as ERCase & { patientName?: string }
-      const label = patientName ?? "View patient"
+      const patient = getPatientById(row.original.patientId)
+      if (!patient) return <span className="text-muted-foreground">Unknown patient</span>
       return (
         <Link
-          href={`/patients/${patientId}`}
+          href={`/patients/${patient.id}`}
           className="flex items-center gap-2.5"
           onClick={(e) => e.stopPropagation()}
         >
-          <PersonAvatar name={label} seed={patientId} size="sm" />
-          <span className="font-medium text-foreground hover:text-primary hover:underline">
-            {label}
-          </span>
+          <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
+          <div className="flex flex-col">
+            <span className="font-medium text-foreground hover:text-primary hover:underline">
+              {patient.name}
+            </span>
+            <span className="text-xs text-muted-foreground">{patient.mrn}</span>
+          </div>
         </Link>
       )
     },
@@ -75,12 +80,8 @@ export const emergencyColumns: ColumnDef<ERCase>[] = [
     id: "doctor",
     header: "Assigned Doctor",
     cell: ({ row }) => {
-      const { assignedDoctorId } = row.original
-      return (
-        <span className="text-muted-foreground">
-          {assignedDoctorId ? `Practitioner/${assignedDoctorId}` : "Unassigned"}
-        </span>
-      )
+      const doctor = getStaffById(row.original.assignedDoctorId)
+      return <span className="text-muted-foreground">{doctor?.name ?? "Unassigned"}</span>
     },
   },
   {

@@ -6,7 +6,16 @@ import { EyeIcon } from "lucide-react"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
-import type { ProcedureNote } from "@/lib/mock/surgery"
+import { getPatientById } from "@/lib/mock/patients"
+import { getStaffById } from "@/lib/mock/staff"
+import { getSurgeryById, getPostOpNoteForSurgery } from "@/lib/mock/surgery"
+import type { ProcedureNote, RecoveryStatus } from "@/lib/mock/surgery"
+
+const RECOVERY_TONE: Record<RecoveryStatus, "green" | "amber" | "red"> = {
+  Stable: "green",
+  Guarded: "amber",
+  Critical: "red",
+}
 
 function procedureNotesColumns(onView: (note: ProcedureNote) => void): ColumnDef<ProcedureNote>[] {
   return [
@@ -14,12 +23,16 @@ function procedureNotesColumns(onView: (note: ProcedureNote) => void): ColumnDef
       id: "patient",
       header: "Patient",
       cell: ({ row }) => {
-        const note = row.original as ProcedureNote & { patientName?: string }
-        const label = note.patientName ?? "Patient"
+        const surgery = getSurgeryById(row.original.surgeryId)
+        const patient = surgery ? getPatientById(surgery.patientId) : undefined
+        if (!patient) return <span className="text-muted-foreground">Unknown patient</span>
         return (
           <div className="flex items-center gap-2.5">
-            <PersonAvatar name={label} seed={note.surgeryId} size="sm" />
-            <span className="font-medium text-foreground">{label}</span>
+            <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
+            <div className="flex flex-col">
+              <span className="font-medium text-foreground">{patient.name}</span>
+              <span className="text-xs text-muted-foreground">{patient.mrn}</span>
+            </div>
           </div>
         )
       },
@@ -28,20 +41,17 @@ function procedureNotesColumns(onView: (note: ProcedureNote) => void): ColumnDef
       id: "procedure",
       header: "Procedure",
       cell: ({ row }) => {
-        const note = row.original as ProcedureNote & { procedureName?: string }
-        return <span className="text-foreground">{note.procedureName ?? "Procedure"}</span>
+        const surgery = getSurgeryById(row.original.surgeryId)
+        return <span className="text-foreground">{surgery?.procedure ?? "N/A"}</span>
       },
     },
     {
       id: "surgeon",
       header: "Surgeon",
       cell: ({ row }) => {
-        const note = row.original as ProcedureNote & { surgeonId?: string }
-        return (
-          <span className="text-muted-foreground">
-            {note.surgeonId ? `Practitioner/${note.surgeonId}` : "Unassigned"}
-          </span>
-        )
+        const surgery = getSurgeryById(row.original.surgeryId)
+        const surgeon = surgery ? getStaffById(surgery.surgeonId) : undefined
+        return <span className="text-muted-foreground">{surgeon?.name ?? "Unassigned"}</span>
       },
     },
     {
@@ -53,16 +63,12 @@ function procedureNotesColumns(onView: (note: ProcedureNote) => void): ColumnDef
     },
     {
       id: "outcome",
-      header: "Complications",
-      // Recovery outcome has no FHIR home in this app yet, so the column
-      // reports what the note DOES record: whether complications occurred.
-      // A recovery status here would be invented.
-      cell: ({ row }) =>
-        row.original.complications ? (
-          <StatusBadge status="Complications" tone="amber" />
-        ) : (
-          <StatusBadge status="None recorded" />
-        ),
+      header: "Outcome",
+      cell: ({ row }) => {
+        const postOp = getPostOpNoteForSurgery(row.original.surgeryId)
+        if (!postOp) return <StatusBadge status="In Progress" />
+        return <StatusBadge status={postOp.recoveryStatus} tone={RECOVERY_TONE[postOp.recoveryStatus]} />
+      },
     },
     {
       accessorKey: "createdAt",
