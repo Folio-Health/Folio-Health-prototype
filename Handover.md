@@ -256,3 +256,64 @@ modules still supply vocabulary, statuses, catalogues, checklist items, with the
 fabricated records removed. Moving the type definitions out is a separate
 refactor from putting real data behind them, and doing both at once would have
 made these diffs unreviewable.
+
+## The write path: why clinical writes go through `/api/*`, not the browser
+
+This is the one rule the two streams of work on this repo disagreed on, and it
+was settled by testing, not preference. Read it before adding any screen that
+creates or updates a FHIR resource.
+
+**The fact.** Every facility AccessPolicy scopes its resources with
+`_compartment=%organization`. A resource is only in that compartment when it
+carries `meta.account = Organization/<facility>`, and Medplum treats
+`meta.account` as a project-admin-only field. So when a *facility user*
+(front desk, nurse, doctor, lab, pharmacist) creates a Patient, Appointment,
+Encounter, Observation, Composition, ServiceRequest, MedicationRequest,
+DiagnosticReport or MedicationDispense straight from the browser, the record
+arrives with no compartment, matches no policy criteria, and Medplum answers
+**403**. Verified end-to-end against this project with a disposable
+front-desk account (direct `POST Patient` → 403, direct `PUT Appointment` →
+403); the e2e suite asserts it (`e2e/access.spec.ts`).
+
+The earlier modules in this handover were exercised as `operator@folio.local`,
+which is a project admin — direct writes succeed for that account and for no
+one else. That is why they appeared to work.
+
+**The rule.** Reads are direct FHIR under the user's own policy (facility-scoped,
+read-only). Writes go through a server route that (1) derives the caller's
+facility from their session (`facilityBindingsFromAuthMe`, off the compiled
+policy — never from the request body), (2) checks their role and that the
+target record is readable with the caller's *own* token, (3) applies the
+workflow rule (state machine, immutability, required fields), and (4) performs
+the write with the service identity, stamping `meta.account`. The helpers are
+in `src/lib/medplum/clinical.ts` (`clinicalSession`, `requireRole`,
+`assertVisible`, `stampedCreate`, `stampedUpdate`); registration, appointments,
+encounters, vitals, notes/orders/prescriptions, results and dispensing all use
+this pattern. The service account must be a project admin
+(`scripts/mark-service-admin.mjs`).
+
+**What this means for the earlier modules.** `use-laboratory.ts`,
+`use-radiology.ts`, `use-vitals.ts`, `use-prescriptions.ts`, `use-surgery.ts`,
+`use-admissions`-style hooks and the billing layer still call
+`createResource`/`updateResource` from the browser. Their read paths and
+resource builders are sound; their write paths need to move behind routes
+(or call the existing ones) before a facility user can use them. The five hub
+screens that collided (consultation, vitals, laboratory, radiology, pharmacy)
+were resolved in favour of the route-based versions, which implement the
+researched clerking flow in `docs/research/`.
+
+## Clinical encounter module (added after this handover)
+
+Check-in opens an Encounter → nurse files vitals on the Triage board
+(`/vitals`; LOINC-coded Observations; filing them moves the visit to
+`triaged`) → doctor clerks in the standard sequence on `/consultation/<encounter>`
+(presenting complaints → HPC → ROS → PMH → drugs/allergies → family → social →
+optional obstetric/paediatric → summary → provisional diagnosis →
+differentials → examination → investigations → management plan), signs the
+note (Composition `final`, immutable), orders lab/imaging (ServiceRequest with
+mandatory indication) and prescribes (MedicationRequest), then closes the
+visit (refused until signed) → lab/imaging results the order on
+`/laboratory` / `/radiology` (Observations + DiagnosticReport; final completes
+the order) → pharmacist reviews medication history and dispenses on
+`/pharmacy`. Policies for lab-scientist, pharmacist and billing:
+`scripts/author-clinical-policies.mjs`. Tests: `npm run e2e`.
