@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PersonAvatar } from "@/components/common/person-avatar"
+import type { Patient } from "@/types/core"
 
 export const vitalsFormSchema = z.object({
   patientId: z.string().min(1, "Select a patient"),
@@ -41,19 +42,6 @@ export type VitalsFormValues = z.infer<typeof vitalsFormSchema>
  * the Vitals hub's "Record Vitals" dialog, and inline (locked to the current
  * patient) from the Consultation workspace's Vitals section.
  */
-export interface PatientPickerOption {
-  id: string
-  name: string
-  mrn: string
-}
-
-/** Adds the fields used to pre-fill and label a locked-in patient. */
-export interface LockedPatient extends PatientPickerOption {
-  avatarSeed?: string
-  weight?: number
-  height?: number
-}
-
 function VitalsEntryForm({
   patients,
   lockedPatient,
@@ -61,13 +49,8 @@ function VitalsEntryForm({
   onCancel,
   submitLabel = "Record Vitals",
 }: {
-  /**
-   * Structural, not the mock `Patient` type: this form only ever shows an id,
-   * a name and an MRN, and typing it that way lets both the FHIR-backed
-   * `PatientSummary` and the older record type satisfy it without a cast.
-   */
-  patients?: PatientPickerOption[]
-  lockedPatient?: LockedPatient
+  patients?: Patient[]
+  lockedPatient?: Patient
   onSubmit: (values: VitalsFormValues) => void
   onCancel?: () => void
   submitLabel?: string
@@ -97,11 +80,7 @@ function VitalsEntryForm({
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
         {lockedPatient ? (
           <div className="flex items-center gap-2.5 rounded-lg border border-border bg-muted/40 px-3 py-2">
-            <PersonAvatar
-              name={lockedPatient.name}
-              seed={lockedPatient.avatarSeed ?? lockedPatient.id}
-              size="sm"
-            />
+            <PersonAvatar name={lockedPatient.name} seed={lockedPatient.avatarSeed} size="sm" />
             <div className="flex flex-col">
               <span className="text-sm font-medium text-foreground">{lockedPatient.name}</span>
               <span className="text-xs text-muted-foreground">{lockedPatient.mrn}</span>
