@@ -7,6 +7,7 @@ import {
   type AppointmentStatus,
 } from "@/lib/appointments/logic"
 import { AdminError, medplumFetch } from "@/lib/medplum/admin"
+import { cancelUntouchedEncounter, findEncounterForAppointment, openEncounter } from "@/lib/medplum/encounters"
 
 /**
  * Move an appointment through its state machine.
@@ -66,7 +67,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     )
 
     // Facility users may only touch their own facility's appointments.
-    const account = (appointment.meta as { account?: { reference?: string } } | undefined)?.account
+    const account = (appointment.meta as { account?: { reference?: string; display?: string } } | undefined)?.account
     if (!isAdmin && account?.reference && !facilityRefs.includes(account.reference)) {
       return NextResponse.json(
         { error: "This appointment belongs to another facility." },
@@ -100,6 +101,37 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         }),
       }
     )
+
+    // Check-in is the join between the administrative Appointment and the
+    // clinical Encounter: arriving OPENS the visit (status `arrived`, which
+    // the triage board lists); undoing a mis-click cancels a visit nothing
+    // clinical has touched yet. Both run with the service identity — the
+    // front desk has no Encounter access of its own, by design.
+    const facilityForVisit =
+      account?.reference && account.display !== undefined
+        ? { reference: account.reference, display: account.display }
+        : account?.reference
+          ? { reference: account.reference }
+          : facilityRefs[0]
+            ? { reference: facilityRefs[0] }
+            : null
+    if (facilityForVisit) {
+      if (action === "check-in") {
+        const existingVisit = await findEncounterForAppointment(id)
+        if (!existingVisit) {
+          const patient = updated.participant?.find((p) => p.actor?.reference?.startsWith("Patient/"))?.actor
+          if (patient?.reference) {
+            await openEncounter(
+              { patientRef: patient.reference, patientDisplay: patient.display, appointment: updated },
+              facilityForVisit
+            )
+          }
+        }
+      } else if (action === "undo-check-in") {
+        const visit = await findEncounterForAppointment(id)
+        if (visit) await cancelUntouchedEncounter(visit, facilityForVisit)
+      }
+    }
 
     return NextResponse.json(updated)
   } catch (error) {
