@@ -370,6 +370,7 @@ function ClerkingNoteEditor({
                   </div>
                 ) : (
                   <Textarea
+                    data-section={def.key}
                     rows={def.key === "hpc" || def.key === "managementPlan" ? 5 : 3}
                     value={note.sections[def.key] ?? ""}
                     readOnly={readOnly}
