@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { ColumnDef } from "@tanstack/react-table"
 import { toast } from "sonner"
@@ -13,26 +13,26 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { StatusBadge } from "@/components/common/status-badge"
 import { RoleGate } from "@/components/common/role-gate"
-import { usePatientLookup } from "@/features/patients/hooks/use-patients"
-import type { PatientSummary } from "@/lib/fhir/patient"
+import { searchPatients } from "@/lib/mock/patients"
+import type { Patient } from "@/types/core"
 
 function ReturningPatientSearch() {
   const router = useRouter()
   const [query, setQuery] = useState("")
 
-  // Server-side lookup: matches on name, phone or NIN, the three things a
-  // returning patient can actually produce at a front desk. The mock version
-  // filtered an in-memory array that is now empty, so nothing was ever found.
-  const { data: results = [], isFetching } = usePatientLookup(query)
+  const results = useMemo(() => {
+    if (!query.trim()) return []
+    return searchPatients(query).slice(0, 25)
+  }, [query])
 
-  function startVisit(patient: PatientSummary) {
+  function startVisit(patient: Patient) {
     toast.success(`Visit started for ${patient.name}`, {
       description: `${patient.mrn} added to the front-desk queue.`,
     })
     router.push("/reception/queue")
   }
 
-  const columns: ColumnDef<PatientSummary>[] = [
+  const columns: ColumnDef<Patient>[] = [
     {
       accessorKey: "name",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Patient" />,
@@ -40,7 +40,7 @@ function ReturningPatientSearch() {
         const patient = row.original
         return (
           <div className="flex items-center gap-2.5">
-            <PersonAvatar name={patient.name} seed={patient.id} size="sm" />
+            <PersonAvatar name={patient.name} seed={patient.avatarSeed} size="sm" />
             <div className="flex flex-col">
               <span className="font-medium text-foreground">{patient.name}</span>
               <span className="text-xs text-muted-foreground">{patient.mrn}</span>
@@ -52,13 +52,7 @@ function ReturningPatientSearch() {
     {
       accessorKey: "gender",
       header: "Gender",
-      // Age is omitted rather than shown as 0 when the record has no birth date.
-      cell: ({ row }) => (
-        <span>
-          {row.original.gender}
-          {row.original.age !== undefined ? `, ${row.original.age}y` : ""}
-        </span>
-      ),
+      cell: ({ row }) => <span>{row.original.gender}, {row.original.age}y</span>,
     },
     {
       accessorKey: "phone",
@@ -133,7 +127,6 @@ function ReturningPatientSearch() {
           <DataTable
             columns={columns}
             data={results}
-            isLoading={isFetching}
             emptyTitle="No matching patients"
             emptyDescription="Try a different name, MRN, or phone number, or register them as a new patient."
           />

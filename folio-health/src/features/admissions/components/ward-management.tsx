@@ -9,7 +9,12 @@ import { StatCard } from "@/components/cards/stat-card"
 import { PersonAvatar } from "@/components/common/person-avatar"
 import { Progress, ProgressTrack, ProgressIndicator } from "@/components/ui/progress"
 import { DataTableColumnHeader } from "@/components/tables/data-table-column-header"
-import { useWardsAndBeds } from "../hooks/use-admissions"
+import {
+  WARDS_LIST,
+  BEDS_LIST,
+  getBedsByWard,
+  getHeadNurse,
+} from "@/lib/mock/admissions"
 import type { Ward } from "@/lib/mock/admissions"
 
 interface WardRow extends Ward {
@@ -20,14 +25,10 @@ interface WardRow extends Ward {
 }
 
 function WardManagement() {
-  const { data, isLoading, isError } = useWardsAndBeds()
-  const wards = useMemo(() => data?.wards ?? [], [data])
-  const allBeds = useMemo(() => data?.beds ?? [], [data])
-
   const rows: WardRow[] = useMemo(
     () =>
-      wards.map((w) => {
-        const beds = allBeds.filter((b) => b.wardId === w.id)
+      WARDS_LIST.map((w) => {
+        const beds = getBedsByWard(w.id)
         return {
           ...w,
           occupied: beds.filter((b) => b.status === "Occupied").length,
@@ -36,7 +37,7 @@ function WardManagement() {
           cleaning: beds.filter((b) => b.status === "Cleaning").length,
         }
       }),
-    [wards, allBeds]
+    []
   )
 
   const columns: ColumnDef<WardRow>[] = [
@@ -86,15 +87,13 @@ function WardManagement() {
       id: "nurse",
       header: "Nurse in Charge",
       cell: ({ row }) => {
-        // FHIR Location has no "nurse in charge" field. The ward's managing
-        // organization is the closest real relationship, and it is an
-        // organization rather than a person — so this is honestly Unassigned
-        // until Folio models ward leadership (a PractitionerRole would do it).
-        const headNurseId = row.original.headNurseId
+        const nurse = getHeadNurse(row.original)
+        if (!nurse) return <span className="text-muted-foreground">Unassigned</span>
         return (
-          <span className="text-muted-foreground">
-            {headNurseId ? `Organization/${headNurseId}` : "Unassigned"}
-          </span>
+          <div className="flex items-center gap-2.5">
+            <PersonAvatar name={nurse.name} seed={nurse.avatarSeed} size="sm" />
+            <span className="text-foreground">{nurse.name}</span>
+          </div>
         )
       },
     },
@@ -104,9 +103,7 @@ function WardManagement() {
     <div>
       <PageHeader
         title="Ward Management"
-        description={
-          isLoading ? "Loading..." : `${wards.length} wards, ${allBeds.length} beds total`
-        }
+        description={`${WARDS_LIST.length} wards, ${BEDS_LIST.length} beds total`}
         breadcrumbs={[
           { label: "Inpatient" },
           { label: "Admissions", href: "/admissions" },
@@ -115,16 +112,11 @@ function WardManagement() {
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Wards" value={wards.length} icon={BuildingIcon} />
-        <StatCard label="Total Bed Capacity" value={allBeds.length} icon={BuildingIcon} tone="violet" />
+        <StatCard label="Total Wards" value={WARDS_LIST.length} icon={BuildingIcon} />
+        <StatCard label="Total Bed Capacity" value={BEDS_LIST.length} icon={BuildingIcon} tone="violet" />
         <StatCard
           label="Overall Occupancy"
-          // Guarded: a project with no beds yet would divide by zero and render NaN%.
-          value={
-            allBeds.length
-              ? `${Math.round((rows.reduce((s, w) => s + w.occupied, 0) / allBeds.length) * 100)}%`
-              : "—"
-          }
+          value={`${Math.round((rows.reduce((s, w) => s + w.occupied, 0) / BEDS_LIST.length) * 100)}%`}
           icon={BuildingIcon}
           tone="amber"
         />
