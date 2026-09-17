@@ -18,7 +18,10 @@ import { defineConfig, devices } from "@playwright/test"
  */
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 90_000,
+  // Generous because `next dev` compiles each route on first visit (tens of
+  // seconds). For stable timings run against the built app:
+  //   npm run build && npx next start -p 3001   then   BASE_URL=http://localhost:3001 npm run e2e
+  timeout: 180_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,

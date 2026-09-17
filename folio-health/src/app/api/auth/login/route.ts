@@ -131,6 +131,16 @@ export async function POST(request: Request) {
 
     const login = (await loginResponse.json()) as LoginResponse
 
+    if (loginResponse.status === 429) {
+      // Medplum rate-limits the sign-in endpoint. Reporting this as a bad
+      // password would send a correct user to reset a working password;
+      // saying "wait" leaks nothing about which accounts exist.
+      console.warn("[auth/login] rate limited by Medplum")
+      return NextResponse.json(
+        { error: "Too many sign-in attempts. Wait a minute and try again." },
+        { status: 429 }
+      )
+    }
     if (!loginResponse.ok) {
       // Always generic. Medplum distinguishes "User not found" from a bad
       // password, which lets an unauthenticated caller enumerate valid staff
