@@ -5,6 +5,7 @@ import Link from "next/link"
 import { format } from "date-fns"
 import {
   PrinterIcon,
+  MessageCircleQuestionIcon,
   CheckCircleIcon,
   UserRoundIcon,
   FlaskConicalIcon,
@@ -22,6 +23,13 @@ import { EmptyState } from "@/components/common/empty-state"
 import { getLabResultById } from "@/lib/mock/laboratory"
 import { getPatientById } from "@/lib/mock/patients"
 import { getStaffById } from "@/lib/mock/staff"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { useUiStore } from "@/stores/ui-store"
+import { getSnapshotSections } from "@/features/patients/lib/patient-tabs-access"
+import { buildEncounterSnapshot } from "@/features/clinical-snapshot/lib/build-snapshot"
+import { ClinicalSnapshot } from "@/features/clinical-snapshot/components/clinical-snapshot"
+import { QueryOrderDialog } from "@/features/orders/components/query-order-dialog"
+import { useOrderQueries } from "@/features/orders/lib/order-queries"
 
 function InfoRow({ icon: Icon, label, value }: { icon: typeof UserRoundIcon; label: string; value: string }) {
   return (
@@ -38,6 +46,14 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof UserRoundIcon; lab
 function LabResultDetail({ resultId }: { resultId: string }) {
   const result = getLabResultById(resultId)
   const [locallyApproved, setLocallyApproved] = useState(false)
+  const [queryOpen, setQueryOpen] = useState(false)
+
+  const { data: user } = useCurrentUser()
+  const previewRole = useUiStore((s) => s.previewRole)
+  const roles = previewRole ? [previewRole] : (user?.roles ?? [])
+  const snapshotSections = getSnapshotSections(roles)
+
+  const queries = useOrderQueries((s) => s.queries).filter((q) => q.orderId === resultId)
 
   if (!result) {
     return (
@@ -72,6 +88,12 @@ function LabResultDetail({ resultId }: { resultId: string }) {
         ]}
         actions={
           <>
+            <RoleGate permission="ORDER_QUERY">
+              <Button variant="outline" onClick={() => setQueryOpen(true)}>
+                <MessageCircleQuestionIcon />
+                Query order
+              </Button>
+            </RoleGate>
             <Button variant="outline" onClick={() => window.print()}>
               <PrinterIcon />
               Print Result
@@ -116,6 +138,48 @@ function LabResultDetail({ resultId }: { resultId: string }) {
             </CardContent>
           </Card>
 
+          {/* §4.4: the lab scientist works from a snapshot — the reason for
+              the test and the relevant presenting complaint — never the
+              physician's full record. */}
+          {patient && snapshotSections.length > 0 && (() => {
+            const snapshot = buildEncounterSnapshot(patient.id, result.clinicalIndication, snapshotSections)
+            return snapshot ? (
+              <ClinicalSnapshot snapshot={snapshot} sections={snapshotSections} />
+            ) : null
+          })()}
+
+          {queries.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Queries on this order</CardTitle>
+                <CardDescription>
+                  Raised back to the ordering physician. The loop stays open until answered.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                {queries.map((query) => (
+                  <div key={query.id} className="flex flex-col gap-1 rounded-lg border border-border p-3">
+                    <p className="text-sm text-foreground">{query.question}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {query.raisedBy} &middot;{" "}
+                      {format(new Date(query.raisedAt), "d MMM yyyy, h:mm a")}
+                    </p>
+                    {query.status === "answered" ? (
+                      <div className="mt-1 rounded-md bg-muted/60 p-2">
+                        <p className="text-sm text-foreground">{query.answer}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Answered by {query.answeredBy}
+                        </p>
+                      </div>
+                    ) : (
+                      <StatusBadge status="Pending" />
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Order Details</CardTitle>
@@ -123,6 +187,11 @@ function LabResultDetail({ resultId }: { resultId: string }) {
             <CardContent className="flex flex-col gap-3">
               <InfoRow icon={UserRoundIcon} label="Ordering Doctor" value={doctor?.name ?? "Unassigned"} />
               <InfoRow icon={FlaskConicalIcon} label="Test Type" value={result.testType} />
+              <InfoRow
+                icon={ClipboardCheckIcon}
+                label="Reason for test"
+                value={result.clinicalIndication || "No indication recorded"}
+              />
               <InfoRow
                 icon={CalendarClockIcon}
                 label="Ordered At"
@@ -228,6 +297,18 @@ function LabResultDetail({ resultId }: { resultId: string }) {
           )}
         </div>
       </div>
+
+      {patient && (
+        <QueryOrderDialog
+          open={queryOpen}
+          onOpenChange={setQueryOpen}
+          orderId={result.id}
+          orderKind="lab"
+          orderLabel={result.testName}
+          patientId={patient.id}
+          patientName={patient.name}
+        />
+      )}
     </div>
   )
 }

@@ -33,12 +33,12 @@ import type {
   AttachmentItem,
   MedicationItem,
   OrderItem,
-  SoapNotes,
   WorkspaceSection,
 } from "@/features/consultation/types"
+import { emptyClerkingNote, type ClerkingNote } from "@/features/consultation/lib/clerking"
 import { PatientInfoSection } from "./sections/patient-info-section"
 import { VitalsSection } from "./sections/vitals-section"
-import { SoapNotesSection } from "./sections/soap-notes-section"
+import { ClerkingSection } from "./sections/clerking-section"
 import { OrdersSection } from "./sections/orders-section"
 import { MedicationListSection } from "./sections/medication-list-section"
 import { ClinicalNotesSection } from "./sections/clinical-notes-section"
@@ -49,7 +49,7 @@ import type { VitalReading } from "@/types/core"
 const SECTIONS: { id: WorkspaceSection; label: string; icon: typeof UserRoundIcon }[] = [
   { id: "patient-info", label: "Patient Info", icon: UserRoundIcon },
   { id: "vitals", label: "Vitals", icon: ActivityIcon },
-  { id: "soap-notes", label: "SOAP Notes", icon: FileTextIcon },
+  { id: "clerking", label: "Clerking", icon: FileTextIcon },
   { id: "orders", label: "Orders", icon: ClipboardListIcon },
   { id: "medications", label: "Medications", icon: PillIcon },
   { id: "prescription", label: "Prescription", icon: ReceiptIcon },
@@ -70,13 +70,13 @@ function ConsultationWorkspace({ appointmentId }: { appointmentId: string }) {
   const consultingDoctor = appointment ? getStaffById(appointment.doctorId) : undefined
   const primaryDoctor = patient ? getStaffById(patient.primaryDoctorId) : undefined
 
-  const [activeSection, setActiveSection] = useState<WorkspaceSection>("patient-info")
-  const [soapNotes, setSoapNotes] = useState<SoapNotes>({
-    subjective: "",
-    objective: "",
-    assessment: "",
-    plan: "",
-  })
+  // §4.1's most-repeated design rule: reception's biodata auto-populates every
+  // downstream interface, and "the physician's job starts at the presenting
+  // complaint, not at re-asking the patient their name and address". So the
+  // workspace opens on Clerking — step 1 is the presenting complaint — with
+  // the biodata already on screen in the banner above and in Patient Info.
+  const [activeSection, setActiveSection] = useState<WorkspaceSection>("clerking")
+  const [clerking, setClerking] = useState<ClerkingNote>(emptyClerkingNote)
   const [orders, setOrders] = useState<OrderItem[]>([])
   const [medications, setMedications] = useState<MedicationItem[]>([])
   const [prescriptions, setPrescriptions] = useState<MedicationItem[]>([])
@@ -219,8 +219,8 @@ function ConsultationWorkspace({ appointmentId }: { appointmentId: string }) {
           {activeSection === "vitals" && (
             <VitalsSection patient={patient} latestVitals={latestVitals} onRecord={handleRecordVitals} />
           )}
-          {activeSection === "soap-notes" && (
-            <SoapNotesSection notes={soapNotes} onChange={setSoapNotes} />
+          {activeSection === "clerking" && (
+            <ClerkingSection note={clerking} onChange={setClerking} />
           )}
           {activeSection === "orders" && (
             <OrdersSection

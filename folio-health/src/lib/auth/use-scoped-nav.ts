@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { NAV_SECTIONS, type NavSection } from "@/config/nav"
+import { isModuleInScope } from "@/config/phases"
 import { useCurrentUser } from "@/lib/fhir/use-current-user"
 import { useUiStore } from "@/stores/ui-store"
 import { PLATFORM_NAV_HREFS, ROLE_NAV_HREFS, type RoleId } from "./roles"
@@ -36,6 +37,12 @@ export function useScopedNav(): NavSection[] | null {
     if (isError || !user) return []
 
     const allowed = (href: string) => {
+      // Modules deferred to Phase 2 (manuscript §7) leave the sidebar for
+      // every role. §6 makes this a usability requirement, not only a
+      // bundle-size one: every extra module visible on day one works against
+      // a first-time user's starting point being unambiguous.
+      if (!isModuleInScope(href)) return false
+
       if (user.platformOnly) return PLATFORM_NAV_HREFS.includes(href)
 
       if (previewRole) return ROLE_NAV_HREFS[previewRole]?.includes(href) ?? false

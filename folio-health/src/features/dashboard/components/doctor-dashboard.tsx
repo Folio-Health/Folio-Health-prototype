@@ -20,6 +20,7 @@ import { getDoctorKpis, getRandomDoctor } from "@/features/dashboard/lib/dashboa
 import { getAppointmentsForDoctor } from "@/lib/mock/appointments"
 import { getPatientById } from "@/lib/mock/patients"
 import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { OpenQueriesPanel } from "@/features/orders/components/open-queries-panel"
 
 function DoctorDashboard() {
   const { data: user } = useCurrentUser()
@@ -113,11 +114,19 @@ function DoctorDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* §4.4 / §9.4: queries raised by lab, imaging and pharmacy against
+            orders this physician signed. The loop only closes when a named
+            human answers, so it belongs on the dashboard, not buried in a
+            module. */}
+        <OpenQueriesPanel />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2">
+          <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { label: "Write Prescription", href: "/pharmacy" },
               { label: "Order Lab Test", href: "/laboratory" },

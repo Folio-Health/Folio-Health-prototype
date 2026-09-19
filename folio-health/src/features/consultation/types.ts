@@ -1,19 +1,12 @@
 export type WorkspaceSection =
   | "patient-info"
   | "vitals"
-  | "soap-notes"
+  | "clerking"
   | "orders"
   | "medications"
   | "prescription"
   | "clinical-notes"
   | "attachments"
-
-export interface SoapNotes {
-  subjective: string
-  objective: string
-  assessment: string
-  plan: string
-}
 
 export type OrderType = "Lab" | "Radiology"
 export type OrderPriority = "Routine" | "Urgent"

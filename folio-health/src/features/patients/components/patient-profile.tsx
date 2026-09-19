@@ -50,10 +50,13 @@ import { useCurrentUser } from "@/lib/fhir/use-current-user"
 import { useUiStore } from "@/stores/ui-store"
 import {
   getVisiblePatientTabs,
+  getSnapshotSections,
   canEditDemographics,
   getVisibleIdentityFields,
   type PatientTabKey,
 } from "../lib/patient-tabs-access"
+import { snapshotFromParts } from "@/features/clinical-snapshot/lib/build-snapshot"
+import { ClinicalSnapshot } from "@/features/clinical-snapshot/components/clinical-snapshot"
 
 function InfoRow({
   icon: Icon,
@@ -163,6 +166,7 @@ function PatientProfileContent({ patient }: { patient: PatientSummary }) {
   const isTabVisible = (tab: PatientTabKey) => visibleTabs.includes(tab)
   const canEdit = canEditDemographics(roles)
   const visibleFields = getVisibleIdentityFields(roles)
+  const snapshotSections = getSnapshotSections(roles)
 
   // Controlled, not just a defaultValue: when previewing a different role
   // changes which tabs exist, an uncontrolled Tabs keeps its old selection
@@ -279,6 +283,7 @@ function PatientProfileContent({ patient }: { patient: PatientSummary }) {
             {isTabVisible("overview") && <TabsTrigger value="overview">Overview</TabsTrigger>}
             {isTabVisible("history") && <TabsTrigger value="history">Medical History</TabsTrigger>}
             {isTabVisible("appointments") && <TabsTrigger value="appointments">Appointments</TabsTrigger>}
+            {isTabVisible("snapshot") && <TabsTrigger value="snapshot">Snapshot</TabsTrigger>}
             {isTabVisible("lab") && <TabsTrigger value="lab">Lab</TabsTrigger>}
             {isTabVisible("imaging") && <TabsTrigger value="imaging">Imaging</TabsTrigger>}
             {isTabVisible("pharmacy") && <TabsTrigger value="pharmacy">Pharmacy</TabsTrigger>}
@@ -394,6 +399,29 @@ function PatientProfileContent({ patient }: { patient: PatientSummary }) {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>}
+
+          {isTabVisible("snapshot") && <TabsContent value="snapshot">
+            {/* §3/§5: diagnostic and dispensing roles get a composed summary
+                of the encounter, not the chart. Allergies inside it are
+                always-visible for pharmacy (§4.6). */}
+            <ClinicalSnapshot
+              snapshot={snapshotFromParts({
+                patientId: patient.id,
+                patientName: patient.name,
+                ageGender: `${patient.age ?? "Unknown"}${patient.age !== undefined ? " yrs" : ""} · ${patient.gender}`,
+                complaint:
+                  appointments.data?.[0]?.description ??
+                  appointments.data?.[0]?.serviceType?.[0]?.coding?.[0]?.display ??
+                  "",
+                allergies: (allergies.data ?? []).map(
+                  (allergy) =>
+                    allergy.code?.text ?? allergy.code?.coding?.[0]?.display ?? "Unspecified"
+                ),
+                sections: snapshotSections,
+              })}
+              sections={snapshotSections}
+            />
           </TabsContent>}
 
           {isTabVisible("lab") && <TabsContent value="lab">

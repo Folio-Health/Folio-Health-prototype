@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
-import { SearchIcon, ClipboardListIcon, PillIcon, TriangleAlertIcon, CalendarClockIcon } from "lucide-react"
+import {
+  SearchIcon,
+  ClipboardListIcon,
+  PillIcon,
+  TriangleAlertIcon,
+  CalendarClockIcon,
+  MessageCircleQuestionIcon,
+} from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
@@ -28,6 +35,12 @@ import { getPatientById } from "@/lib/mock/patients"
 import { getStaffById } from "@/lib/mock/staff"
 import { format } from "date-fns"
 import type { Prescription, PrescriptionStatus } from "@/lib/mock/pharmacy"
+import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { useUiStore } from "@/stores/ui-store"
+import { getSnapshotSections } from "@/features/patients/lib/patient-tabs-access"
+import { buildEncounterSnapshot } from "@/features/clinical-snapshot/lib/build-snapshot"
+import { ClinicalSnapshot } from "@/features/clinical-snapshot/components/clinical-snapshot"
+import { QueryOrderDialog } from "@/features/orders/components/query-order-dialog"
 
 const ALL = "all"
 const TABS: { value: string; label: string }[] = [
@@ -46,6 +59,14 @@ function PharmacyList() {
   const [tab, setTab] = useState(ALL)
   const [search, setSearch] = useState("")
   const [viewing, setViewing] = useState<Prescription | null>(null)
+  const [queryOpen, setQueryOpen] = useState(false)
+
+  const { data: user } = useCurrentUser()
+  const previewRole = useUiStore((s) => s.previewRole)
+  const roles = previewRole ? [previewRole] : (user?.roles ?? [])
+  // §4.6: medication history, presenting complaint and allergies — allergies
+  // flagged explicitly as always-visible and non-negotiable.
+  const snapshotSections = getSnapshotSections(roles)
 
   const rows = useMemo(
     () => PRESCRIPTIONS.map((rx) => ({ ...rx, status: statuses[rx.id] ?? rx.status })),
@@ -173,6 +194,16 @@ function PharmacyList() {
                 <StatusBadge status={viewing.status} />
               </div>
 
+              {/* The snapshot is what the pharmacist gets instead of the
+                  physician's clinical notes (§3, §4.6, §5). Allergies render
+                  as a prominent alert inside it. */}
+              {viewingPatient && snapshotSections.length > 0 && (() => {
+                const snapshot = buildEncounterSnapshot(viewingPatient.id, undefined, snapshotSections)
+                return snapshot ? (
+                  <ClinicalSnapshot snapshot={snapshot} sections={snapshotSections} />
+                ) : null
+              })()}
+
               <div className="overflow-hidden rounded-lg border border-border">
                 <Table>
                   <TableHeader>
@@ -195,6 +226,12 @@ function PharmacyList() {
               </div>
 
               <DialogFooter showCloseButton>
+                <RoleGate permission="ORDER_QUERY">
+                  <Button variant="outline" onClick={() => setQueryOpen(true)}>
+                    <MessageCircleQuestionIcon />
+                    Query prescriber
+                  </Button>
+                </RoleGate>
                 {viewing.status === "To Dispense" && (
                   <RoleGate permission="PHARMACY_DISPENSE">
                     <Button onClick={() => handleDispense(viewing)}>
@@ -208,6 +245,18 @@ function PharmacyList() {
           )}
         </DialogContent>
       </Dialog>
+
+      {viewing && viewingPatient && (
+        <QueryOrderDialog
+          open={queryOpen}
+          onOpenChange={setQueryOpen}
+          orderId={viewing.id}
+          orderKind="medication"
+          orderLabel={viewing.medications.map((m) => m.drugName).join(", ") || "Prescription"}
+          patientId={viewingPatient.id}
+          patientName={viewingPatient.name}
+        />
+      )}
     </div>
   )
 }

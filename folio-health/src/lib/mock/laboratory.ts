@@ -52,6 +52,13 @@ export interface LabResult {
   labScientistId: string
   testType: string
   testName: string
+  /**
+   * Why the physician ordered this test — the "reason for test" the lab
+   * scientist's snapshot is built around (Implementation Manuscript §4.4).
+   * Without it the lab works blind, which is exactly what the snapshot exists
+   * to prevent.
+   */
+  clinicalIndication: string
   parameters: ResultParameter[]
   resultSummary: string
   referenceRangeSummary: string
@@ -239,6 +246,26 @@ function summarize(parameters: ResultParameter[]) {
   }
 }
 
+/**
+ * Stand-in order indications. In the real build this text comes from the
+ * physician's Presenting Complaint / HPC on the encounter (§4.3 steps 1-2),
+ * carried onto the ServiceRequest.
+ */
+const INDICATIONS = [
+  "Persistent fever for 5 days, rule out malaria",
+  "Routine antenatal screening",
+  "Pre-operative workup",
+  "Fatigue and pallor, rule out anaemia",
+  "Known diabetic, routine glycaemic review",
+  "Recurrent headache with blurred vision",
+  "Abdominal pain and vomiting for 2 days",
+  "Follow up on abnormal result from last visit",
+  "Unexplained weight loss over 3 months",
+  "Chronic cough, rule out infection",
+  "Hypertension review, baseline renal function",
+  "Post-treatment test of cure",
+]
+
 function buildResults(count: number): LabResult[] {
   const results: LabResult[] = []
 
@@ -293,6 +320,7 @@ function buildResults(count: number): LabResult[] {
       labScientistId: scientist?.id ?? doctor.id,
       testType: test.category,
       testName: test.name,
+      clinicalIndication: pick(INDICATIONS),
       parameters,
       resultSummary,
       referenceRangeSummary,

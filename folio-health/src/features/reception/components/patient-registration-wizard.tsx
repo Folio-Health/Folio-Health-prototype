@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -25,6 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -44,7 +45,63 @@ import type { BloodGroup } from "@/types/core"
 
 const BLOOD_GROUPS: BloodGroup[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
 
-const STEPS = ["Personal Info", "Contact & Address", "Emergency Contact", "Insurance", "Review"]
+/**
+ * Registration captures the biodata set in Implementation Manuscript §4.1.
+ *
+ * Three of these fields are there for clinical reasons the manuscript spells
+ * out, not for demographics reporting:
+ *   - ethnicity/tribe, because some conditions are ethnicity-linked;
+ *   - religion, because e.g. blood-transfusion refusal in some faiths is
+ *     something the physician needs to know going in, not discover mid-crisis;
+ *   - source of referral, because a patient sent from a PHC has already been
+ *     worked up somewhere and should not be re-clerked from zero (§1).
+ *
+ * "Next of Kin" rather than "Emergency Contact" is the manuscript's own term
+ * and the one used in Nigerian clinical practice.
+ */
+const STEPS = [
+  "Personal Info",
+  "Contact & Address",
+  "Next of Kin",
+  "Visit Details",
+  "Insurance",
+  "Review",
+]
+
+/** Major ethnic groups, with a free-text escape — the list is never complete. */
+const ETHNIC_GROUPS = [
+  "Hausa",
+  "Yoruba",
+  "Igbo",
+  "Fulani",
+  "Ijaw",
+  "Kanuri",
+  "Ibibio",
+  "Tiv",
+  "Efik",
+  "Edo",
+  "Urhobo",
+  "Nupe",
+  "Idoma",
+  "Prefer not to say",
+  "Other",
+]
+
+const RELIGIONS = ["Christianity", "Islam", "Traditional", "Other", "Prefer not to say"]
+
+/** §4.1: self-referral vs. referred, and from where. */
+const REFERRAL_SOURCES = [
+  "Self-referral",
+  "Primary health centre (PHC)",
+  "Secondary facility",
+  "Private hospital",
+  "Teaching / tertiary hospital",
+  "Traditional or alternative practitioner",
+  "Employer or occupational health",
+  "Other",
+]
+
+const SELF_REFERRAL = "Self-referral"
 
 const registrationSchema = z
   .object({
@@ -56,6 +113,17 @@ const registrationSchema = z
     maritalStatus: z.enum(["Single", "Married", "Divorced", "Widowed"]),
     occupation: z.string().min(1, "Occupation is required"),
 
+    // §2: the patient ID strategy is moving off the raw NIN, now treated as
+    // too sensitive to use directly, onto the 16-digit VNIN as the primary
+    // linkable identifier. Not every patient presents with one, so the
+    // checkbox below is an explicit, recorded exception rather than a blank
+    // field nobody notices.
+    vnin: z.string().optional(),
+    noVnin: z.boolean(),
+
+    ethnicity: z.string().min(1, "Ethnicity is required"),
+    religion: z.string().min(1, "Religion is required"),
+
     phone: z.string().min(7, "Enter a valid phone number"),
     email: z.string().min(1, "Email is required").email("Enter a valid email address"),
     addressLine1: z.string().min(1, "Address is required"),
@@ -64,9 +132,15 @@ const registrationSchema = z
     postalCode: z.string().min(1, "Postal code is required"),
     country: z.string().min(1, "Country is required"),
 
-    emergencyName: z.string().min(1, "Contact name is required"),
+    emergencyName: z.string().min(1, "Next of kin name is required"),
     emergencyRelationship: z.string().min(1, "Relationship is required"),
     emergencyPhone: z.string().min(7, "Enter a valid phone number"),
+
+    // §4.1: date and time of presentation, and how the patient got here.
+    presentedOnDate: z.string().min(1, "Date of presentation is required"),
+    presentedAtTime: z.string().min(1, "Time of presentation is required"),
+    referralSource: z.string().min(1, "Source of referral is required"),
+    referringFacility: z.string().optional(),
 
     selfPay: z.boolean(),
     insuranceProvider: z.string().optional(),
@@ -82,13 +156,37 @@ const registrationSchema = z
     message: "Policy number is required unless self pay",
     path: ["policyNumber"],
   })
+  .refine((data) => data.noVnin || /^\d{16}$/.test((data.vnin ?? "").replace(/\s/g, "")), {
+    message: "A VNIN is exactly 16 digits",
+    path: ["vnin"],
+  })
+  .refine(
+    (data) => data.referralSource === SELF_REFERRAL || !!data.referringFacility?.trim(),
+    {
+      message: "Name the facility or practitioner who referred the patient",
+      path: ["referringFacility"],
+    }
+  )
 
 type RegistrationValues = z.infer<typeof registrationSchema>
 
 const STEP_FIELDS: (keyof RegistrationValues)[][] = [
-  ["firstName", "lastName", "gender", "dob", "bloodGroup", "maritalStatus", "occupation"],
+  [
+    "firstName",
+    "lastName",
+    "gender",
+    "dob",
+    "bloodGroup",
+    "maritalStatus",
+    "occupation",
+    "vnin",
+    "noVnin",
+    "ethnicity",
+    "religion",
+  ],
   ["phone", "email", "addressLine1", "city", "state", "postalCode", "country"],
   ["emergencyName", "emergencyRelationship", "emergencyPhone"],
+  ["presentedOnDate", "presentedAtTime", "referralSource", "referringFacility"],
   ["selfPay", "insuranceProvider", "policyNumber", "plan", "validTill"],
   [],
 ]
@@ -116,6 +214,10 @@ function PatientRegistrationWizard() {
       bloodGroup: "",
       maritalStatus: "Single",
       occupation: "",
+      vnin: "",
+      noVnin: false,
+      ethnicity: "",
+      religion: "",
       phone: "",
       email: "",
       addressLine1: "",
@@ -126,6 +228,11 @@ function PatientRegistrationWizard() {
       emergencyName: "",
       emergencyRelationship: "",
       emergencyPhone: "",
+      // Left empty and filled after mount — see the effect below.
+      presentedOnDate: "",
+      presentedAtTime: "",
+      referralSource: SELF_REFERRAL,
+      referringFacility: "",
       selfPay: false,
       insuranceProvider: "",
       policyNumber: "",
@@ -136,6 +243,22 @@ function PatientRegistrationWizard() {
   })
 
   const selfPay = form.watch("selfPay")
+  const noVnin = form.watch("noVnin")
+  const referralSource = form.watch("referralSource")
+  const isSelfReferral = referralSource === SELF_REFERRAL
+
+  // §4.1 wants the actual date and time the patient presented, and reception
+  // should not have to type what the clock already knows. Resolved after mount
+  // rather than in defaultValues: formatting "now" during render makes the
+  // server's HTML disagree with the browser and React discards the tree.
+  useEffect(() => {
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, "0")
+    form.setValue("presentedOnDate", `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`)
+    form.setValue("presentedAtTime", `${pad(now.getHours())}:${pad(now.getMinutes())}`)
+    // Runs once, on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function goNext() {
     const fields = STEP_FIELDS[step]
@@ -306,6 +429,98 @@ function PatientRegistrationWizard() {
                         </FormItem>
                       )}
                     />
+
+                    {/* §2: VNIN, not the raw NIN, is the linkable identifier. */}
+                    <FormField
+                      control={form.control}
+                      name="vnin"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-2">
+                          <FormLabel>VNIN (16 digits)</FormLabel>
+                          <FormControl>
+                            <Input
+                              inputMode="numeric"
+                              autoComplete="off"
+                              placeholder="1234 5678 9012 3456"
+                              disabled={noVnin}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            The virtual NIN from the patient&rsquo;s NIMC slip or *346# short code. Folio
+                            never stores the raw NIN.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="noVnin"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center gap-2 space-y-0 sm:col-span-2">
+                          <FormControl>
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <FormLabel className="cursor-pointer text-sm font-normal text-muted-foreground">
+                            Patient has no VNIN today &mdash; register without one
+                          </FormLabel>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="ethnicity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ethnicity / tribe</FormLabel>
+                          <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select ethnicity" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {ETHNIC_GROUPS.map((group) => (
+                                <SelectItem key={group} value={group}>
+                                  {group}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>Some conditions are ethnicity-linked.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="religion"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Religion</FormLabel>
+                          <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select religion" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {RELIGIONS.map((religion) => (
+                                <SelectItem key={religion} value={religion}>
+                                  {religion}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Recorded so the physician knows going in &mdash; not discovered mid-crisis.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 )}
 
@@ -412,7 +627,7 @@ function PatientRegistrationWizard() {
                       name="emergencyName"
                       render={({ field }) => (
                         <FormItem className="sm:col-span-2">
-                          <FormLabel>Contact full name</FormLabel>
+                          <FormLabel>Next of kin full name</FormLabel>
                           <FormControl>
                             <Input placeholder="Ngozi Chukwu" {...field} />
                           </FormControl>
@@ -461,6 +676,81 @@ function PatientRegistrationWizard() {
                 )}
 
                 {step === 3 && (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="presentedOnDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Date of presentation</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="presentedAtTime"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Time of presentation</FormLabel>
+                          <FormControl>
+                            <Input type="time" {...field} />
+                          </FormControl>
+                          <FormDescription>Prefilled from the clock. Change it if the patient arrived earlier.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="referralSource"
+                      render={({ field }) => (
+                        <FormItem className={isSelfReferral ? "sm:col-span-2" : undefined}>
+                          <FormLabel>Source of referral</FormLabel>
+                          <Select value={field.value} onValueChange={(v) => field.onChange(v ?? SELF_REFERRAL)}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select source" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {REFERRAL_SOURCES.map((source) => (
+                                <SelectItem key={source} value={source}>
+                                  {source}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            A referred patient has already been worked up elsewhere &mdash; the physician
+                            should not start from zero.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {!isSelfReferral && (
+                      <FormField
+                        control={form.control}
+                        name="referringFacility"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Referring facility or practitioner</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Ikeja PHC" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {step === 4 && (
                   <div className="flex flex-col gap-4">
                     <FormField
                       control={form.control}
@@ -546,7 +836,7 @@ function PatientRegistrationWizard() {
                   </div>
                 )}
 
-                {step === 4 && (
+                {step === 5 && (
                   <div className="flex flex-col gap-4">
                     <div className="rounded-lg border border-border p-4">
                       <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-foreground">
@@ -558,6 +848,12 @@ function PatientRegistrationWizard() {
                       <SummaryRow label="Blood group" value={values.bloodGroup} />
                       <SummaryRow label="Marital status" value={values.maritalStatus} />
                       <SummaryRow label="Occupation" value={values.occupation} />
+                      <SummaryRow
+                        label="VNIN"
+                        value={values.noVnin ? "Not provided at registration" : (values.vnin ?? "")}
+                      />
+                      <SummaryRow label="Ethnicity / tribe" value={values.ethnicity} />
+                      <SummaryRow label="Religion" value={values.religion} />
                     </div>
                     <div className="rounded-lg border border-border p-4">
                       <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-foreground">
@@ -574,11 +870,24 @@ function PatientRegistrationWizard() {
                     </div>
                     <div className="rounded-lg border border-border p-4">
                       <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-foreground">
-                        <ContactRoundIcon className="size-4 text-primary" /> Emergency Contact
+                        <ContactRoundIcon className="size-4 text-primary" /> Next of Kin
                       </p>
                       <SummaryRow label="Name" value={values.emergencyName} />
                       <SummaryRow label="Relationship" value={values.emergencyRelationship} />
                       <SummaryRow label="Phone" value={values.emergencyPhone} />
+                    </div>
+                    <div className="rounded-lg border border-border p-4">
+                      <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-foreground">
+                        <ClipboardCheckIcon className="size-4 text-primary" /> Visit Details
+                      </p>
+                      <SummaryRow
+                        label="Presented"
+                        value={[values.presentedOnDate, values.presentedAtTime].filter(Boolean).join(" at ")}
+                      />
+                      <SummaryRow label="Source of referral" value={values.referralSource} />
+                      {values.referralSource !== SELF_REFERRAL && (
+                        <SummaryRow label="Referred by" value={values.referringFacility ?? ""} />
+                      )}
                     </div>
                     <div className="rounded-lg border border-border p-4">
                       <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-foreground">
@@ -641,9 +950,10 @@ function PatientRegistrationWizard() {
               <CardDescription>
                 {step === 0 && "Capture the patient's core identity details."}
                 {step === 1 && "Where can we reach and locate the patient?"}
-                {step === 2 && "Who should we contact in an emergency?"}
-                {step === 3 && "Record coverage details for billing."}
-                {step === 4 && "Confirm everything looks correct before submitting."}
+                {step === 2 && "Who should we contact on the patient's behalf?"}
+                {step === 3 && "When did they arrive, and who sent them?"}
+                {step === 4 && "Record coverage details for billing."}
+                {step === 5 && "Confirm everything looks correct before submitting."}
               </CardDescription>
             </CardContent>
           </Card>

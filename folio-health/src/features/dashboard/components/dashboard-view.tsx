@@ -15,6 +15,8 @@ import { LabScientistDashboard } from "./lab-scientist-dashboard"
 import { PharmacistDashboard } from "./pharmacist-dashboard"
 import { AccountantDashboard } from "./accountant-dashboard"
 import { HimOfficerDashboard } from "./him-officer-dashboard"
+import { RadiologistDashboard } from "./radiologist-dashboard"
+import { StartHereCard } from "./start-here-card"
 
 /**
  * Dashboard per FACILITY role (EMR V1 RBAC spec §16). `facility-admin` falls
@@ -27,6 +29,10 @@ const ROLE_DASHBOARDS: Record<Exclude<RoleId, "platform-admin">, React.Component
   "front-desk": ReceptionistDashboard,
   nurse: NurseDashboard,
   "lab-scientist": LabScientistDashboard,
+  // §4.5: the radiographer's own dashboard — an imaging queue to work from,
+  // the parallel of the lab scientist's order queue. This component already
+  // existed but had no role to render for.
+  radiographer: RadiologistDashboard,
   pharmacist: PharmacistDashboard,
   "billing-cashier": AccountantDashboard,
   "him-officer": HimOfficerDashboard,
@@ -86,6 +92,14 @@ function DashboardView() {
         title="Dashboard"
         description={today ? `${scope} overview for ${today}` : `${scope} overview`}
       />
+      {/* §6: the primary action comes before the numbers, so a first-time
+          user never has to guess what to click first. Not shown on the
+          operator plane, which has no clinical primary action. */}
+      {!isPlatform && (
+        <div className="mb-6">
+          <StartHereCard role={effectiveRole} />
+        </div>
+      )}
       <DashboardComponent />
     </div>
   )

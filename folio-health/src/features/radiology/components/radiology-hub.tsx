@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/common/page-header"
 import { DataTable } from "@/components/tables/data-table"
 import { StatCard } from "@/components/cards/stat-card"
 import { Button } from "@/components/ui/button"
+import { RoleGate } from "@/components/common/role-gate"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -133,10 +134,15 @@ function RadiologyHub() {
         description={`${allRequests.length} imaging studies on record`}
         breadcrumbs={[{ label: "Diagnostics" }, { label: "Radiology" }]}
         actions={
-          <Button onClick={() => setNewOpen(true)}>
-            <PlusIcon />
-            New Imaging Request
-          </Button>
+          // §9.1 "orders are the spine" and §9.5 "orderer ≠ resulter": only a
+          // role holding ORDER may raise an imaging request. This was
+          // ungated, so a radiographer could order their own work.
+          <RoleGate permission="ORDER">
+            <Button onClick={() => setNewOpen(true)}>
+              <PlusIcon />
+              New Imaging Request
+            </Button>
+          </RoleGate>
         }
       />
 
@@ -272,7 +278,9 @@ function RadiologyHub() {
             <Button variant="outline" onClick={() => setNewOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateRequest}>Create Request</Button>
+            <RoleGate permission="ORDER">
+              <Button onClick={handleCreateRequest}>Create Request</Button>
+            </RoleGate>
           </DialogFooter>
         </DialogContent>
       </Dialog>

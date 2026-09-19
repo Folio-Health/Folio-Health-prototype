@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import type { WorkspaceSection } from "@/features/consultation/types"
 
 const QUICK_ACTIONS: { label: string; icon: typeof FileTextIcon; section: WorkspaceSection }[] = [
-  { label: "Add Diagnosis", icon: FileTextIcon, section: "soap-notes" },
+  { label: "Add Diagnosis", icon: FileTextIcon, section: "clerking" },
   { label: "Add Medication", icon: PillIcon, section: "medications" },
   { label: "Add Lab Test", icon: FlaskConicalIcon, section: "orders" },
   { label: "Add Radiology", icon: ScanIcon, section: "orders" },

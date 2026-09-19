@@ -28,6 +28,10 @@ export type Permission =
   | "LAB_ENTER_RESULT"
   | "LAB_VERIFY_RESULT"
   | "LAB_RELEASE_RESULT"
+  | "IMAGING_ACQUIRE_STUDY"
+  | "IMAGING_UPLOAD_FINDING"
+  | "ORDER_QUERY"
+  | "ORDER_ANSWER_QUERY"
   | "PHARMACY_DISPENSE"
   | "PHARMACY_RECONCILE"
   | "PHARMACY_DOCUMENT_INTERVENTION"
@@ -57,6 +61,10 @@ export const ALL_PERMISSIONS: Permission[] = [
   "LAB_ENTER_RESULT",
   "LAB_VERIFY_RESULT",
   "LAB_RELEASE_RESULT",
+  "IMAGING_ACQUIRE_STUDY",
+  "IMAGING_UPLOAD_FINDING",
+  "ORDER_QUERY",
+  "ORDER_ANSWER_QUERY",
   "PHARMACY_DISPENSE",
   "PHARMACY_RECONCILE",
   "PHARMACY_DOCUMENT_INTERVENTION",
@@ -73,10 +81,19 @@ export const ALL_PERMISSIONS: Permission[] = [
  * clinical/financial action rights).
  */
 export const ROLE_PERMISSIONS: Record<Exclude<RoleId, "platform-admin">, Permission[]> = {
-  doctor: ["VIEW", "CREATE", "AMEND", "SIGN", "PRESCRIBE", "ORDER", "PRINT"],
+  // §9.1 "orders are the spine": the physician is the only role that signs an
+  // order into existence. ORDER_ANSWER_QUERY closes the loop a diagnostic role
+  // opens against one (§4.4, §9.4).
+  doctor: ["VIEW", "CREATE", "AMEND", "SIGN", "PRESCRIBE", "ORDER", "PRINT", "ORDER_ANSWER_QUERY"],
+  // §4.2: vitals and general record access. No SIGN, no ORDER, no clerking —
+  // that responsibility sits with the physician in this market.
   nurse: ["VIEW", "CREATE", "ADMINISTER"],
   // PRINT here too: lab reports and specimen labels are a normal part of
   // processing an order, not something reserved for a doctor's own notes.
+  // ORDER_QUERY is the manuscript's "two-way channel, not a one-way results
+  // pipe" (§4.4): the lab scientist can flag or query an order back to the
+  // physician — "why is this test being ordered given X" — as an explicit,
+  // tracked loop rather than a side conversation (§9.4).
   "lab-scientist": [
     "VIEW",
     "PRINT",
@@ -84,13 +101,36 @@ export const ROLE_PERMISSIONS: Record<Exclude<RoleId, "platform-admin">, Permiss
     "LAB_ENTER_RESULT",
     "LAB_VERIFY_RESULT",
     "LAB_RELEASE_RESULT",
+    "ORDER_QUERY",
+  ],
+  // §4.5: "parallel structure to lab". Acquires the study, uploads the
+  // finding for the physician to view, and holds the same query-back channel.
+  // Notably NO order rights — the radiographer executes orders, never signs
+  // them (§9.5: orderer ≠ resulter).
+  radiographer: [
+    "VIEW",
+    "PRINT",
+    "IMAGING_ACQUIRE_STUDY",
+    "IMAGING_UPLOAD_FINDING",
+    "ORDER_QUERY",
   ],
   // PRINT here too: a dispensing label or counselling sheet is routine, not
   // an escalation.
-  pharmacist: ["VIEW", "PRINT", "PHARMACY_DISPENSE", "PHARMACY_RECONCILE", "PHARMACY_DOCUMENT_INTERVENTION"],
-  // Initiate-only (spec §7.5): create registration/appointment/encounter
-  // records, nothing clinical.
-  "front-desk": ["CREATE"],
+  pharmacist: [
+    "VIEW",
+    "PRINT",
+    "PHARMACY_DISPENSE",
+    "PHARMACY_RECONCILE",
+    "PHARMACY_DOCUMENT_INTERVENTION",
+    "ORDER_QUERY",
+  ],
+  // §3/§4.1: "registration/biodata only … no access to clinical documentation
+  // of any kind". VIEW is what lets reception read back the biodata and queue
+  // they themselves created — what they can view is narrowed by
+  // getVisiblePatientTabs (appointments only) and by ROLE_NAV_HREFS, not by
+  // withholding VIEW, which only had the effect of hiding reception's own
+  // work from them.
+  "front-desk": ["VIEW", "CREATE"],
   "him-officer": ["VIEW", "AMEND", "EXPORT", "DISCLOSE"],
   "billing-cashier": ["VIEW", "BILLING_POST_CHARGE", "BILLING_RECEIVE_PAYMENT", "BILLING_REFUND", "BILLING_CLAIM"],
   // VIEW here too: facility-admin does see appointment/billing context for

@@ -7,8 +7,6 @@ import {
   ZapIcon,
   ClipboardCheckIcon,
   ListOrderedIcon,
-  MonitorIcon,
-  IdCardIcon,
   UsersIcon,
   ClockIcon,
   UserCheckIcon,
@@ -58,19 +56,13 @@ const QUICK_LINKS = [
     href: "/reception/queue",
     icon: ListOrderedIcon,
   },
-  {
-    title: "Token Display",
-    description: "Live now serving board for the waiting area",
-    href: "/reception/token-system",
-    icon: MonitorIcon,
-  },
-  {
-    title: "Print Patient ID Card",
-    description: "Preview and print a patient's ID card",
-    href: "/reception/print-card",
-    icon: IdCardIcon,
-  },
 ]
+
+// Removed: "Token Display" (/reception/token-system) and "Print Patient ID
+// Card" (/reception/print-card). Both linked to routes that were never built,
+// so every click 404'd. Neither is part of the §4.1 reception interface, so
+// they belong with the other Phase 2 scope decisions rather than as dead
+// links on the front desk's landing page.
 
 function ReceptionDashboard() {
   const todaysAppointments = getTodaysAppointments()

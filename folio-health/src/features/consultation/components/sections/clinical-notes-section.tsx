@@ -14,7 +14,7 @@ function ClinicalNotesSection({
     <Card>
       <CardHeader>
         <CardTitle>Clinical Notes</CardTitle>
-        <CardDescription>General free text notes for this visit, not tied to SOAP structure</CardDescription>
+        <CardDescription>General free text notes for this visit, outside the structured clerking sequence</CardDescription>
       </CardHeader>
       <CardContent>
         <Textarea

@@ -20,6 +20,8 @@
  *   - Facility roles require a facility binding.
  */
 
+import { isModuleInScope } from "@/config/phases"
+
 export type RoleId =
   | "platform-admin"
   | "facility-admin"
@@ -28,6 +30,7 @@ export type RoleId =
   | "front-desk"
   | "him-officer"
   | "lab-scientist"
+  | "radiographer"
   | "pharmacist"
   | "billing-cashier"
 
@@ -56,6 +59,7 @@ const KNOWN_ROLES: RoleId[] = [
   "front-desk",
   "him-officer",
   "lab-scientist",
+  "radiographer",
   "pharmacist",
   "billing-cashier",
 ]
@@ -78,12 +82,19 @@ export const ROLE_ACCESS_POLICY_NAMES: Record<Exclude<RoleId, "platform-admin">,
   nurse: "Folio Nurse Access Policy",
   "front-desk": "Folio Front Desk Access Policy",
   "him-officer": "Folio HIM Access Policy",
-  // Added for the EMR V1 RBAC spec's 8-role model. These three policies do not
-  // exist on the Medplum project yet — until Folio-Web's provisioning tooling
-  // (packages/fhir-model/src/access.ts) authors them under these exact names,
-  // findAccessPolicyByName() will reject an invite for these roles. The UI side
-  // (nav, dashboards, permission gating) is ready ahead of that.
+  // BACKEND GAP — these four policies do NOT exist on the Medplum project yet.
+  // Until Folio-Web's provisioning tooling (packages/fhir-model/src/access.ts)
+  // authors them under these exact names, findAccessPolicyByName() will reject
+  // an invite for these roles, so no account can actually be created with one.
+  // The UI side (nav, dashboards, snapshot scoping, permission gating) is ready
+  // ahead of that.
+  //
+  // `radiographer` is the newest of the four, added for the Implementation
+  // Manuscript §3/§4.5 role that the 8-role EMR V1 spec had no equivalent for.
+  // Its server policy must scope to the imaging snapshot (§4.5) — reason for
+  // the study and presenting complaint — and must NOT grant the full chart.
   "lab-scientist": "Folio Lab Scientist Access Policy",
+  radiographer: "Folio Radiographer Access Policy",
   pharmacist: "Folio Pharmacist Access Policy",
   "billing-cashier": "Folio Billing Access Policy",
 }
@@ -102,6 +113,7 @@ export type FacilityAssignableRole =
   | "front-desk"
   | "him-officer"
   | "lab-scientist"
+  | "radiographer"
   | "pharmacist"
   | "billing-cashier"
 
@@ -111,6 +123,7 @@ export const FACILITY_ASSIGNABLE_ROLES: FacilityAssignableRole[] = [
   "front-desk",
   "him-officer",
   "lab-scientist",
+  "radiographer",
   "pharmacist",
   "billing-cashier",
 ]
@@ -131,6 +144,7 @@ export const ROLE_LABELS: Record<RoleId, string> = {
   "front-desk": "Receptionist",
   "him-officer": "Medical Records Officer",
   "lab-scientist": "Laboratory Scientist",
+  radiographer: "Radiographer",
   pharmacist: "Pharmacist",
   "billing-cashier": "Billing / Cashier",
 }
@@ -212,19 +226,22 @@ export function platformCanAccess(pathname: string): boolean {
 }
 
 /**
- * Nav hrefs each FACILITY role may see (EMR V1 RBAC spec §16).
+ * Nav hrefs each FACILITY role may see.
+ *
+ * Source of truth is the Implementation Manuscript §3 access table, read
+ * together with the per-interface scoping in §4. The manuscript's governing
+ * sentence, repeated by the mentor several times, is: **no two roles should
+ * see the same data** — every role gets exactly the slice of the record
+ * relevant to their job, never a shared undifferentiated chart.
  *
  * Same allow-list philosophy as PLATFORM_NAV_HREFS: a new module added to
- * nav.ts is hidden from every facility role by default, not exposed until
- * someone remembers to add it here. This is UI-layer routing convenience —
- * it hides links a role shouldn't act on, it does not grant or deny data
- * access. The server-side AccessPolicy (see ROLE_ACCESS_POLICY_NAMES) is
+ * nav.ts is hidden from every facility role by default. This is UI-layer
+ * routing — it hides links a role shouldn't act on, it does not grant or deny
+ * data access. The server-side AccessPolicy (see ROLE_ACCESS_POLICY_NAMES) is
  * the actual boundary; this must never be treated as a substitute for it.
  *
  * `facility-admin` is deliberately narrow, not "everything in the facility":
- * the spec's separation-of-duties principle (§3, §7.8) applies to any admin
- * role, not only the platform operator — technical/administrative authority
- * must not imply routine clinical content access.
+ * administrative authority must not imply routine clinical content access.
  */
 export const ROLE_NAV_HREFS: Record<Exclude<RoleId, "platform-admin">, string[]> = {
   "facility-admin": [
@@ -237,6 +254,10 @@ export const ROLE_NAV_HREFS: Record<Exclude<RoleId, "platform-admin">, string[]>
     "/help",
     "/settings",
   ],
+  // §3: "Full clinical documentation … owns the encounter note end-to-end."
+  // §4.3 step 10 branches orders out to Lab, Radiology/Imaging and Pharmacy,
+  // so the physician reaches all three — they are the one role that sees the
+  // whole picture.
   doctor: [
     "/dashboard",
     "/assistant",
@@ -258,40 +279,53 @@ export const ROLE_NAV_HREFS: Record<Exclude<RoleId, "platform-admin">, string[]>
     "/help",
     "/settings",
   ],
+  // §3/§4.2: vitals + general (revocable) record access, and NOTHING else.
+  //
+  // Deliberately much narrower than it used to be. The manuscript's
+  // country-specific scoping decision is explicit: in the UK/Ireland nurses
+  // also clerk, but in Nigeria's current clinical landscape that sits with
+  // the physician — "do not build clerking fields into the nurse role for
+  // this market". So /consultation is gone.
+  //
+  // /laboratory is gone too: §8 lists "whether nurses should be able to
+  // review lab results directly" as DEFERRED to a future mentor session —
+  // mentioned as happening in some settings, not confirmed for this build.
+  // Deferred means not granted; an allow-list fails closed.
+  //
+  // /admissions and /blood-bank likewise await §8's ADT and blood-bank
+  // workflow sessions.
   nurse: [
     "/dashboard",
     "/assistant",
     "/patients",
     "/vitals",
     "/nursing",
-    "/consultation",
-    "/emergency",
-    "/surgery",
-    "/pediatrics",
-    "/obstetrics",
-    "/laboratory",
-    "/blood-bank",
-    "/pharmacy",
-    "/admissions",
     "/communication",
     "/help",
     "/settings",
   ],
-  // Registration/identity search happens inside /reception itself. No
-  // /patients: the spec is explicit that reception must not receive a
-  // general Patients page exposing the complete chart (§9, §12).
+  // §3/§4.1: registration and biodata only — "no access to clinical
+  // documentation of any kind". Registration and identity search happen
+  // inside /reception itself; no /patients, which would expose the chart.
   "front-desk": ["/dashboard", "/assistant", "/reception", "/appointments", "/communication", "/help", "/settings"],
   // Identity/demographics and document work needs the patient record, but
-  // not its clinical sections — the patient workspace itself narrows what
-  // an HIM officer sees once inside a chart (spec §19).
+  // not its clinical sections — the patient workspace narrows what an HIM
+  // officer sees once inside a chart.
   "him-officer": ["/dashboard", "/assistant", "/patients", "/communication", "/help", "/settings"],
-  // Deliberately module-only — the spec calls this out explicitly: "no
-  // broad patient chart browsing" (§7.3, §16).
+  // §3/§4.4: snapshot only, worked from the order queue. Module-only — no
+  // broad chart browsing. The snapshot itself is reached from the order (see
+  // the clinical-snapshot feature), not by navigating a patient list.
   "lab-scientist": ["/dashboard", "/assistant", "/laboratory", "/blood-bank", "/communication", "/help", "/settings"],
-  // Module-only; inventory is pharmacy stock, not the clinical chart.
+  // §3/§4.5: "same snapshot model as lab" — a separate dashboard to upload
+  // X-ray/scan results, which the physician then views. Parallel in every
+  // respect to the lab scientist above.
+  radiographer: ["/dashboard", "/assistant", "/radiology", "/communication", "/help", "/settings"],
+  // §3/§4.6: medication orders plus a snapshot of medication history,
+  // presenting complaint and allergies. Does NOT see the physician's full
+  // clinical notes. /inventory is pharmacy stock, not the clinical chart.
   pharmacist: ["/dashboard", "/assistant", "/pharmacy", "/inventory", "/communication", "/help", "/settings"],
-  // No /patients: billing must not open the complete chart (§7.7, §16).
-  // Diagnosis coding needed for a claim is a field inside /billing itself.
+  // No /patients: billing must not open the complete chart. Diagnosis coding
+  // needed for a claim is a field inside /billing itself.
   "billing-cashier": ["/dashboard", "/assistant", "/billing", "/communication", "/help", "/settings"],
 }
 
@@ -311,6 +345,11 @@ export const ROLE_NAV_HREFS: Record<Exclude<RoleId, "platform-admin">, string[]>
  * in the facility is a different, broader capability than opening one.
  */
 export function facilityRouteAllowed(pathname: string, roles: RoleId[]): boolean {
+  // Modules deferred to Phase 2 (manuscript §7) are closed to every role,
+  // regardless of what their allow-list says — scope is a build decision, not
+  // a permission one. See src/config/phases.ts.
+  if (!isModuleInScope(pathname)) return false
+
   if (pathname.startsWith("/patients/")) return true
 
   const facilityRoles = roles.filter((r): r is Exclude<RoleId, "platform-admin"> => r !== "platform-admin")

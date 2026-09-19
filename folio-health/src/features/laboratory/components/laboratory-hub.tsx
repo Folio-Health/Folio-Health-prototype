@@ -18,6 +18,7 @@ import { RoleGate } from "@/components/common/role-gate"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -59,6 +60,9 @@ function LaboratoryHub() {
   const [newPatientId, setNewPatientId] = useState("")
   const [newDoctorId, setNewDoctorId] = useState("")
   const [newTestName, setNewTestName] = useState(TEST_NAMES[0] ?? "")
+  // §4.4: the lab scientist's snapshot is built around "reason for test".
+  // Capturing it at order time is what makes that snapshot possible at all.
+  const [newIndication, setNewIndication] = useState("")
 
   const allResults = useMemo(() => [...localResults, ...LAB_RESULTS], [localResults])
 
@@ -120,11 +124,16 @@ function LaboratoryHub() {
     setNewPatientId("")
     setNewDoctorId("")
     setNewTestName(TEST_NAMES[0] ?? "")
+    setNewIndication("")
   }
 
   function handleCreateOrder() {
     if (!newPatientId || !newDoctorId || !newTestName) {
       toast.error("Select a patient, doctor, and test to place a lab order")
+      return
+    }
+    if (!newIndication.trim()) {
+      toast.error("Give a reason for the test — the lab sees this instead of the clinical notes")
       return
     }
     const patient = getPatientById(newPatientId)
@@ -135,6 +144,7 @@ function LaboratoryHub() {
       labScientistId: newDoctorId,
       testType: TEST_CATEGORY_BY_NAME[newTestName] ?? "General",
       testName: newTestName,
+      clinicalIndication: newIndication.trim(),
       parameters: [],
       resultSummary: "N/A",
       referenceRangeSummary: "N/A",
@@ -252,6 +262,19 @@ function LaboratoryHub() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="lab-order-indication">Reason for test</Label>
+              <Textarea
+                id="lab-order-indication"
+                rows={2}
+                placeholder="e.g. Persistent fever for 5 days, rule out malaria"
+                value={newIndication}
+                onChange={(e) => setNewIndication(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                This is what the lab scientist sees instead of your clinical notes.
+              </p>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="lab-order-test">Test</Label>
