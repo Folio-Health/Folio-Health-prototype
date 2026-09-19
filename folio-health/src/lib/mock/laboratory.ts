@@ -43,13 +43,6 @@ export interface LabResult {
   labScientistId: string
   testType: string
   testName: string
-  /**
-   * Why the physician ordered this test — the "reason for test" the lab
-   * scientist's snapshot is built around (Implementation Manuscript §4.4).
-   * Without it the lab works blind, which is what the snapshot exists to
-   * prevent. The FHIR path carries this as ServiceRequest.reasonCode.
-   */
-  clinicalIndication: string
   parameters: ResultParameter[]
   resultSummary: string
   referenceRangeSummary: string

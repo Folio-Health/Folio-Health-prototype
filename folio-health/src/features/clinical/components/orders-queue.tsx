@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react"
 import { format } from "date-fns"
-import { FlaskConicalIcon, Loader2Icon, PlusIcon, ScanIcon } from "lucide-react"
+import {
+  FlaskConicalIcon,
+  Loader2Icon,
+  MessageCircleQuestionIcon,
+  PlusIcon,
+  ScanIcon,
+} from "lucide-react"
 import { toast } from "sonner"
 import type { ServiceRequest } from "@medplum/fhirtypes"
 import { PersonAvatar } from "@/components/common/person-avatar"
@@ -22,6 +28,8 @@ import {
   usePostResult,
   useReportsForOrders,
 } from "@/features/clinical/hooks/use-clinical"
+import { QueryOrderDialog } from "@/features/orders/components/query-order-dialog"
+import { useQueriesForOrder } from "@/features/orders/lib/order-queries"
 
 /**
  * The performing unit's queue for one order category (laboratory or
@@ -41,8 +49,11 @@ function OrdersQueue({ category }: { category: string }) {
   const doneIds = useMemo(() => (done ?? []).map((o) => o.id as string), [done])
   const { data: reports } = useReportsForOrders(doneIds)
   const [target, setTarget] = useState<ServiceRequest | null>(null)
+  const [querying, setQuerying] = useState<ServiceRequest | null>(null)
 
   const Icon = imaging ? ScanIcon : FlaskConicalIcon
+  /** The role that performs this category — and so may query the order back. */
+  const performingRole = imaging ? "radiographer" : "lab-scientist"
 
   function Row({ order, action }: { order: ServiceRequest; action?: React.ReactNode }) {
     const report = reports?.find((r) => r.basedOn?.some((b) => b.reference === `ServiceRequest/${order.id}`))
@@ -71,6 +82,7 @@ function OrdersQueue({ category }: { category: string }) {
           {report && !report.conclusion && report.result?.length ? (
             <p className="mt-1 text-xs text-muted-foreground">{report.result.length} value(s) reported</p>
           ) : null}
+          <OrderQueryThread focusRef={`ServiceRequest/${order.id}`} />
         </div>
         {action}
       </div>
@@ -102,10 +114,18 @@ function OrdersQueue({ category }: { category: string }) {
                   key={order.id}
                   order={order}
                   action={
-                    <RoleGate roles={imaging ? ["radiographer"] : ["lab-scientist"]}>
-                      <Button size="sm" onClick={() => setTarget(order)}>
-                        <PlusIcon /> {imaging ? "Enter report" : "Enter result"}
-                      </Button>
+                    <RoleGate roles={[performingRole]}>
+                      <div className="flex items-center gap-2">
+                        {/* §4.4: "a two-way channel, not a one-way results
+                            pipe" — the performing unit can put the order back
+                            to the physician instead of only resulting it. */}
+                        <Button variant="outline" size="sm" onClick={() => setQuerying(order)}>
+                          <MessageCircleQuestionIcon /> Query
+                        </Button>
+                        <Button size="sm" onClick={() => setTarget(order)}>
+                          <PlusIcon /> {imaging ? "Enter report" : "Enter result"}
+                        </Button>
+                      </div>
                     </RoleGate>
                   }
                 />
@@ -129,7 +149,55 @@ function OrdersQueue({ category }: { category: string }) {
       </Tabs>
 
       {target && <ResultDialog order={target} imaging={imaging} onClose={() => setTarget(null)} />}
+
+      {querying && (
+        <QueryOrderDialog
+          open
+          onOpenChange={(v) => !v && setQuerying(null)}
+          focusRef={`ServiceRequest/${querying.id}`}
+          orderLabel={querying.code?.text ?? (imaging ? "Imaging request" : "Laboratory order")}
+          patientRef={querying.subject?.reference ?? ""}
+          patientName={querying.subject?.display ?? "Patient"}
+        />
+      )}
     </>
+  )
+}
+
+/**
+ * Questions raised against one order, with the physician's answer once it
+ * lands (Manuscript §4.4, §9.4). Shown inline on the order so the loop is
+ * visible to whoever is working it — an unanswered query should not be
+ * something you have to go looking for.
+ */
+function OrderQueryThread({ focusRef }: { focusRef: string }) {
+  const { data: queries } = useQueriesForOrder(focusRef)
+  if (!queries?.length) return null
+
+  return (
+    <div className="mt-1.5 flex flex-col gap-1.5">
+      {queries.map((query) => (
+        <div
+          key={query.id}
+          className="rounded-md border-l-2 border-muted-foreground/30 bg-muted/40 px-2 py-1.5"
+        >
+          <p className="flex flex-wrap items-center gap-1.5 text-xs text-foreground">
+            <MessageCircleQuestionIcon className="size-3.5 shrink-0" aria-hidden="true" />
+            {query.question}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {query.raisedBy} · {format(new Date(query.raisedAt), "d MMM HH:mm")}
+            {query.status === "open" && " · awaiting the physician"}
+          </p>
+          {query.status === "answered" && query.answer && (
+            <p className="mt-1 border-t border-border pt-1 text-xs text-foreground">
+              {query.answer}{" "}
+              <span className="text-[11px] text-muted-foreground">— {query.answeredBy}</span>
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
   )
 }
 

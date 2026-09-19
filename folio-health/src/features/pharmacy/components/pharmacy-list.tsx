@@ -2,7 +2,13 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { HistoryIcon, Loader2Icon, PillIcon, TriangleAlertIcon } from "lucide-react"
+import {
+  HistoryIcon,
+  Loader2Icon,
+  MessageCircleQuestionIcon,
+  PillIcon,
+  TriangleAlertIcon,
+} from "lucide-react"
 import { toast } from "sonner"
 import type { MedicationRequest } from "@medplum/fhirtypes"
 import { PageHeader } from "@/components/common/page-header"
@@ -20,6 +26,7 @@ import {
   usePatientMedicationHistory,
   usePrescriptionQueue,
 } from "@/features/clinical/hooks/use-clinical"
+import { QueryOrderDialog } from "@/features/orders/components/query-order-dialog"
 
 /**
  * The pharmacy queue: active prescriptions written by doctors, oldest
@@ -228,6 +235,7 @@ function DispenseDialog({ rx, onClose }: { rx: MedicationRequest; onClose: () =>
   const dispense = useDispense()
   const [quantity, setQuantity] = useState(rx.dispenseRequest?.quantity?.value ? String(rx.dispenseRequest.quantity.value) : "")
   const [note, setNote] = useState("")
+  const [querying, setQuerying] = useState(false)
 
   async function submit() {
     try {
@@ -265,6 +273,12 @@ function DispenseDialog({ rx, onClose }: { rx: MedicationRequest; onClose: () =>
           </div>
         </div>
         <DialogFooter>
+          {/* §4.4's two-way channel applies to pharmacy too: the pharmacist
+              can put the prescription back to the prescriber rather than
+              only dispensing it or silently refusing. */}
+          <Button variant="outline" onClick={() => setQuerying(true)}>
+            <MessageCircleQuestionIcon /> Query prescriber
+          </Button>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => void submit()} disabled={dispense.isPending}>
             {dispense.isPending && <Loader2Icon className="animate-spin" />}
@@ -272,6 +286,17 @@ function DispenseDialog({ rx, onClose }: { rx: MedicationRequest; onClose: () =>
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {querying && (
+        <QueryOrderDialog
+          open
+          onOpenChange={(v) => !v && setQuerying(false)}
+          focusRef={`MedicationRequest/${rx.id}`}
+          orderLabel={rx.medicationCodeableConcept?.text ?? "Prescription"}
+          patientRef={rx.subject?.reference ?? ""}
+          patientName={rx.subject?.display ?? "Patient"}
+        />
+      )}
     </Dialog>
   )
 }

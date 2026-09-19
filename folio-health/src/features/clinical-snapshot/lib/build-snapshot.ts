@@ -161,8 +161,7 @@ export function snapshotFromParts(parts: {
  * Build the snapshot for one patient and one order, from the mock layer.
  *
  * @param patientId the patient the order belongs to
- * @param reason    the order's own indication, when the module has one
- *                  (radiology carries `clinicalIndication`, lab now does too).
+ * @param reason    the order's own indication, when the caller has one.
  *                  Falls back to the presenting complaint.
  */
 export function buildEncounterSnapshot(

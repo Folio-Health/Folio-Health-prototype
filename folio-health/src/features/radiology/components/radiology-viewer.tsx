@@ -13,11 +13,7 @@ import {
   ScanIcon,
   UserRoundIcon,
   CalendarClockIcon,
-  MessageCircleQuestionIcon,
-  UploadIcon,
-  CheckIcon,
 } from "lucide-react"
-import { toast } from "sonner"
 import { PageHeader } from "@/components/common/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -25,16 +21,6 @@ import { StatusBadge } from "@/components/common/status-badge"
 import { EmptyState } from "@/components/common/empty-state"
 import { getImagingRequestById, getReportForRequest } from "@/lib/mock/radiology"
 import { getPatientById } from "@/lib/mock/patients"
-import { RoleGate } from "@/components/common/role-gate"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { useCurrentUser } from "@/lib/fhir/use-current-user"
-import { useUiStore } from "@/stores/ui-store"
-import { getSnapshotSections } from "@/features/patients/lib/patient-tabs-access"
-import { buildEncounterSnapshot } from "@/features/clinical-snapshot/lib/build-snapshot"
-import { ClinicalSnapshot } from "@/features/clinical-snapshot/components/clinical-snapshot"
-import { QueryOrderDialog } from "@/features/orders/components/query-order-dialog"
-import { useOrderQueries } from "@/features/orders/lib/order-queries"
 import { getStaffById } from "@/lib/mock/staff"
 import { unsplash, MEDICAL_IMAGES } from "@/lib/images"
 import { cn } from "@/lib/utils"
@@ -60,21 +46,6 @@ function RadiologyViewer({ requestId }: { requestId: string }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [zoom, setZoom] = useState(100)
   const [rotation, setRotation] = useState(0)
-  const [queryOpen, setQueryOpen] = useState(false)
-
-  // §4.5: the radiographer uploads imaging findings to a portal the physician
-  // then views. Held locally here — persisting a DiagnosticReport is the
-  // backend half of this.
-  const [uploading, setUploading] = useState(false)
-  const [draftFindings, setDraftFindings] = useState("")
-  const [draftConclusion, setDraftConclusion] = useState("")
-  const [uploadedAt, setUploadedAt] = useState<string | null>(null)
-
-  const { data: user } = useCurrentUser()
-  const previewRole = useUiStore((s) => s.previewRole)
-  const roles = previewRole ? [previewRole] : (user?.roles ?? [])
-  const snapshotSections = getSnapshotSections(roles)
-  const queries = useOrderQueries((s) => s.queries).filter((q) => q.orderId === requestId)
 
   if (!request) {
     return (
@@ -129,17 +100,7 @@ function RadiologyViewer({ requestId }: { requestId: string }) {
           { label: patient?.name ?? "Unknown Patient" },
           { label: request.modality },
         ]}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={request.status} className="h-7 px-3" />
-            <RoleGate permission="ORDER_QUERY">
-              <Button variant="outline" size="sm" onClick={() => setQueryOpen(true)}>
-                <MessageCircleQuestionIcon />
-                Query order
-              </Button>
-            </RoleGate>
-          </div>
-        }
+        actions={<StatusBadge status={request.status} className="h-7 px-3" />}
       />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[96px_1fr_360px]">
@@ -224,44 +185,6 @@ function RadiologyViewer({ requestId }: { requestId: string }) {
 
         {/* Report panel */}
         <div className="flex flex-col gap-4">
-          {/* §4.5: "same snapshot model as lab" — the radiographer is told why
-              the study was requested, not handed the physician's notes. */}
-          {patient && snapshotSections.length > 0 && (() => {
-            const snapshot = buildEncounterSnapshot(patient.id, request.clinicalIndication, snapshotSections)
-            return snapshot ? (
-              <ClinicalSnapshot snapshot={snapshot} sections={snapshotSections} />
-            ) : null
-          })()}
-
-          {queries.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Queries on this order</CardTitle>
-                <CardDescription>
-                  Raised back to the requesting physician. The loop stays open until answered.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                {queries.map((query) => (
-                  <div key={query.id} className="flex flex-col gap-1 rounded-lg border border-border p-3">
-                    <p className="text-sm text-foreground">{query.question}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {query.raisedBy} &middot; {format(new Date(query.raisedAt), "d MMM yyyy, h:mm a")}
-                    </p>
-                    {query.status === "answered" ? (
-                      <div className="mt-1 rounded-md bg-muted/60 p-2">
-                        <p className="text-sm text-foreground">{query.answer}</p>
-                        <p className="text-xs text-muted-foreground">Answered by {query.answeredBy}</p>
-                      </div>
-                    ) : (
-                      <StatusBadge status="Pending" />
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
           <Card>
             <CardContent className="flex flex-col gap-3">
               <InfoRow icon={UserRoundIcon} label="Patient" value={patient?.name ?? "Unknown"} />
@@ -284,86 +207,12 @@ function RadiologyViewer({ requestId }: { requestId: string }) {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               {!report ? (
-                uploadedAt ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-muted-foreground">Findings</span>
-                      <p className="text-sm text-foreground">{draftFindings}</p>
-                    </div>
-                    {draftConclusion && (
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs text-muted-foreground">Conclusion</span>
-                        <p className="text-sm text-foreground">{draftConclusion}</p>
-                      </div>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Uploaded by {user?.name ?? "you"} on{" "}
-                      {format(new Date(uploadedAt), "d MMM yyyy, h:mm a")}. The requesting physician
-                      can now see this.
-                    </p>
-                  </div>
-                ) : uploading ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="imaging-findings">Findings</Label>
-                      <Textarea
-                        id="imaging-findings"
-                        rows={4}
-                        autoFocus
-                        placeholder="What the study shows…"
-                        value={draftFindings}
-                        onChange={(e) => setDraftFindings(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="imaging-conclusion">Conclusion</Label>
-                      <Textarea
-                        id="imaging-conclusion"
-                        rows={2}
-                        placeholder="Impression, and anything that needs urgent attention"
-                        value={draftConclusion}
-                        onChange={(e) => setDraftConclusion(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setUploading(false)}>
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          if (!draftFindings.trim()) {
-                            toast.error("Record what the study shows before uploading")
-                            return
-                          }
-                          setUploadedAt(new Date().toISOString())
-                          setUploading(false)
-                          toast.success("Findings uploaded", {
-                            description: "The requesting physician can now see them.",
-                          })
-                        }}
-                      >
-                        <CheckIcon />
-                        Upload findings
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={ScanIcon}
-                    title="No findings uploaded yet"
-                    description="Once imaging is captured, upload the findings here for the requesting physician."
-                    className="py-10"
-                    action={
-                      <RoleGate permission="IMAGING_UPLOAD_FINDING">
-                        <Button size="sm" onClick={() => setUploading(true)}>
-                          <UploadIcon />
-                          Upload findings
-                        </Button>
-                      </RoleGate>
-                    }
-                  />
-                )
+                <EmptyState
+                  icon={ScanIcon}
+                  title="Report not available"
+                  description="The radiologist hasn't finalized a report for this study yet."
+                  className="py-10"
+                />
               ) : (
                 <>
                   <div className="flex flex-col gap-1">
@@ -396,18 +245,6 @@ function RadiologyViewer({ requestId }: { requestId: string }) {
           </Card>
         </div>
       </div>
-
-      {patient && (
-        <QueryOrderDialog
-          open={queryOpen}
-          onOpenChange={setQueryOpen}
-          orderId={request.id}
-          orderKind="imaging"
-          orderLabel={`${request.modality} — ${request.bodyPart}`}
-          patientId={patient.id}
-          patientName={patient.name}
-        />
-      )}
     </div>
   )
 }
