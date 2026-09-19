@@ -109,12 +109,14 @@ export function getSnapshotSections(roles: RoleId[]): SnapshotSection[] {
 /**
  * Who may edit patient demographics.
  *
- * Reception owns registration data (§4.1) and Medical Records owns approved
- * post-registration corrections; clinicians and diagnostic/financial roles
- * have no reason to rewrite identity data.
+ * Reception REGISTERS patients but may not rewrite a record once it exists —
+ * post-registration corrections are Medical Records' job (§7.5, §7.6), with
+ * the facility administrator as oversight. This is enforced server-side too:
+ * the Front Desk AccessPolicy marks Patient readonly (registration itself
+ * goes through /api/patients with the service identity), so hiding the Edit
+ * button here is presentation, not the boundary.
  */
 const DEMOGRAPHICS_EDITORS: Exclude<RoleId, "platform-admin">[] = [
-  "front-desk",
   "him-officer",
   "facility-admin",
 ]

@@ -1,8 +1,4 @@
-import { faker } from "@faker-js/faker"
-import { seedFaker, id } from "./seed"
-
-seedFaker(70)
-
+// Mock records removed: production shows real (empty) state. Types and vocabulary constants remain.
 export interface AssistantMessage {
   id: string
   role: "user" | "assistant"
@@ -88,11 +84,7 @@ export function generateAssistantReply(message: string): string {
 
   if (q.includes("bed") || q.includes("icu") || q.includes("ward")) {
     return (
-      "Here's a snapshot of current bed availability:\n\n" +
-      "• ICU: 3 of 12 beds available\n" +
-      "• General Ward: 18 of 60 beds available\n" +
-      "• Maternity Ward: 6 of 20 beds available\n\n" +
-      "Head over to Admissions → Bed Allocation for the live, filterable view by ward."
+      "Head over to Admissions → Bed Allocation for the live, filterable view of bed availability by ward."
     )
   }
 
@@ -111,11 +103,7 @@ export function generateAssistantReply(message: string): string {
 
   if (q.includes("schedule") || q.includes("appointment")) {
     return (
-      "Today's schedule at a glance:\n\n" +
-      "• 86 appointments booked across all departments\n" +
-      "• Cardiology and General Medicine are the busiest clinics today\n" +
-      "• 3 appointments are currently overdue for check in\n\n" +
-      "Open Appointments → Calendar View for the full breakdown by doctor and time slot."
+      "Open Appointments → Calendar View for today's full schedule breakdown by doctor and time slot."
     )
   }
 
@@ -151,49 +139,4 @@ export function generateAssistantReply(message: string): string {
   )
 }
 
-function buildConversations(): AssistantConversation[] {
-  const seeds: { title: string; messages: [string, string][] }[] = [
-    {
-      title: "ICU bed availability",
-      messages: [
-        ["Check bed availability in the ICU", ""],
-        ["Can you also check the general ward?", ""],
-      ],
-    },
-    {
-      title: "Amoxicillin dosage check",
-      messages: [["What is the recommended adult dosage for Amoxicillin?", ""]],
-    },
-    {
-      title: "Discharge summary draft",
-      messages: [["Draft a discharge summary template for a routine admission", ""]],
-    },
-  ]
-
-  return seeds.map((seed, i) => {
-    const messages: AssistantMessage[] = []
-    seed.messages.forEach(([userText], mi) => {
-      const userTimestamp = faker.date.recent({ days: 5 - i }).toISOString()
-      messages.push({
-        id: id(`ASM-${i}`, mi * 2 + 1),
-        role: "user",
-        content: userText,
-        timestamp: userTimestamp,
-      })
-      messages.push({
-        id: id(`ASM-${i}`, mi * 2 + 2),
-        role: "assistant",
-        content: generateAssistantReply(userText),
-        timestamp: userTimestamp,
-      })
-    })
-    return {
-      id: id("CONV", i + 1),
-      title: seed.title,
-      updatedAt: messages[messages.length - 1]?.timestamp ?? new Date().toISOString(),
-      messages,
-    }
-  })
-}
-
-export const INITIAL_CONVERSATIONS: AssistantConversation[] = buildConversations()
+export const INITIAL_CONVERSATIONS: AssistantConversation[] = []

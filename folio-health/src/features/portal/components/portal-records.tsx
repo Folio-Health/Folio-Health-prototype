@@ -85,7 +85,7 @@ function PortalRecords() {
                 <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-0.5">
                     <span className="text-xs text-muted-foreground">Date of Birth</span>
-                    <span className="text-sm text-foreground">{format(new Date(PORTAL_PATIENT.dob), "MMM d, yyyy")}</span>
+                    <span className="text-sm text-foreground">{PORTAL_PATIENT.dob ? format(new Date(PORTAL_PATIENT.dob), "MMM d, yyyy") : "—"}</span>
                   </div>
                   <div className="flex flex-col gap-0.5">
                     <span className="text-xs text-muted-foreground">Marital Status</span>
@@ -207,7 +207,7 @@ function PortalRecords() {
                   <div className="flex flex-col gap-0.5">
                     <span className="text-xs text-muted-foreground">Valid Till</span>
                     <span className="text-sm font-medium text-foreground">
-                      {format(new Date(PORTAL_PATIENT.insurance.validTill), "MMM d, yyyy")}
+                      {PORTAL_PATIENT.insurance.validTill ? format(new Date(PORTAL_PATIENT.insurance.validTill), "MMM d, yyyy") : "—"}
                     </span>
                   </div>
                 </CardContent>

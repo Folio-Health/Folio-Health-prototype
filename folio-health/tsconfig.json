@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,8 +23,12 @@
       }
     ],
     "paths": {
-      "@folio-brand/*": ["./folio-brand/*"],
-      "@/*": ["./src/*"]
+      "@folio-brand/*": [
+        "./folio-brand/*"
+      ],
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
@@ -32,6 +40,8 @@
     ".mts"
   ],
   "exclude": [
-    "node_modules"
+    "e2e",
+    "node_modules",
+    "playwright.config.ts"
   ]
 }

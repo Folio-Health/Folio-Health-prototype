@@ -1,75 +1,114 @@
+"use client"
+
 import Link from "next/link"
-import { ReceiptIcon, WalletIcon, TriangleAlertIcon, TrendingUpIcon } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardAction } from "@/components/ui/card"
+import { format } from "date-fns"
+import { ReceiptIcon, ShieldCheckIcon, TrendingUpIcon, WalletIcon } from "lucide-react"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { StatCard } from "@/components/cards/stat-card"
-import { TrendChart } from "@/components/charts/trend-chart"
 import { StatusBadge } from "@/components/common/status-badge"
-import { PATIENTS } from "@/lib/mock/patients"
+import { EmptyState } from "@/components/common/empty-state"
+import { ListSkeleton, StatCardGridSkeleton } from "@/components/common/loading-skeletons"
+import { subjectLabel, useBillingDashboard } from "../hooks/use-role-dashboards"
 
-const REVENUE_TREND = [
-  { month: "Jan", revenue: 8.4 },
-  { month: "Feb", revenue: 9.1 },
-  { month: "Mar", revenue: 8.8 },
-  { month: "Apr", revenue: 10.2 },
-  { month: "May", revenue: 11.6 },
-  { month: "Jun", revenue: 12.45 },
-]
-
-const OUTSTANDING = [
-  { id: "INV-0032", patient: PATIENTS[2], amount: "₦45,000", status: "Overdue" },
-  { id: "INV-0041", patient: PATIENTS[3], amount: "₦18,500", status: "Partial" },
-  { id: "INV-0055", patient: PATIENTS[4], amount: "₦62,000", status: "Overdue" },
-]
-
+/**
+ * Billing/Cashier dashboard — real Claim / Coverage figures from the server.
+ * There is no revenue ledger data model yet, so no revenue amounts or trends
+ * are shown; claims are the billing facts that actually exist.
+ */
 function AccountantDashboard() {
+  const { data, isLoading } = useBillingDashboard()
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Total Invoices" value={250} icon={ReceiptIcon} />
-        <StatCard label="Paid Invoices" value={180} icon={WalletIcon} tone="emerald" />
-        <StatCard label="Outstanding" value={70} icon={TriangleAlertIcon} tone="red" />
-        <StatCard label="Total Revenue (MTD)" value="₦12.45M" icon={TrendingUpIcon} tone="violet" />
-      </div>
+      {isLoading || !data ? (
+        <StatCardGridSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard label="Claims" value={data.claims ?? "—"} icon={ReceiptIcon} />
+          <StatCard
+            label="Active Claims"
+            value={data.claimsActive ?? "—"}
+            icon={WalletIcon}
+            tone="amber"
+          />
+          <StatCard
+            label="Coverage Records"
+            value={data.coverage ?? "—"}
+            icon={ShieldCheckIcon}
+            tone="violet"
+          />
+          <StatCard label="Revenue (MTD)" value="—" icon={TrendingUpIcon} tone="emerald" />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Revenue Trend</CardTitle>
-            <CardDescription>Last 6 months (₦ millions)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TrendChart
-              data={REVENUE_TREND}
-              xKey="month"
-              series={[{ key: "revenue", label: "Revenue", color: "var(--chart-1)" }]}
-              yFormatter={(v) => `₦${v}M`}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Outstanding Bills</CardTitle>
+            <CardTitle>Recent Claims</CardTitle>
+            <CardDescription>Latest claims recorded at your facility</CardDescription>
             <CardAction>
-              <Button variant="ghost" size="sm" className="text-xs" render={<Link href="/billing/outstanding" />}>
+              <Button variant="ghost" size="sm" className="text-xs" render={<Link href="/billing" />}>
                 View all
               </Button>
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {OUTSTANDING.map((row) => (
-              <div key={row.id} className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 flex-col">
-                  <p className="truncate text-sm font-medium text-foreground">{row.patient?.name}</p>
-                  <p className="text-xs text-muted-foreground">{row.id}</p>
+            {isLoading ? (
+              <ListSkeleton />
+            ) : data?.recentClaims === null ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Not available for your role.
+              </p>
+            ) : !data?.recentClaims?.length ? (
+              <EmptyState
+                icon={ReceiptIcon}
+                title="No claims recorded yet"
+                description="Claims appear here as they are created from billing."
+              />
+            ) : (
+              data.recentClaims.map((claim) => (
+                <div key={claim.id} className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 flex-col">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {subjectLabel({ subject: claim.patient })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {claim.created ? format(new Date(claim.created), "d MMM yyyy") : "No date"}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-sm font-medium text-foreground">
+                      {claim.total?.value != null
+                        ? `${claim.total.currency ?? ""} ${claim.total.value.toLocaleString()}`
+                        : "—"}
+                    </span>
+                    <StatusBadge status={claim.status ?? "unknown"} />
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className="text-sm font-medium text-foreground">{row.amount}</span>
-                  <StatusBadge status={row.status} />
-                </div>
-              </div>
-            ))}
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue Trend</CardTitle>
+            <CardDescription>Month over month</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EmptyState
+              icon={TrendingUpIcon}
+              title="No revenue ledger yet"
+              description="Payments and receipts aren't backed by a real ledger yet — the trend will appear here once they are."
+            />
           </CardContent>
         </Card>
       </div>

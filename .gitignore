@@ -1,2 +1,5 @@
 # Local demo video project — not part of the app, do not commit
 demo-video/
+
+# Playwright MCP scratch output (page snapshots, console logs, screenshots)
+.playwright-mcp/

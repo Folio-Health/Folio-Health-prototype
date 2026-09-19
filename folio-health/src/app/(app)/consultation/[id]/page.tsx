@@ -9,5 +9,5 @@ export default async function ConsultationWorkspacePage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  return <ConsultationWorkspace appointmentId={id} />
+  return <ConsultationWorkspace encounterId={id} />
 }

@@ -25,6 +25,7 @@ import { PersonAvatar } from "@/components/common/person-avatar"
 import { FACILITY_ASSIGNABLE_ROLES, ROLE_LABELS, type RoleId } from "@/lib/auth/roles"
 import { useUiStore } from "@/stores/ui-store"
 import { useCurrentUser } from "@/lib/fhir/use-current-user"
+import { useQueryClient } from "@tanstack/react-query"
 import { signOut } from "@/lib/sign-out"
 
 /** Roles worth previewing a dashboard for. "facility-admin" is not
@@ -36,6 +37,7 @@ const PREVIEWABLE_ROLES: Exclude<RoleId, "platform-admin">[] = [
 
 function ProfileMenu() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const previewRole = useUiStore((s) => s.previewRole)
   const setPreviewRole = useUiStore((s) => s.setPreviewRole)
   const { data: user } = useCurrentUser()
@@ -141,7 +143,7 @@ function ProfileMenu() {
           </>
         )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={() => void signOut(router)}>
+        <DropdownMenuItem variant="destructive" onClick={() => void signOut(router, queryClient)}>
           <LogOutIcon />
           Log Out
         </DropdownMenuItem>

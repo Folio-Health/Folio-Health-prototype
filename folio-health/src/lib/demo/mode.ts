@@ -18,34 +18,28 @@ export function isDemoMode(): boolean {
 }
 
 /**
- * Who the demo session pretends to be. Picked from the sign-in email so a
- * teammate can exercise both planes without any provisioning:
- *
- *   - an email containing "operator" or "platform" → the platform operator
- *   - an email containing "doctor"                 → a facility doctor
- *   - anything else                                → the facility administrator
- */
-export type DemoPersona = "operator" | "facility-admin" | "doctor"
-
-/**
  * Demo sessions reuse the real ACCESS_TOKEN_COOKIE so the edge proxy's
  * "is there a session" check keeps working unchanged. The prefix is what
- * distinguishes a demo token from a real Medplum OAuth2 token.
+ * distinguishes a demo token from a real Medplum OAuth2 token; what follows
+ * it is the id of the Practitioner the session belongs to.
+ *
+ * Any account in the demo store can sign in — the three seeded personas
+ * (operator@demo.folio, admin@demo.folio, doctor@demo.folio) AND every account
+ * provisioned through the app (a facility's hospital admin created by the
+ * operator, staff created by that admin). That keeps the RBAC chain identical
+ * to production: the role comes from the Practitioner's role identifier, the
+ * facility from its membership binding, never from the sign-in email. See
+ * `demoSignIn` in ./store.ts for the email → account lookup.
  */
 export const DEMO_TOKEN_PREFIX = "folio-demo:"
 
-export function demoPersonaForEmail(email: string): DemoPersona {
-  const normalized = email.toLowerCase()
-  if (normalized.includes("operator") || normalized.includes("platform")) return "operator"
-  if (normalized.includes("doctor")) return "doctor"
-  return "facility-admin"
+export function demoTokenForUser(practitionerId: string): string {
+  return DEMO_TOKEN_PREFIX + practitionerId
 }
 
-/** The persona a demo session cookie encodes, or null when it is not one. */
-export function demoPersonaFromToken(token: string | undefined): DemoPersona | null {
+/** The Practitioner id a demo session cookie encodes, or null when it is not one. */
+export function demoUserIdFromToken(token: string | undefined): string | null {
   if (!token?.startsWith(DEMO_TOKEN_PREFIX)) return null
-  const persona = token.slice(DEMO_TOKEN_PREFIX.length)
-  return persona === "operator" || persona === "facility-admin" || persona === "doctor"
-    ? persona
-    : null
+  const id = token.slice(DEMO_TOKEN_PREFIX.length)
+  return id.length > 0 ? id : null
 }

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { BellIcon, LogOutIcon, MenuIcon, HelpCircleIcon } from "lucide-react"
 import { Logo } from "@/components/common/logo"
 import { PersonAvatar } from "@/components/common/person-avatar"
+import { useQueryClient } from "@tanstack/react-query"
 import { signOut } from "@/lib/sign-out"
 import { Button } from "@/components/ui/button"
 import {
@@ -171,6 +172,7 @@ function PortalNotificationBell() {
 
 function PortalProfileMenu() {
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   return (
     <DropdownMenu>
@@ -203,7 +205,7 @@ function PortalProfileMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
-          onClick={() => void signOut(router)}
+          onClick={() => void signOut(router, queryClient)}
         >
           <LogOutIcon />
           Log Out

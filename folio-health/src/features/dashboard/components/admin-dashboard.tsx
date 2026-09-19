@@ -38,6 +38,19 @@ import {
  * shows an empty state — deliberately, rather than substituting a plausible
  * number. A dashboard that invents numbers is worse than one that reads zero.
  */
+/**
+ * A section whose data this role's AccessPolicy does not expose (e.g. a
+ * facility admin has no Appointment access). Shown in place of the content
+ * rather than failing the page: the rest of the dashboard is still valid.
+ */
+function Unavailable() {
+  return (
+    <p className="py-6 text-center text-sm text-muted-foreground">
+      Not available for your role.
+    </p>
+  )
+}
+
 function AdminDashboard() {
   const metrics = useDashboardMetrics()
   const weekly = useWeeklyAppointments()
@@ -73,7 +86,7 @@ function AdminDashboard() {
           {/* Tiles link out only where a screen actually exists — a figure you
               can't click through to is a dead end. */}
           <Link href="/patients" className="rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50">
-            <StatCard label="Patients" value={data.patients} icon={UsersIcon} />
+            <StatCard label="Patients" value={data.patients ?? "—"} icon={UsersIcon} />
           </Link>
           <Link
             href="/appointments"
@@ -81,32 +94,32 @@ function AdminDashboard() {
           >
             <StatCard
               label="Appointments Today"
-              value={data.appointmentsToday}
+              value={data.appointmentsToday ?? "—"}
               icon={CalendarDaysIcon}
               tone="violet"
             />
           </Link>
           <StatCard
             label="Active Encounters"
-            value={data.activeEncounters}
+            value={data.activeEncounters ?? "—"}
             icon={ActivityIcon}
             tone="emerald"
           />
-          <StatCard label="Practitioners" value={data.practitioners} icon={StethoscopeIcon} />
+          <StatCard label="Practitioners" value={data.practitioners ?? "—"} icon={StethoscopeIcon} />
           <Link
             href="/facilities"
             className="rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <StatCard
               label="Facilities"
-              value={data.organizations}
+              value={data.organizations ?? "—"}
               icon={Building2Icon}
               tone="amber"
             />
           </Link>
           <StatCard
             label="Open Lab Orders"
-            value={data.pendingLabOrders}
+            value={data.pendingLabOrders ?? "—"}
             icon={FlaskConicalIcon}
             tone="violet"
           />
@@ -122,6 +135,8 @@ function AdminDashboard() {
           <CardContent>
             {weekly.isLoading ? (
               <ChartCardSkeleton />
+            ) : weekly.isError ? (
+              <Unavailable />
             ) : (
               <TrendChart
                 data={weekly.data ?? []}
@@ -151,6 +166,8 @@ function AdminDashboard() {
           <CardContent className="flex flex-col gap-3">
             {upcoming.isLoading ? (
               <ListSkeleton />
+            ) : upcoming.isError ? (
+              <Unavailable />
             ) : upcoming.data?.length ? (
               upcoming.data.map((appointment) => {
                 const patient = appointment.participant?.find((p) =>
@@ -201,6 +218,8 @@ function AdminDashboard() {
         <CardContent className="flex flex-col gap-4">
           {activity.isLoading ? (
             <ListSkeleton />
+          ) : activity.isError ? (
+            <Unavailable />
           ) : activity.data?.length ? (
             activity.data.map((item) => (
               <div key={item.id} className="flex items-start gap-3">

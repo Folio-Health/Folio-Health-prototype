@@ -45,16 +45,17 @@ function HospitalBrandingForm() {
 
   const form = useForm<BrandingValues>({
     resolver: zodResolver(brandingSchema),
+    // Blank until the user types — no invented identity presented as saved.
     defaultValues: {
-      name: "Folio Health Medical Centre",
-      tagline: "Compassionate care, advanced medicine.",
+      name: "",
+      tagline: "",
     },
   })
 
   function onSubmit(values: BrandingValues) {
     void values
-    toast.success("Branding updated", {
-      description: "Your logo, name, and color changes have been saved.",
+    toast.success("Branding saved locally", {
+      description: "Not persisted yet — branding isn't wired to the server in this build.",
     })
   }
 

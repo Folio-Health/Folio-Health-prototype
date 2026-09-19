@@ -7,6 +7,20 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
+import type { Patient as FhirPatient } from "@medplum/fhirtypes"
+import { ageFromBirthDate } from "@/lib/fhir/patient"
+import { registerPatient } from "../lib/register-patient"
+import { phoneSchema, phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
+import {
+  NIN_SYSTEM,
+  ninInputProps,
+  optionalNinSchema,
+  sanitizeNinInput,
+  VNIN_SYSTEM,
+  vninInputProps,
+  optionalVninSchema,
+  sanitizeVninInput,
+} from "@/lib/identifiers"
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -48,8 +62,8 @@ const BLOOD_GROUPS: BloodGroup[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", 
 /**
  * Registration captures the biodata set in Implementation Manuscript §4.1.
  *
- * Three of these fields are there for clinical reasons the manuscript spells
- * out, not for demographics reporting:
+ * Three fields are here for clinical reasons the manuscript spells out, not
+ * for demographics reporting:
  *   - ethnicity/tribe, because some conditions are ethnicity-linked;
  *   - religion, because e.g. blood-transfusion refusal in some faiths is
  *     something the physician needs to know going in, not discover mid-crisis;
@@ -103,6 +117,17 @@ const REFERRAL_SOURCES = [
 
 const SELF_REFERRAL = "Self-referral"
 
+/** Extension URLs for the §4.1 fields FHIR has no core element for. */
+const EXT = {
+  bloodGroup: "https://folio.health/fhir/StructureDefinition/blood-group",
+  occupation: "https://folio.health/fhir/StructureDefinition/occupation",
+  ethnicity: "https://folio.health/fhir/StructureDefinition/ethnicity",
+  religion: "https://folio.health/fhir/StructureDefinition/religion",
+  referralSource: "https://folio.health/fhir/StructureDefinition/referral-source",
+  referringFacility: "https://folio.health/fhir/StructureDefinition/referring-facility",
+  presentedAt: "https://folio.health/fhir/StructureDefinition/presented-at",
+} as const
+
 const registrationSchema = z
   .object({
     firstName: z.string().min(1, "First name is required"),
@@ -112,19 +137,17 @@ const registrationSchema = z
     bloodGroup: z.string().min(1, "Blood group is required"),
     maritalStatus: z.enum(["Single", "Married", "Divorced", "Widowed"]),
     occupation: z.string().min(1, "Occupation is required"),
-
-    // §2: the patient ID strategy is moving off the raw NIN, now treated as
-    // too sensitive to use directly, onto the 16-digit VNIN as the primary
-    // linkable identifier. Not every patient presents with one, so the
-    // checkbox below is an explicit, recorded exception rather than a blank
-    // field nobody notices.
-    vnin: z.string().optional(),
-    noVnin: z.boolean(),
+    // Optional by design: registration is never blocked for lack of a NIN —
+    // when present it becomes an identifier and powers duplicate checking.
+    nin: optionalNinSchema,
+    // §2: the linkable identifier is the VNIN, not the raw NIN. The NIN above
+    // stays because duplicate checking already keys on it.
+    vnin: optionalVninSchema,
 
     ethnicity: z.string().min(1, "Ethnicity is required"),
     religion: z.string().min(1, "Religion is required"),
 
-    phone: z.string().min(7, "Enter a valid phone number"),
+    phone: phoneSchema,
     email: z.string().min(1, "Email is required").email("Enter a valid email address"),
     addressLine1: z.string().min(1, "Address is required"),
     city: z.string().min(1, "City is required"),
@@ -134,7 +157,7 @@ const registrationSchema = z
 
     emergencyName: z.string().min(1, "Next of kin name is required"),
     emergencyRelationship: z.string().min(1, "Relationship is required"),
-    emergencyPhone: z.string().min(7, "Enter a valid phone number"),
+    emergencyPhone: phoneSchema,
 
     // §4.1: date and time of presentation, and how the patient got here.
     presentedOnDate: z.string().min(1, "Date of presentation is required"),
@@ -156,10 +179,6 @@ const registrationSchema = z
     message: "Policy number is required unless self pay",
     path: ["policyNumber"],
   })
-  .refine((data) => data.noVnin || /^\d{16}$/.test((data.vnin ?? "").replace(/\s/g, "")), {
-    message: "A VNIN is exactly 16 digits",
-    path: ["vnin"],
-  })
   .refine(
     (data) => data.referralSource === SELF_REFERRAL || !!data.referringFacility?.trim(),
     {
@@ -179,8 +198,8 @@ const STEP_FIELDS: (keyof RegistrationValues)[][] = [
     "bloodGroup",
     "maritalStatus",
     "occupation",
+    "nin",
     "vnin",
-    "noVnin",
     "ethnicity",
     "religion",
   ],
@@ -214,8 +233,8 @@ function PatientRegistrationWizard() {
       bloodGroup: "",
       maritalStatus: "Single",
       occupation: "",
+      nin: "",
       vnin: "",
-      noVnin: false,
       ethnicity: "",
       religion: "",
       phone: "",
@@ -243,7 +262,6 @@ function PatientRegistrationWizard() {
   })
 
   const selfPay = form.watch("selfPay")
-  const noVnin = form.watch("noVnin")
   const referralSource = form.watch("referralSource")
   const isSelfReferral = referralSource === SELF_REFERRAL
 
@@ -254,7 +272,10 @@ function PatientRegistrationWizard() {
   useEffect(() => {
     const now = new Date()
     const pad = (n: number) => String(n).padStart(2, "0")
-    form.setValue("presentedOnDate", `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`)
+    form.setValue(
+      "presentedOnDate",
+      `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    )
     form.setValue("presentedAtTime", `${pad(now.getHours())}:${pad(now.getMinutes())}`)
     // Runs once, on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -270,12 +291,88 @@ function PatientRegistrationWizard() {
     setStep((s) => Math.max(s - 1, 0))
   }
 
-  function onSubmit(values: RegistrationValues) {
-    void values
-    toast.success("Patient registered successfully", {
-      description: "A new medical record number has been generated.",
-    })
-    router.push("/patients/PAT-0001")
+  const [submitting, setSubmitting] = useState(false)
+
+  /**
+   * Creates the REAL FHIR Patient and lands on its actual record. This used to
+   * show a success toast, discard the form, and redirect to a hardcoded
+   * "PAT-0001" — a fabricated flow that registered nobody.
+   *
+   * Insurance details are collected but not yet persisted (no Coverage
+   * resource is modelled server-side yet); the toast says what was saved.
+   */
+  async function onSubmit(values: RegistrationValues) {
+    setSubmitting(true)
+    try {
+      const created = await registerPatient({
+        resourceType: "Patient",
+        active: true,
+        name: [{ given: [values.firstName], family: values.lastName }],
+        gender: values.gender.toLowerCase() as FhirPatient["gender"],
+        birthDate: values.dob,
+        maritalStatus: { text: values.maritalStatus },
+        ...((values.nin || values.vnin)
+          ? {
+              identifier: [
+                ...(values.vnin ? [{ system: VNIN_SYSTEM, value: values.vnin }] : []),
+                ...(values.nin ? [{ system: NIN_SYSTEM, value: values.nin }] : []),
+              ],
+            }
+          : {}),
+        telecom: [
+          { system: "phone", value: values.phone },
+          { system: "email", value: values.email },
+        ],
+        address: [
+          {
+            line: [values.addressLine1],
+            city: values.city,
+            state: values.state,
+            postalCode: values.postalCode,
+            country: values.country,
+          },
+        ],
+        contact: [
+          {
+            name: { text: values.emergencyName },
+            relationship: [{ text: values.emergencyRelationship }],
+            telecom: [{ system: "phone", value: values.emergencyPhone }],
+          },
+        ],
+        extension: [
+          { url: EXT.bloodGroup, valueString: values.bloodGroup },
+          { url: EXT.occupation, valueString: values.occupation },
+          // §4.1 biodata with no core FHIR element. Ethnicity and religion are
+          // captured for clinical reasons (see the STEPS comment above), not
+          // for reporting.
+          { url: EXT.ethnicity, valueString: values.ethnicity },
+          { url: EXT.religion, valueString: values.religion },
+          { url: EXT.referralSource, valueString: values.referralSource },
+          ...(values.referringFacility?.trim()
+            ? [{ url: EXT.referringFacility, valueString: values.referringFacility.trim() }]
+            : []),
+          // Presentation time belongs on the Encounter once one exists for
+          // this visit; recorded here so the arrival time is not lost at the
+          // desk in the meantime.
+          {
+            url: EXT.presentedAt,
+            valueString: `${values.presentedOnDate}T${values.presentedAtTime}`,
+          },
+        ],
+      })
+      toast.success("Patient registered", {
+        description: values.selfPay
+          ? "Demographics and contacts saved to their record."
+          : "Demographics and contacts saved. Insurance details are not stored yet — coverage isn't modelled server-side.",
+      })
+      router.push(`/patients/${created.id}`)
+    } catch (error) {
+      toast.error("Could not register the patient", {
+        description: error instanceof Error ? error.message : "Check your connection and try again.",
+      })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const values = form.getValues()
@@ -429,42 +526,46 @@ function PatientRegistrationWizard() {
                         </FormItem>
                       )}
                     />
-
-                    {/* §2: VNIN, not the raw NIN, is the linkable identifier. */}
                     <FormField
                       control={form.control}
-                      name="vnin"
+                      name="nin"
                       render={({ field }) => (
                         <FormItem className="sm:col-span-2">
-                          <FormLabel>VNIN (16 digits)</FormLabel>
+                          <FormLabel>National Identification Number (NIN)</FormLabel>
                           <FormControl>
                             <Input
-                              inputMode="numeric"
-                              autoComplete="off"
-                              placeholder="1234 5678 9012 3456"
-                              disabled={noVnin}
+                              {...ninInputProps}
                               {...field}
+                              onChange={(e) => field.onChange(sanitizeNinInput(e.target.value))}
                             />
                           </FormControl>
                           <FormDescription>
-                            The virtual NIN from the patient&rsquo;s NIMC slip or *346# short code. Folio
-                            never stores the raw NIN.
+                            Optional. Used to check whether this patient is already registered.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    {/* §2: the VNIN, not the raw NIN, is what records link on. */}
                     <FormField
                       control={form.control}
-                      name="noVnin"
+                      name="vnin"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center gap-2 space-y-0 sm:col-span-2">
+                        <FormItem className="sm:col-span-2">
+                          <FormLabel>Virtual NIN (VNIN)</FormLabel>
                           <FormControl>
-                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                            <Input
+                              {...vninInputProps}
+                              {...field}
+                              onChange={(e) => field.onChange(sanitizeVninInput(e.target.value))}
+                            />
                           </FormControl>
-                          <FormLabel className="cursor-pointer text-sm font-normal text-muted-foreground">
-                            Patient has no VNIN today &mdash; register without one
-                          </FormLabel>
+                          <FormDescription>
+                            From the patient&rsquo;s NIMC app or the *346# short code. This is the
+                            identifier their records link on.
+                          </FormDescription>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -533,7 +634,11 @@ function PatientRegistrationWizard() {
                         <FormItem>
                           <FormLabel>Phone number</FormLabel>
                           <FormControl>
-                            <Input placeholder="+234 801 234 5678" {...field} />
+                            <Input
+                              {...phoneInputProps}
+                              {...field}
+                              onChange={(e) => field.onChange(sanitizePhoneInput(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -666,7 +771,11 @@ function PatientRegistrationWizard() {
                         <FormItem>
                           <FormLabel>Phone number</FormLabel>
                           <FormControl>
-                            <Input placeholder="+234 802 345 6789" {...field} />
+                            <Input
+                              {...phoneInputProps}
+                              {...field}
+                              onChange={(e) => field.onChange(sanitizePhoneInput(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -699,7 +808,9 @@ function PatientRegistrationWizard() {
                           <FormControl>
                             <Input type="time" {...field} />
                           </FormControl>
-                          <FormDescription>Prefilled from the clock. Change it if the patient arrived earlier.</FormDescription>
+                          <FormDescription>
+                            Prefilled from the clock. Change it if the patient arrived earlier.
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -710,7 +821,10 @@ function PatientRegistrationWizard() {
                       render={({ field }) => (
                         <FormItem className={isSelfReferral ? "sm:col-span-2" : undefined}>
                           <FormLabel>Source of referral</FormLabel>
-                          <Select value={field.value} onValueChange={(v) => field.onChange(v ?? SELF_REFERRAL)}>
+                          <Select
+                            value={field.value}
+                            onValueChange={(v) => field.onChange(v ?? SELF_REFERRAL)}
+                          >
                             <FormControl>
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select source" />
@@ -725,8 +839,8 @@ function PatientRegistrationWizard() {
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            A referred patient has already been worked up elsewhere &mdash; the physician
-                            should not start from zero.
+                            A referred patient has already been worked up elsewhere &mdash; the
+                            physician should not start from zero.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -845,13 +959,18 @@ function PatientRegistrationWizard() {
                       <SummaryRow label="Name" value={`${values.firstName} ${values.lastName}`.trim()} />
                       <SummaryRow label="Gender" value={values.gender} />
                       <SummaryRow label="Date of birth" value={values.dob} />
+                      <SummaryRow
+                        label="Age"
+                        value={(() => {
+                          const age = ageFromBirthDate(values.dob)
+                          return age !== undefined ? `${age} ${age === 1 ? "year" : "years"}` : ""
+                        })()}
+                      />
+                      <SummaryRow label="NIN" value={values.nin || "Not provided"} />
                       <SummaryRow label="Blood group" value={values.bloodGroup} />
                       <SummaryRow label="Marital status" value={values.maritalStatus} />
                       <SummaryRow label="Occupation" value={values.occupation} />
-                      <SummaryRow
-                        label="VNIN"
-                        value={values.noVnin ? "Not provided at registration" : (values.vnin ?? "")}
-                      />
+                      <SummaryRow label="VNIN" value={values.vnin || "Not provided"} />
                       <SummaryRow label="Ethnicity / tribe" value={values.ethnicity} />
                       <SummaryRow label="Religion" value={values.religion} />
                     </div>
@@ -882,7 +1001,9 @@ function PatientRegistrationWizard() {
                       </p>
                       <SummaryRow
                         label="Presented"
-                        value={[values.presentedOnDate, values.presentedAtTime].filter(Boolean).join(" at ")}
+                        value={[values.presentedOnDate, values.presentedAtTime]
+                          .filter(Boolean)
+                          .join(" at ")}
                       />
                       <SummaryRow label="Source of referral" value={values.referralSource} />
                       {values.referralSource !== SELF_REFERRAL && (
@@ -919,9 +1040,9 @@ function PatientRegistrationWizard() {
                     </Button>
                   ) : (
                     <RoleGate roles={["front-desk", "facility-admin"]}>
-                      <Button type="submit">
+                      <Button type="submit" disabled={submitting}>
                         <CheckIcon />
-                        Complete Registration
+                        {submitting ? "Registering…" : "Complete Registration"}
                       </Button>
                     </RoleGate>
                   )}

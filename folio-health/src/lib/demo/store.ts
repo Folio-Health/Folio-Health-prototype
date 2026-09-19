@@ -2,9 +2,15 @@
 import "server-only"
 
 import { faker } from "@faker-js/faker"
-import { FOLIO_ROLE_SYSTEM, ROLE_ACCESS_POLICY_NAMES } from "@/lib/auth/roles"
+import {
+  FOLIO_ROLE_SYSTEM,
+  ROLE_ACCESS_POLICY_NAMES,
+  TEMP_CREDENTIAL_EXTENSION_URL,
+} from "@/lib/auth/roles"
 import { ORGANIZATION_TYPE_SYSTEM } from "@/lib/fhir/organization-types"
-import type { DemoPersona } from "./mode"
+
+/** The three seeded sign-in personas; any provisioned account can sign in too. */
+type DemoPersona = "operator" | "facility-admin" | "doctor"
 
 /**
  * In-memory FHIR store for demo mode (`FOLIO_DEMO_MODE=1`).
@@ -36,9 +42,6 @@ export interface DemoResponse {
 
 const DEMO_PROJECT_ID = "demo-project"
 const DEMO_PROJECT_NAME = "Folio Health (Demo)"
-
-/** The facility every non-operator persona belongs to. */
-const HOME_FACILITY_ID = "org-demo-1"
 
 const PERSONA_PRACTITIONER_IDS: Record<DemoPersona, string> = {
   operator: "prac-demo-operator",
@@ -623,47 +626,133 @@ function notFound(message: string): DemoResponse {
   }
 }
 
-function homeFacilityBinding() {
-  const org = collection("Organization").get(HOME_FACILITY_ID)
+// ── Sessions ─────────────────────────────────────────────────────────────────
+
+/**
+ * Teammate convenience, kept from the original three-persona design: an email
+ * with no matching account still signs in as one of the seeded personas by
+ * substring ("operator"/"platform" → operator, "doctor" → doctor, anything
+ * else → facility admin). A provisioned account ALWAYS wins over this fallback.
+ */
+function fallbackPersonaForEmail(email: string): DemoPersona {
+  const normalized = email.toLowerCase()
+  if (normalized.includes("operator") || normalized.includes("platform")) return "operator"
+  if (normalized.includes("doctor")) return "doctor"
+  return "facility-admin"
+}
+
+function practitionerEmail(practitioner: AnyResource | undefined): string | null {
+  return practitioner?.telecom?.find((t: any) => t.system === "email")?.value ?? null
+}
+
+function membershipFor(practitionerId: string): AnyResource | undefined {
+  for (const membership of collection("ProjectMembership").values()) {
+    if (membership.profile?.reference === `Practitioner/${practitionerId}`) return membership
+  }
+  return undefined
+}
+
+/** The facility a membership is bound to (its %organization parameter). */
+function membershipFacility(membership: AnyResource | undefined) {
+  const params = (membership?.access ?? []).flatMap((a: any) => a.parameter ?? [])
+  return params.find((p: any) => p?.name === "organization")?.valueReference ?? null
+}
+
+function hasTempCredential(practitioner: AnyResource | undefined): boolean {
+  return (practitioner?.extension ?? []).some(
+    (e: any) => e.url === TEMP_CREDENTIAL_EXTENSION_URL && e.valueBoolean === true
+  )
+}
+
+export type DemoSignIn =
+  | { status: "ok"; practitionerId: string; mustChangePassword: boolean }
+  | { status: "disabled" }
+
+/**
+ * Resolve a sign-in email to a demo account. Mirrors what Medplum enforces in
+ * production: a deactivated account (or one whose facility was deactivated,
+ * which flips its membership inactive) cannot sign in. The password is never
+ * checked — this is demo mode.
+ */
+export function demoSignIn(email: string): DemoSignIn {
+  const wanted = email.trim().toLowerCase()
+  let practitioner: AnyResource | undefined
+  for (const candidate of collection("Practitioner").values()) {
+    if (practitionerEmail(candidate)?.toLowerCase() === wanted) {
+      practitioner = candidate
+      break
+    }
+  }
+  if (!practitioner) {
+    practitioner = collection("Practitioner").get(
+      PERSONA_PRACTITIONER_IDS[fallbackPersonaForEmail(wanted)]
+    )
+  }
+  if (!practitioner) return { status: "disabled" }
+
+  const membership = membershipFor(practitioner.id)
+  if (practitioner.active === false || membership?.active === false) return { status: "disabled" }
+
   return {
-    reference: `Organization/${HOME_FACILITY_ID}`,
-    display: org?.name ?? "Demo Facility",
+    status: "ok",
+    practitionerId: practitioner.id,
+    mustChangePassword: hasTempCredential(practitioner),
   }
 }
 
-/** Raw Medplum-shaped `auth/me` payload for a demo persona. */
-export function demoAuthMe(persona: DemoPersona): unknown {
-  const profile = collection("Practitioner").get(PERSONA_PRACTITIONER_IDS[persona])
+/** Raw Medplum-shaped `auth/me` payload for a demo session. */
+export function demoAuthMe(practitionerId: string): unknown {
+  const profile = collection("Practitioner").get(practitionerId)
+  const membership = membershipFor(practitionerId)
   return {
     project: { id: DEMO_PROJECT_ID, name: DEMO_PROJECT_NAME },
-    membership:
-      persona === "operator"
-        ? { id: "pm-prac-demo-operator", admin: true }
-        : {
-            id: `pm-${PERSONA_PRACTITIONER_IDS[persona]}`,
-            admin: false,
-            access: [{ parameter: [{ name: "organization", valueReference: homeFacilityBinding() }] }],
-          },
+    membership: membership
+      ? { id: membership.id, admin: membership.admin === true, access: membership.access ?? [] }
+      : { id: `pm-${practitionerId}`, admin: false },
     profile,
   }
 }
 
-/** The `/api/auth/me` response shape, built directly for a demo persona. */
-export function demoCurrentUser(persona: DemoPersona): unknown {
-  const profile = collection("Practitioner").get(PERSONA_PRACTITIONER_IDS[persona])
-  const facility = persona === "operator" ? null : homeFacilityBinding()
+/**
+ * The `/api/auth/me` response shape for a demo session, derived from the
+ * stored Practitioner + ProjectMembership exactly the way the production route
+ * derives it from Medplum: role from the role identifier, facility from the
+ * membership binding (Practitioner `meta.account` as fallback), first-login
+ * flag from the temp-credential extension.
+ */
+export function demoCurrentUser(practitionerId: string): unknown {
+  const profile = collection("Practitioner").get(practitionerId)
+  const membership = membershipFor(practitionerId)
+  const facility = membershipFacility(membership) ?? profile?.meta?.account ?? null
+  const roleTags: string[] = (profile?.identifier ?? [])
+    .filter((i: any) => i.system === FOLIO_ROLE_SYSTEM)
+    .map((i: any) => i.value)
+    .filter(Boolean)
   return {
     id: profile?.id ?? null,
     resourceType: "Practitioner",
     name: profile ? nameText(profile) : "Demo user",
-    email: profile?.telecom?.find((t: any) => t.system === "email")?.value ?? null,
-    admin: persona === "operator",
+    email: practitionerEmail(profile),
+    admin: membership?.admin === true,
     project: DEMO_PROJECT_NAME,
-    facilityId: facility?.reference.split("/")[1] ?? null,
+    facilityId: facility?.reference?.split("/")[1] ?? null,
     facilityName: facility?.display ?? null,
-    roleTags: persona === "operator" ? [] : [persona],
-    mustChangePassword: false,
+    roleTags,
+    mustChangePassword: hasTempCredential(profile),
   }
+}
+
+/** Demo counterpart of `clearTempCredentialFlag`: the first login is done. */
+export function demoClearTempCredential(practitionerId: string): void {
+  const practitioner = collection("Practitioner").get(practitionerId)
+  if (!practitioner) return
+  put({
+    ...practitioner,
+    extension: (practitioner.extension ?? []).filter(
+      (e: any) => e.url !== TEMP_CREDENTIAL_EXTENSION_URL
+    ),
+    meta: { ...practitioner.meta, lastUpdated: iso(new Date()) },
+  })
 }
 
 function handleInvite(body: any): DemoResponse {
@@ -712,7 +801,7 @@ export function demoMedplumRequest(
   method: string,
   pathAndQuery: string,
   body?: unknown,
-  persona?: DemoPersona
+  practitionerId?: string
 ): DemoResponse {
   const [rawPath, rawQuery = ""] = pathAndQuery.split("?", 2)
   const path = rawPath.replace(/^\/+|\/+$/g, "")
@@ -720,8 +809,8 @@ export function demoMedplumRequest(
   const verb = method.toUpperCase()
 
   if (path === "auth/me") {
-    if (!persona) return { status: 401, body: { error: "Not authenticated." } }
-    return { status: 200, body: demoAuthMe(persona) }
+    if (!practitionerId) return { status: 401, body: { error: "Not authenticated." } }
+    return { status: 200, body: demoAuthMe(practitionerId) }
   }
   if (path === "auth/logout" || path === "auth/changepassword") {
     return { status: 200, body: { ok: true } }

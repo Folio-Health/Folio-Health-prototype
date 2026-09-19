@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
+import { phoneInputProps, sanitizePhoneInput } from "@/lib/phone"
 import { format } from "date-fns"
 import { PlusIcon, SearchIcon, MailIcon, PhoneIcon, DropletIcon } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
@@ -270,7 +271,8 @@ function DonorsList() {
               <Input
                 id="donor-phone"
                 value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, phone: sanitizePhoneInput(e.target.value) }))}
+                {...phoneInputProps}
                 placeholder="+234..."
               />
             </div>

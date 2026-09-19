@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import type { Appointment, AuditEvent } from "@medplum/fhirtypes"
-import { searchResources, type SearchParams } from "@/lib/fhir/client"
+import { FhirError, searchResources, type SearchParams } from "@/lib/fhir/client"
 
 /**
  * Dashboard figures, counted by the FHIR server.
@@ -34,13 +34,35 @@ async function countOf(resourceType: string, params: SearchParams = {}): Promise
   return total ?? 0
 }
 
+/**
+ * A count the signed-in role may not be allowed to make.
+ *
+ * Each role's AccessPolicy lists only the resource types that role works with —
+ * a facility admin's, for instance, has no Encounter, ServiceRequest or
+ * Appointment at all, so those searches come back 403 by design. That is not a
+ * failure of the dashboard, so it must not take the whole page down with
+ * "Could not load dashboard": the figure is simply unavailable (`null`) and
+ * the card shows a dash. Every other error still propagates.
+ */
+async function countIfPermitted(
+  resourceType: string,
+  params: SearchParams = {}
+): Promise<number | null> {
+  try {
+    return await countOf(resourceType, params)
+  } catch (error) {
+    if (error instanceof FhirError && error.status === 403) return null
+    throw error
+  }
+}
+
 export interface DashboardMetrics {
-  patients: number
-  appointmentsToday: number
-  activeEncounters: number
-  practitioners: number
-  organizations: number
-  pendingLabOrders: number
+  patients: number | null
+  appointmentsToday: number | null
+  activeEncounters: number | null
+  practitioners: number | null
+  organizations: number | null
+  pendingLabOrders: number | null
 }
 
 export function useDashboardMetrics() {
@@ -56,13 +78,13 @@ export function useDashboardMetrics() {
         organizations,
         pendingLabOrders,
       ] = await Promise.all([
-        countOf("Patient"),
+        countIfPermitted("Patient"),
         // Repeated `date` params — AND, not the OR a comma would produce.
-        countOf("Appointment", { date: [`ge${start}`, `le${end}`] }),
-        countOf("Encounter", { status: "in-progress" }),
-        countOf("Practitioner"),
-        countOf("Organization"),
-        countOf("ServiceRequest", { status: "active" }),
+        countIfPermitted("Appointment", { date: [`ge${start}`, `le${end}`] }),
+        countIfPermitted("Encounter", { status: "in-progress" }),
+        countIfPermitted("Practitioner"),
+        countIfPermitted("Organization"),
+        countIfPermitted("ServiceRequest", { status: "active" }),
       ])
       return {
         patients,
@@ -72,6 +94,33 @@ export function useDashboardMetrics() {
         organizations,
         pendingLabOrders,
       }
+    },
+  })
+}
+
+export interface FacilityAdminMetrics {
+  /** Patients registered at this facility (compartment-scoped by the policy). */
+  patients: number | null
+  /** Audit events recorded today — the admin's view of "what happened". */
+  auditEventsToday: number | null
+}
+
+/**
+ * Figures for the hospital administrator — accounts, roles and infrastructure,
+ * "clinical content none" (EMR V1 RBAC spec §7.8). Nothing clinical is
+ * requested here at all; the staff-account figures come from the admin plane
+ * via `useFacilityStaff`, not from FHIR searches.
+ */
+export function useFacilityAdminMetrics() {
+  return useQuery({
+    queryKey: ["facility-admin-metrics"],
+    queryFn: async (): Promise<FacilityAdminMetrics> => {
+      const { start, end } = todayRange()
+      const [patients, auditEventsToday] = await Promise.all([
+        countIfPermitted("Patient"),
+        countIfPermitted("AuditEvent", { date: [`ge${start}`, `le${end}`] }),
+      ])
+      return { patients, auditEventsToday }
     },
   })
 }
